@@ -26,7 +26,7 @@
       "graceSecs": 1800,
       "feeBps": 30,
       "quorum": 2,
-      "lockPerWatcher": "4000000000000000000",
+      "lockPerWatcher": "50000000000000000000",
       "enabled": true
     }
   }

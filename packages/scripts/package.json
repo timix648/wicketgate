@@ -25,7 +25,8 @@
     "memo": "tsx src/memo.ts",
     "withdraw": "tsx src/withdraw-normal.ts",
     "state": "tsx src/state.ts",
-    "receipt": "tsx src/receipt.ts"
+    "receipt": "tsx src/receipt.ts",
+    "lp": "tsx src/lp.ts"
   },
   "dependencies": {
     "@qorechain/rdk": "0.9.0",
