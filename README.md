@@ -1,5 +1,7 @@
 # Wicketgate
 
+[![Built on QoreChain](https://build.qorechain.io/badge/wicketgate.svg)](https://build.qorechain.io/p/wicketgate)
+
 **Instant exits for QoreChain rollups, backed by watchers with stake on the line.**
 
 A wicket gate is the small door cut into a large castle gate: people pass through it without waiting for the main gate to open. Wicketgate does that for rollup withdrawals.
@@ -28,7 +30,7 @@ An optimistic rollup only pays a withdrawal after its challenge window: one hour
 | Contracts (`WatcherRegistry`, `ExitPool`, `ExitAddress`, `Directory`, `MemoBoard`) | Deployed on diana (addresses in [deployments/diana.json](deployments/diana.json)); admin actions verified by two ML-DSA-87 signatures on chain; 3 watchers staked; 31 Foundry tests |
 | Own rollup, operator, wallet, board | Not started |
 
-Evidence for every claim is in [PROOF.md](PROOF.md).
+Evidence for every claim is in [PROOF.md](PROOF.md). How AI was used, and what the team decided, is in [AI_USAGE.md](AI_USAGE.md).
 
 ## Run the probes
 
