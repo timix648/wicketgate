@@ -5,7 +5,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOGS="$HOME/.wicketgate/logs"
 mkdir -p "$LOGS" "$HOME/.wicketgate/feed-w1" "$HOME/.wicketgate/feed-w2"
-ROLLUPS="${WICKETGATE_ROLLUPS:-rdk-v328-e2e-mwd5v89d,wicketgate-pay}"
+ROLLUPS="${WICKETGATE_ROLLUPS:-all}"
 
 start() { # name, workdir, command, log
   if tmux has-session -t "$1" 2>/dev/null; then echo "running  $1"; return; fi

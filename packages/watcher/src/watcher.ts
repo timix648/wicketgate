@@ -90,9 +90,16 @@ export class Watcher {
     mkdirSync(cfg.feedDir, { recursive: true });
   }
 
+  /** "all" = every rollup on chain that runs the qledger-v1 execution VM, rediscovered each round. */
+  private async rollupList(): Promise<string[]> {
+    if (!this.cfg.rollups.includes("all")) return this.cfg.rollups;
+    const { body } = await restGet<any>("/qorechain/rdk/v1/rollups?pagination.limit=200");
+    return (body?.rollups ?? []).filter((r: any) => r.execution_vm === "qledger-v1" && r.status !== "stopped").map((r: any) => r.rollup_id);
+  }
+
   async round(): Promise<void> {
     const index: Record<string, unknown>[] = [];
-    for (const rollupId of this.cfg.rollups) {
+    for (const rollupId of await this.rollupList()) {
       try {
         const feed = await this.checkRollup(rollupId);
         index.push({ rollupId, updatedAt: feed.updatedAt, batches: feed.batches.length, file: `${rollupId}.json` });

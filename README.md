@@ -62,7 +62,7 @@ cd ../../contracts && forge test       # contract tests
 
 ```bash
 cd packages/watcher
-npx tsx src/cli.ts --mode observe --rollup rdk-v328-e2e-mwd5v89d --feed ./feed     # needs no key
+npx tsx src/cli.ts --mode observe --rollup all --feed ./feed     # every qledger-v1 rollup on chain; needs no key
 ```
 
 Or with Docker, from a clean machine:

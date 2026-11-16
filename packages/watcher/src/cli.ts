@@ -1,4 +1,4 @@
-// wicketgate-watcher [--rollup id[,id]] [--mode observe|attest|challenge] [--as W1] [--feed dir] [--interval s] [--once]
+// wicketgate-watcher [--rollup id[,id]|all] [--mode observe|attest|challenge] [--as W1] [--feed dir] [--interval s] [--once]
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Address } from "viem";
