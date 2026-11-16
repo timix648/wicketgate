@@ -1,0 +1,85 @@
+[
+ {
+  "type": "function",
+  "name": "MAX_ENVELOPE",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "post",
+  "inputs": [
+   {
+    "name": "rollupKey",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "toLedgerAccount",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "ledgerTxHash",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "envelope",
+    "type": "bytes",
+    "internalType": "bytes"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "event",
+  "name": "Memo",
+  "inputs": [
+   {
+    "name": "rollupKey",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "toLedgerAccount",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "ledgerTxHash",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "from",
+    "type": "address",
+    "indexed": false,
+    "internalType": "address"
+   },
+   {
+    "name": "envelope",
+    "type": "bytes",
+    "indexed": false,
+    "internalType": "bytes"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "error",
+  "name": "TooLarge",
+  "inputs": []
+ }
+]
