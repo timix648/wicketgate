@@ -23,6 +23,12 @@ importers:
 
   packages/scripts:
     dependencies:
+      '@cosmjs/stargate':
+        specifier: 0.39.0
+        version: 0.39.0
+      '@qorechain/evm':
+        specifier: 0.14.0
+        version: 0.14.0(viem@2.21.54(typescript@5.6.3))
       '@qorechain/pqc':
         specifier: 0.2.3
         version: 0.2.3
