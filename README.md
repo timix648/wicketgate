@@ -1,6 +1,6 @@
 # Wicketgate
 
-[![Built on QoreChain](https://build.qorechain.io/badge/wicketgate.svg)](https://build.qorechain.io/p/wicketgate)
+[![ci](https://github.com/timix648/wicketgate/actions/workflows/ci.yml/badge.svg)](https://github.com/timix648/wicketgate/actions/workflows/ci.yml) [![Built on QoreChain](https://build.qorechain.io/badge/wicketgate.svg)](https://build.qorechain.io/p/wicketgate)
 
 **Instant exits for QoreChain rollups, backed by watchers with stake on the line.**
 

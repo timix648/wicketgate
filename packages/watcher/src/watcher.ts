@@ -169,10 +169,13 @@ export class Watcher {
       inbox.headSequence > inbox.consumedSequence
         ? (await this.rest.getPostedData(rollupId, inbox.consumedSequence + 1).catch(() => undefined as any))?.height ?? null
         : null;
+    const pool = this.cfg.pool ? await this.poolState(rollupKey, verdicts.length) : null;
+    if (pool) for (const v of verdicts) (v as any).pool = pool.batches[v.index] ?? null;
     const feed = {
       version: 1,
       rollupId,
       rollupKey,
+      lane: pool?.lane ?? null,
       updatedAt: new Date().toISOString(),
       watcher: this.cfg.me?.evm ?? null,
       mode: this.cfg.mode,
@@ -183,6 +186,31 @@ export class Watcher {
     const m = verdicts.filter((v) => v.verdict === "match").length;
     this.log(`[${rollupId}] ${verdicts.length} batches: ${m} match, ${verdicts.filter((v) => v.verdict === "mismatch").length} mismatch, ${verdicts.filter((v) => v.verdict === "rejected-on-chain").length} rejected; inbox ${inbox.consumedSequence}/${inbox.headSequence}`);
     return feed;
+  }
+
+  /** The pool's view of each batch, so readers of the feed need no contract calls. */
+  private async poolState(rollupKey: Hex, n: number) {
+    const pool = this.cfg.pool!;
+    const l = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "lanes", args: [rollupKey] })) as any[];
+    const lane = { windowSecs: Number(l[0]), graceSecs: Number(l[1]), feeBps: Number(l[2]), quorum: Number(l[3]), lockPerWatcherQor: Number(l[4]) / 1e18, enabled: Boolean(l[5]) };
+    const batches: Record<number, unknown> = {};
+    if (!lane.enabled) return { lane, batches };
+    for (let i = 0; i < n; i++) {
+      const bk = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(i)] })) as Hex;
+      const b = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
+      batches[i] = {
+        batchKey: bk,
+        confirmed: b[1] > 0n,
+        confirmedAt: b[1] > 0n ? new Date(Number(b[1]) * 1000).toISOString() : null,
+        contested: b[2],
+        released: b[3],
+        openAdvances: Number(b[4]),
+        coverQor: Number(b[5]) / 1e18,
+        advancedQor: Number(b[6]) / 1e18,
+        watchers: b[7],
+      };
+    }
+    return { lane, batches };
   }
 
   private async attestAll(

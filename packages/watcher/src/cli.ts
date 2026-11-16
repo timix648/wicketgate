@@ -15,11 +15,12 @@ async function main() {
   const rollups = (arg("rollup", "rdk-v328-e2e-mwd5v89d") as string).split(",").map((s) => s.trim()).filter(Boolean);
   const feedDir = resolve(arg("feed", "./feed") as string);
   const interval = Number(arg("interval", "20")) * 1000;
-  let me, pool: Address | undefined;
-  if (mode !== "observe") {
-    me = await account((arg("as", "W1") as Role));
-    pool = JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")).pool;
-  }
+  let me;
+  let pool: Address | undefined = arg("pool") as Address | undefined;
+  try {
+    pool ??= JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")).pool;
+  } catch {}
+  if (mode !== "observe") me = await account((arg("as", "W1") as Role));
   const w = new Watcher({ rollups, mode, me, pool, feedDir });
   console.log(`wicketgate watcher: mode=${mode} rollups=${rollups.join(",")} feed=${feedDir}${me ? ` as ${me.evm}` : ""}`);
   for (;;) {
