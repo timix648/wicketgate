@@ -37,6 +37,16 @@ All six Protocol Builders requirements are shown on diana: ML-DSA-signed (anchor
 
 Evidence for every claim is in [PROOF.md](PROOF.md). The threat model is in [THREAT_MODEL.md](THREAT_MODEL.md) and the known limits in [LIMITS.md](LIMITS.md). How AI was used, and what the team decided, is in [AI_USAGE.md](AI_USAGE.md).
 
+## Check it yourself in five minutes
+
+Nothing below needs a key or test tokens.
+
+1. **Watch a rollup with your own eyes.** `cd packages/watcher && npx tsx src/cli.ts --mode observe --rollup wicketgate-pay --once --feed ./feed`. It rebuilds the rollup from chain data and prints whether every batch matches its re-execution.
+2. **Verify a settlement receipt against the chain.** `cd packages/scripts && npx tsx src/receipt.ts wicketgate-pay 3`. All six checks should pass, and a tampered copy should fail.
+3. **Read the pool.** `npx tsx src/state.ts` shows each confirmed batch, the stake behind it, every advance and its state.
+4. **Follow the fraud demo in the explorer.** The bad batch, the challenge five seconds later and the slashed bond are linked in [PROOF.md](PROOF.md) and [deployments/demo-timeline.json](deployments/demo-timeline.json).
+5. **Read the live feed** the board uses: https://raw.githubusercontent.com/timix648/wicketgate-feed/main/wicketgate-pay.json
+
 ## Run the probes
 
 ```bash

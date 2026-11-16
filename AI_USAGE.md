@@ -49,3 +49,6 @@ The project's accounts are testnet-only. Their recovery phrases live in a file o
 | 16 Nov 2026 | Team | Repository created and made public, faucet funding, project page, drill registration |
 | 16 Nov 2026 | Agent | Accounts registered, contracts deployed, watchers staked, proof recorded |
 | 16 Nov 2026 | Team | Roles set: @da-b0s owns the frontend, some backend jobs and the demo |
+| 16 Nov 2026 | Team | Asked the organiser for test QOR and received 15,000; created the feed repository; registered the Q-Day Drill; funded the accounts from the faucet |
+| 16 Nov 2026 | Agent | Watcher, operator, exit and receipt scripts; launched `wicketgate-pay`; ran the instant exits, the fraud demo and the encrypted notes on diana; CI, invariant tests and the QoreScan inventory |
+| 16 Nov 2026 | Team | Decided to keep building now and update the project page later |
