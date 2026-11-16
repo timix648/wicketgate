@@ -65,6 +65,9 @@ importers:
       '@cosmjs/stargate':
         specifier: 0.39.0
         version: 0.39.0
+      '@noble/hashes':
+        specifier: 1.8.0
+        version: 1.8.0
       '@qorechain/evm':
         specifier: 0.14.0
         version: 0.14.0(viem@2.21.54(typescript@5.6.3)(zod@4.6.7))
