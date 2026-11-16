@@ -64,6 +64,13 @@ cd packages/watcher
 npx tsx src/cli.ts --mode observe --rollup rdk-v328-e2e-mwd5v89d --feed ./feed     # needs no key
 ```
 
+Or with Docker, from a clean machine:
+
+```bash
+docker build -t wicketgate-watcher .
+docker run --rm -v "$PWD/feed:/feed" wicketgate-watcher --mode observe --rollup wicketgate-pay --once
+```
+
 Observe mode rebuilds the rollup from chain data and writes verdicts and exit proofs to `./feed/<rollup>.json`. `--mode attest` and `--mode challenge` also sign and send attestations and fraud proofs; they need a staked watcher account.
 
 Neither probe needs a key or funds.
