@@ -19,7 +19,7 @@ An optimistic rollup only pays a withdrawal after its challenge window: one hour
 3. When enough staked watchers agree, the batch is confirmed and **each confirming watcher locks stake behind it**.
 4. A user withdraws to an exit address computed in advance. The pool pays them at once, minus a small fee, **never more than the stake locked behind that batch**.
 5. When the batch finalises, the chain pays the exit address and the pool collects it.
-6. **Exit to another chain:** the wallet can forward the payout over IBC straight away. A withdrawal from our rollup reached Osmosis testnet in 126 seconds end to end.
+6. **Exit to another chain:** the wallet can forward the payout over IBC straight away. A withdrawal from our rollup reached Osmosis testnet in 88 seconds end to end.
 7. If the batch is wrong: watchers refuse to sign, **a single watcher that attests different facts freezes payouts on that batch**, and a watcher sends the fraud proof that slashes the submitter. If an exit is never repaid, the confirming watchers' stake repays the pool.
 
 ## Status (16 November 2026)
