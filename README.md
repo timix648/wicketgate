@@ -33,6 +33,8 @@ An optimistic rollup only pays a withdrawal after its challenge window: one hour
 | Operator (`packages/operator`) | Running on both rollups: batches the inbox, pays withdrawals behind instant exits and settles them |
 | Wallet and board | In progress (frontend) |
 
+All six Protocol Builders requirements are shown on diana: ML-DSA-signed (anchored) batches, withdrawals (instant and normal), a verified settlement receipt, a watchtower that slashed a bad submitter, ML-KEM-1024 data protection, and a threat model.
+
 Evidence for every claim is in [PROOF.md](PROOF.md). The threat model is in [THREAT_MODEL.md](THREAT_MODEL.md) and the known limits in [LIMITS.md](LIMITS.md). How AI was used, and what the team decided, is in [AI_USAGE.md](AI_USAGE.md).
 
 ## Run the probes

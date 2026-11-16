@@ -225,10 +225,17 @@ export class Watcher {
     try {
       const wallet = walletFor(me);
       for (const bk of toRelease) {
-        const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "release", args: [bk] } as any);
-        const rc = await publicClient.waitForTransactionReceipt({ hash });
         this.sent.add(`r:${bk}`);
-        this.log(`[${rollupId}] released stake on ${bk.slice(0, 10)}: ${rc.status} ${hash}`);
+        // another watcher of the same batch may release it first; that is fine
+        const again = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
+        if (again[3]) continue;
+        try {
+          const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "release", args: [bk], gas: 400_000n } as any);
+          const rc = await publicClient.waitForTransactionReceipt({ hash });
+          this.log(`[${rollupId}] released stake on ${bk.slice(0, 10)}: ${rc.status} ${hash}`);
+        } catch (e: any) {
+          this.log(`[${rollupId}] release of ${bk.slice(0, 10)} skipped: ${e?.shortMessage ?? e?.message ?? e}`);
+        }
       }
       for (const t of pending) {
         const msg = (await publicClient.readContract({
