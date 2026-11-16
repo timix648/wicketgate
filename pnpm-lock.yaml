@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@qorechain/qorescan':
+        specifier: 0.1.0
+        version: 0.1.0
       '@types/node':
         specifier: 22.10.2
         version: 22.10.2
@@ -536,6 +539,11 @@ packages:
   '@qorechain/pqc@0.2.3':
     resolution: {integrity: sha512-YLzcfwkeq9mCyTcFf/BQFB7dsNIkyFcUluByp1zrJ7SRAkPj8cwPmv7jtw5Xeh7K80FgwzlvtBeZb/dzzknWZA==}
     engines: {node: '>=18'}
+
+  '@qorechain/qorescan@0.1.0':
+    resolution: {integrity: sha512-PIewGe1NoeqggtGrsQ0rOOyWn4vnUoBVZpMlSZnb/udBlbCvyWDwDZ41QvBu6B6+9SYKPGnTpjOmGk11hyipIg==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@qorechain/qoreseal@0.1.0':
     resolution: {integrity: sha512-OBUwTVsibzTH/zOpqT6lkq7mH/dCg9zV4hSw3tEMUttt3Jb4BqF4BF6/DsZqzSY1+joPusm3gRutx17kV+Hb5w==}
@@ -1491,6 +1499,8 @@ snapshots:
     dependencies:
       '@noble/hashes': 2.4.0
       '@noble/post-quantum': 0.7.1
+
+  '@qorechain/qorescan@0.1.0': {}
 
   '@qorechain/qoreseal@0.1.0':
     dependencies:

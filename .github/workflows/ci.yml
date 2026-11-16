@@ -1,0 +1,53 @@
+name: ci
+on:
+  push:
+    branches: [main, web]
+  pull_request:
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.9.0
+      - name: Build and test the contracts
+        working-directory: contracts
+        run: forge test -vv
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck every package
+        run: pnpm -r --if-present typecheck
+      - name: Core tests (one reads the live ExitPool on diana)
+        run: pnpm --filter @wicketgate/core test
+
+  cbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cryptographic inventory of the contracts (QoreScan, CycloneDX CBOM)
+        run: npx -y @qorechain/qorescan@0.1.0 scan --name wicketgate --solidity contracts/src --out cbom-ci.cdx.json
+      - name: Fail if a contract verifies a classical signature
+        run: |
+          if grep -q '"ecrecover"' cbom-ci.cdx.json; then echo "classical signature check found in contracts"; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cbom
+          path: cbom-ci.cdx.json

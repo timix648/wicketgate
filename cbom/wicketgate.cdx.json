@@ -1,0 +1,1908 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:4a0a52a8-4378-5c2b-852c-75be52496254",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-16T17:07:54Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "supplier": {
+            "name": "QoreChain Association"
+          },
+          "name": "qorescan",
+          "version": "0.1.0",
+          "externalReferences": [
+            {
+              "type": "vcs",
+              "url": "https://github.com/qorechain/qorescan"
+            }
+          ]
+        }
+      ]
+    },
+    "component": {
+      "type": "platform",
+      "bom-ref": "target",
+      "name": "wicketgate"
+    },
+    "properties": [
+      {
+        "name": "qorescan:disclaimer",
+        "value": "QoreScan output is an inventory aid. It is not a certification, an audit or a legal opinion, and it does not establish conformity with any regulation or standard."
+      },
+      {
+        "name": "qorescan:chain:network",
+        "value": "testnet"
+      },
+      {
+        "name": "qorescan:chain:rest",
+        "value": "https://api-testnet.qore.host"
+      },
+      {
+        "name": "qorescan:chain:id",
+        "value": "qorechain-diana"
+      },
+      {
+        "name": "qorescan:chain:consensus-engine-version",
+        "value": "0.38.26"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-sign-bytes-v2"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "evm-pqc-authorisation-window"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-ecdsa-pubkey-validation"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-keyed-account-maintenance-hybrid"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-registration-integrity"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-rotation-replay-guard"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-algorithm-governance-guards"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-hybrid-single-extension"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-keyless-extension-closed"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "evm-pqc-window-targets"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-possession-flag"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-kem-registry"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-rotate-key-size-check"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-verify-once-per-signer"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-multisig"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-verify-gas-calibrated"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-consent-authz-limiter"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-consent-outer-signer"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-rotation-ends-evm-consent"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-degenerate-key-refused"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "svm-pqc-key-lane-gated"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-registration-ends-evm-consent"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "pqc-consent-own-message"
+      },
+      {
+        "name": "qorescan:chain:protocol-feature",
+        "value": "svm-pqc-key-for-wallets"
+      },
+      {
+        "name": "qorescan:chain:protocol-features",
+        "value": "264 enabled at height 10206170 (24 PQC-related listed)"
+      },
+      {
+        "name": "qorescan:chain:pqc:hybrid-signature-mode",
+        "value": "required"
+      },
+      {
+        "name": "qorescan:chain:pqc:pqc-primary",
+        "value": "true"
+      },
+      {
+        "name": "qorescan:chain:pqc:allow-classical-fallback",
+        "value": "false"
+      },
+      {
+        "name": "qorescan:chain:pqc:min-security-level",
+        "value": "5"
+      },
+      {
+        "name": "qorescan:chain:pqc:default-migration-blocks",
+        "value": "1000000"
+      },
+      {
+        "name": "qorescan:chain:evm:active-precompile",
+        "value": "crossVmBridge (0x0000000000000000000000000000000000000901)"
+      },
+      {
+        "name": "qorescan:chain:evm:active-precompile",
+        "value": "rlConsensusParams (0x0000000000000000000000000000000000000C01)"
+      },
+      {
+        "name": "qorescan:chain:evm:active-precompile",
+        "value": "pqcVerify (0x0000000000000000000000000000000000000a01)"
+      },
+      {
+        "name": "qorescan:chain:evm:active-precompile",
+        "value": "pqcKeyStatus (0x0000000000000000000000000000000000000a02)"
+      },
+      {
+        "name": "qorescan:chain:account-pqc-status",
+        "value": "qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k: hybrid key, dilithium5"
+      },
+      {
+        "name": "qorescan:chain:account-pqc-status",
+        "value": "qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac: hybrid key, dilithium5"
+      },
+      {
+        "name": "qorescan:chain:account-pqc-status",
+        "value": "qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5: hybrid key, dilithium5"
+      },
+      {
+        "name": "qorescan:chain:account-pqc-status",
+        "value": "qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp: hybrid key, dilithium5"
+      },
+      {
+        "name": "qorescan:chain:account-pqc-status",
+        "value": "qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf: hybrid key, dilithium5"
+      },
+      {
+        "name": "qorescan:solidity:files",
+        "value": "6"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/aes-128-gcm",
+      "name": "AES-128-GCM",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "cipher-suite",
+            "additionalContext": "TLS_AES_128_GCM_SHA256"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "ae",
+          "parameterSetIdentifier": "128",
+          "mode": "gcm",
+          "cryptoFunctions": [
+            "encrypt",
+            "decrypt"
+          ],
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 1
+        },
+        "oid": "2.16.840.1.101.3.4.1.6"
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "symmetric"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Not scheduled for deprecation by NIST IR 8547"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 197, SP 800-38D"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "AES"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ecdsa-p256",
+      "name": "ECDSA P-256",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[0]",
+            "additionalContext": "presented by the server"
+          },
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[1]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "curve": "secp256r1",
+          "cryptoFunctions": [
+            "sign",
+            "verify"
+          ],
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 0
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "quantum-vulnerable"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 186-5"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "ECDSA"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ecdsa-p384",
+      "name": "ECDSA P-384",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[2]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "curve": "secp384r1",
+          "cryptoFunctions": [
+            "sign",
+            "verify"
+          ],
+          "classicalSecurityLevel": 192,
+          "nistQuantumSecurityLevel": 0
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "quantum-vulnerable"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 186-5"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "ECDSA"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ecdsa-secp256k1",
+      "name": "ECDSA secp256k1",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/cosmos/evm/vm/v1/params",
+            "symbol": "evm",
+            "additionalContext": "EVM lane: transactions signed with ECDSA secp256k1 over Keccak-256; ecrecover (0x01), sha256 (0x02) and ripemd160 (0x03) precompiles"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "classical key of qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "classical key of qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "classical key of qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "classical key of qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "classical key of qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/params",
+            "symbol": "params.hybrid_signature_mode",
+            "additionalContext": "classical half of the native-lane hybrid signature"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "curve": "secp256k1",
+          "cryptoFunctions": [
+            "sign",
+            "verify"
+          ],
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 0
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "quantum-vulnerable"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "SEC 2 curve, ECDSA per FIPS 186-5"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "ECDSA"
+        },
+        {
+          "name": "qorescan:algorithm-note",
+          "value": "IR 8547 schedules the ECDSA family; QoreScan applies that schedule to every curve in the family."
+        },
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ecdsa-sha256",
+      "name": "ECDSA with SHA-256",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[0]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "cryptoFunctions": [
+            "sign",
+            "verify"
+          ],
+          "nistQuantumSecurityLevel": 0
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "quantum-vulnerable"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 186-5"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "ECDSA"
+        },
+        {
+          "name": "qorescan:algorithm-note",
+          "value": "Signature scheme of a certificate; the issuer key size or curve is recorded with the issuer, not here."
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ecdsa-sha384",
+      "name": "ECDSA with SHA-384",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[1]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "cryptoFunctions": [
+            "sign",
+            "verify"
+          ],
+          "nistQuantumSecurityLevel": 0
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "quantum-vulnerable"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 186-5"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "ECDSA"
+        },
+        {
+          "name": "qorescan:algorithm-note",
+          "value": "Signature scheme of a certificate; the issuer key size or curve is recorded with the issuer, not here."
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ed25519",
+      "name": "Ed25519",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/cosmos/base/tendermint/v1beta1/validatorsets/latest?pagination.limit=1000",
+            "symbol": "validators[].pub_key",
+            "additionalContext": "4 active validators with /cosmos.crypto.ed25519.PubKey consensus keys at height 10206171"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "curve": "Ed25519",
+          "cryptoFunctions": [
+            "sign",
+            "verify"
+          ],
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 0
+        },
+        "oid": "1.3.101.112"
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "quantum-vulnerable"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 186-5"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "EdDSA"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/hkdf-sha256",
+      "name": "HKDF-SHA256",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "cipher-suite",
+            "additionalContext": "TLS_AES_128_GCM_SHA256"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kdf",
+          "parameterSetIdentifier": "256",
+          "cryptoFunctions": [
+            "keyderive"
+          ]
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "symmetric"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Not scheduled for deprecation by NIST IR 8547"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "RFC 5869, SP 800-56C"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "HKDF"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/keccak-256",
+      "name": "Keccak-256",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "ExitPool.sol",
+            "line": 20,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 139,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 143,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 159,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 164,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 166,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 208,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 260,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 268,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 431,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "ExitPool.sol",
+            "line": 461,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "https://api-testnet.qore.host/cosmos/evm/vm/v1/params",
+            "symbol": "evm",
+            "additionalContext": "EVM lane: transactions signed with ECDSA secp256k1 over Keccak-256; ecrecover (0x01), sha256 (0x02) and ripemd160 (0x03) precompiles"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "hash",
+          "parameterSetIdentifier": "256",
+          "cryptoFunctions": [
+            "digest"
+          ],
+          "classicalSecurityLevel": 128
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "symmetric"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Not a NIST-standardised algorithm; not scheduled by NIST IR 8547"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "Keccak submission padding (as used by Ethereum), not FIPS 202"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "Keccak"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "solidity"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ml-dsa-87",
+      "name": "ML-DSA-87",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/cosmos/evm/vm/v1/params",
+            "symbol": "params.active_static_precompiles",
+            "additionalContext": "EVM precompile pqcVerify (0x0000000000000000000000000000000000000a01) is active: signature verification from contracts"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf: dilithium5, key type hybrid, registered at height 10192736"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k: dilithium5, key type hybrid, registered at height 10192717"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac: dilithium5, key type hybrid, registered at height 10192722"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5: dilithium5, key type hybrid, registered at height 10192727"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp: dilithium5, key type hybrid, registered at height 10192731"
+          },
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/params",
+            "symbol": "params.default_signature_algo_name",
+            "additionalContext": "default signature algorithm for new keys: id 1, \"dilithium5\"; hybrid signature mode required"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "parameterSetIdentifier": "87",
+          "cryptoFunctions": [
+            "keygen",
+            "sign",
+            "verify"
+          ],
+          "classicalSecurityLevel": 256,
+          "nistQuantumSecurityLevel": 5
+        },
+        "oid": "2.16.840.1.101.3.4.3.19"
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "post-quantum"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Not scheduled for deprecation by NIST IR 8547"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 204"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "ML-DSA"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:pqc:default-signature-algorithm",
+          "value": "true"
+        },
+        {
+          "name": "qorescan:pqc:hybrid-signature-mode",
+          "value": "required"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/ml-kem-1024",
+      "name": "ML-KEM-1024",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/kem/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+            "symbol": "key",
+            "additionalContext": "KEM public key published by qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kem",
+          "parameterSetIdentifier": "1024",
+          "cryptoFunctions": [
+            "keygen",
+            "encapsulate",
+            "decapsulate"
+          ],
+          "classicalSecurityLevel": 256,
+          "nistQuantumSecurityLevel": 5
+        },
+        "oid": "2.16.840.1.101.3.4.4.3"
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "post-quantum"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Not scheduled for deprecation by NIST IR 8547"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 203"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "ML-KEM"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/rsa-pkcs1v15-sha256",
+      "name": "RSA PKCS#1 v1.5 with SHA-256",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[2]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "cryptoFunctions": [
+            "sign",
+            "verify"
+          ],
+          "nistQuantumSecurityLevel": 0
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "quantum-vulnerable"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 186-5"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "RSA"
+        },
+        {
+          "name": "qorescan:algorithm-note",
+          "value": "Signature scheme of a certificate; the issuer key size or curve is recorded with the issuer, not here."
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/sha-256",
+      "name": "SHA-256",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "cipher-suite",
+            "additionalContext": "TLS_AES_128_GCM_SHA256"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "hash",
+          "parameterSetIdentifier": "256",
+          "cryptoFunctions": [
+            "digest"
+          ],
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 2
+        },
+        "oid": "2.16.840.1.101.3.4.2.1"
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "symmetric"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Not scheduled for deprecation by NIST IR 8547"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 180-4"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "SHA-2"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/algorithm/x25519mlkem768",
+      "name": "X25519MLKEM768",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "key-exchange",
+            "additionalContext": "hybrid key exchange X25519MLKEM768"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kem",
+          "parameterSetIdentifier": "768",
+          "cryptoFunctions": [
+            "encapsulate",
+            "decapsulate"
+          ],
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 3
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:classification",
+          "value": "hybrid"
+        },
+        {
+          "name": "qorescan:transition",
+          "value": "Hybrid: post-quantum component approved; classical component deprecated after 2030, disallowed after 2035 (NIST IR 8547)"
+        },
+        {
+          "name": "qorescan:standard",
+          "value": "FIPS 203 (ML-KEM-768) combined with X25519"
+        },
+        {
+          "name": "qorescan:family",
+          "value": "Hybrid KEM"
+        },
+        {
+          "name": "qorescan:algorithm-note",
+          "value": "Post-quantum security comes from the ML-KEM-768 component."
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/protocol/tls/rpc-testnet.qore.host:443",
+      "name": "TLS 1.3 at rpc-testnet.qore.host:443",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "tls-handshake",
+            "additionalContext": "negotiated by QoreScan's client with default key exchange preferences (hybrid ML-KEM groups offered first)"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "protocol",
+        "protocolProperties": {
+          "type": "tls",
+          "version": "1.3",
+          "cipherSuites": [
+            {
+              "name": "TLS_AES_128_GCM_SHA256",
+              "algorithms": [
+                "crypto/algorithm/x25519mlkem768",
+                "crypto/algorithm/aes-128-gcm",
+                "crypto/algorithm/hkdf-sha256",
+                "crypto/algorithm/sha-256"
+              ],
+              "identifiers": [
+                "0x1301"
+              ]
+            }
+          ],
+          "cryptoRefArray": [
+            "crypto/algorithm/x25519mlkem768",
+            "crypto/certificate/22cd45c412254fa4",
+            "crypto/certificate/1dfc1605fbad358d",
+            "crypto/certificate/76b27b80a58027dc",
+            "crypto/algorithm/aes-128-gcm",
+            "crypto/algorithm/hkdf-sha256",
+            "crypto/algorithm/sha-256",
+            "crypto/algorithm/ecdsa-p256"
+          ]
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        },
+        {
+          "name": "qorescan:tls:key-exchange-group",
+          "value": "X25519MLKEM768"
+        },
+        {
+          "name": "qorescan:tls:server-name",
+          "value": "rpc-testnet.qore.host"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/certificate/1dfc1605fbad358d",
+      "name": "Certificate WE1",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[1]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "certificate",
+        "certificateProperties": {
+          "subjectName": "CN=WE1,O=Google Trust Services,C=US",
+          "issuerName": "CN=GTS Root R4,O=Google Trust Services LLC,C=US",
+          "notValidBefore": "2023-12-13T09:00:00Z",
+          "notValidAfter": "2029-02-20T14:00:00Z",
+          "signatureAlgorithmRef": "crypto/algorithm/ecdsa-sha384",
+          "subjectPublicKeyRef": "crypto/key/certificate/908769e8d34477cc",
+          "certificateFormat": "X.509"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:certificate:sha256",
+          "value": "1dfc1605fbad358d8bc844f76d15203fac9ca5c1a79fd4857ffaf2864fbebf96"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/certificate/22cd45c412254fa4",
+      "name": "Certificate qore.host",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[0]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "certificate",
+        "certificateProperties": {
+          "subjectName": "CN=qore.host",
+          "issuerName": "CN=WE1,O=Google Trust Services,C=US",
+          "notValidBefore": "2026-10-11T21:24:58Z",
+          "notValidAfter": "2027-01-09T22:24:55Z",
+          "signatureAlgorithmRef": "crypto/algorithm/ecdsa-sha256",
+          "subjectPublicKeyRef": "crypto/key/certificate/c2ace7bc11323391",
+          "certificateFormat": "X.509"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:certificate:sha256",
+          "value": "22cd45c412254fa44e99eb87d7afb5c0faf281a6fa434f646efb85b8fca2c9da"
+        },
+        {
+          "name": "qorescan:certificate:chain",
+          "value": "verified against the system roots"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/certificate/76b27b80a58027dc",
+      "name": "Certificate GTS Root R4",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[2]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "certificate",
+        "certificateProperties": {
+          "subjectName": "CN=GTS Root R4,O=Google Trust Services LLC,C=US",
+          "issuerName": "CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE",
+          "notValidBefore": "2023-11-15T03:43:21Z",
+          "notValidAfter": "2028-01-28T00:00:42Z",
+          "signatureAlgorithmRef": "crypto/algorithm/rsa-pkcs1v15-sha256",
+          "subjectPublicKeyRef": "crypto/key/certificate/9847e5653e5e9e84",
+          "certificateFormat": "X.509"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:certificate:sha256",
+          "value": "76b27b80a58027dc3cf1da68dac17010ed93997d0b603e2fadbe85012493b5a7"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-classical/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+      "name": "Account classical public key qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "source: auth_account"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+          "algorithmRef": "crypto/algorithm/ecdsa-secp256k1",
+          "size": 264,
+          "format": "SEC 1"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-classical/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+      "name": "Account classical public key qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "source: auth_account"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+          "algorithmRef": "crypto/algorithm/ecdsa-secp256k1",
+          "size": 264,
+          "format": "SEC 1"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-classical/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+      "name": "Account classical public key qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "source: auth_account"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+          "algorithmRef": "crypto/algorithm/ecdsa-secp256k1",
+          "size": 264,
+          "format": "SEC 1"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-classical/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "name": "Account classical public key qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "source: auth_account"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+          "algorithmRef": "crypto/algorithm/ecdsa-secp256k1",
+          "size": 264,
+          "format": "SEC 1"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-classical/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+      "name": "Account classical public key qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+            "symbol": "account.ecdsa_pubkey",
+            "additionalContext": "source: auth_account"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+          "algorithmRef": "crypto/algorithm/ecdsa-secp256k1",
+          "size": 264,
+          "format": "SEC 1"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-kem/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "name": "Account KEM public key qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/kem/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+            "symbol": "key",
+            "additionalContext": "KEM public key published by qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+          "algorithmRef": "crypto/algorithm/ml-kem-1024",
+          "size": 12544,
+          "format": "raw"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-pqc/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+      "name": "Account PQC public key qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf: dilithium5, key type hybrid, registered at height 10192736"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+          "algorithmRef": "crypto/algorithm/ml-dsa-87",
+          "size": 20736,
+          "format": "raw"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:pqc:key-type",
+          "value": "hybrid"
+        },
+        {
+          "name": "qorescan:pqc:registry-id",
+          "value": "1"
+        },
+        {
+          "name": "qorescan:pqc:classical-key-source",
+          "value": "auth_account"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-pqc/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+      "name": "Account PQC public key qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k: dilithium5, key type hybrid, registered at height 10192717"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+          "algorithmRef": "crypto/algorithm/ml-dsa-87",
+          "size": 20736,
+          "format": "raw"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:pqc:key-type",
+          "value": "hybrid"
+        },
+        {
+          "name": "qorescan:pqc:registry-id",
+          "value": "1"
+        },
+        {
+          "name": "qorescan:pqc:classical-key-source",
+          "value": "auth_account"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-pqc/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+      "name": "Account PQC public key qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac: dilithium5, key type hybrid, registered at height 10192722"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+          "algorithmRef": "crypto/algorithm/ml-dsa-87",
+          "size": 20736,
+          "format": "raw"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:pqc:key-type",
+          "value": "hybrid"
+        },
+        {
+          "name": "qorescan:pqc:registry-id",
+          "value": "1"
+        },
+        {
+          "name": "qorescan:pqc:classical-key-source",
+          "value": "auth_account"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-pqc/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "name": "Account PQC public key qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5: dilithium5, key type hybrid, registered at height 10192727"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+          "algorithmRef": "crypto/algorithm/ml-dsa-87",
+          "size": 20736,
+          "format": "raw"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:pqc:key-type",
+          "value": "hybrid"
+        },
+        {
+          "name": "qorescan:pqc:registry-id",
+          "value": "1"
+        },
+        {
+          "name": "qorescan:pqc:classical-key-source",
+          "value": "auth_account"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/account-pqc/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+      "name": "Account PQC public key qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/qorechain/pqc/v1/account/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+            "symbol": "account",
+            "additionalContext": "PQC key of qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp: dilithium5, key type hybrid, registered at height 10192731"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+          "algorithmRef": "crypto/algorithm/ml-dsa-87",
+          "size": 20736,
+          "format": "raw"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:pqc:key-type",
+          "value": "hybrid"
+        },
+        {
+          "name": "qorescan:pqc:registry-id",
+          "value": "1"
+        },
+        {
+          "name": "qorescan:pqc:classical-key-source",
+          "value": "auth_account"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/active-validators/ed25519",
+      "name": "Active validator consensus public keys (Ed25519)",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "https://api-testnet.qore.host/cosmos/base/tendermint/v1beta1/validatorsets/latest?pagination.limit=1000",
+            "symbol": "validators[].pub_key",
+            "additionalContext": "4 active validators with /cosmos.crypto.ed25519.PubKey consensus keys at height 10206171"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "algorithmRef": "crypto/algorithm/ed25519"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "chain"
+        },
+        {
+          "name": "qorescan:count",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/certificate/908769e8d34477cc",
+      "name": "Certificate public key (ECDSA P-256)",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[1]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "spki-sha256:908769e8d34477cc2cba0632c88605b22d7294c0840f78596d247c645b1afc0e",
+          "algorithmRef": "crypto/algorithm/ecdsa-p256",
+          "size": 256,
+          "format": "X.509 SubjectPublicKeyInfo"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/certificate/9847e5653e5e9e84",
+      "name": "Certificate public key (ECDSA P-384)",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[2]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "spki-sha256:9847e5653e5e9e847516e5cb818606aa7544a19be67fd7366d506988e8d84347",
+          "algorithmRef": "crypto/algorithm/ecdsa-p384",
+          "size": 384,
+          "format": "X.509 SubjectPublicKeyInfo"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "crypto/key/certificate/c2ace7bc11323391",
+      "name": "Certificate public key (ECDSA P-256)",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "rpc-testnet.qore.host:443",
+            "symbol": "certificate[0]",
+            "additionalContext": "presented by the server"
+          }
+        ]
+      },
+      "cryptoProperties": {
+        "assetType": "related-crypto-material",
+        "relatedCryptoMaterialProperties": {
+          "type": "public-key",
+          "id": "spki-sha256:c2ace7bc11323391086b5833a0f950e4da053578d09fb8a86ca6ed4218802c8e",
+          "algorithmRef": "crypto/algorithm/ecdsa-p256",
+          "size": 256,
+          "format": "X.509 SubjectPublicKeyInfo"
+        }
+      },
+      "properties": [
+        {
+          "name": "qorescan:source",
+          "value": "tls"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "target",
+      "dependsOn": [
+        "crypto/algorithm/aes-128-gcm",
+        "crypto/algorithm/ecdsa-p256",
+        "crypto/algorithm/ecdsa-p384",
+        "crypto/algorithm/ecdsa-secp256k1",
+        "crypto/algorithm/ecdsa-sha256",
+        "crypto/algorithm/ecdsa-sha384",
+        "crypto/algorithm/ed25519",
+        "crypto/algorithm/hkdf-sha256",
+        "crypto/algorithm/keccak-256",
+        "crypto/algorithm/ml-dsa-87",
+        "crypto/algorithm/ml-kem-1024",
+        "crypto/algorithm/rsa-pkcs1v15-sha256",
+        "crypto/algorithm/sha-256",
+        "crypto/algorithm/x25519mlkem768",
+        "crypto/protocol/tls/rpc-testnet.qore.host:443",
+        "crypto/certificate/1dfc1605fbad358d",
+        "crypto/certificate/22cd45c412254fa4",
+        "crypto/certificate/76b27b80a58027dc",
+        "crypto/key/account-classical/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+        "crypto/key/account-classical/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+        "crypto/key/account-classical/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+        "crypto/key/account-classical/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+        "crypto/key/account-classical/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+        "crypto/key/account-kem/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+        "crypto/key/account-pqc/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+        "crypto/key/account-pqc/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+        "crypto/key/account-pqc/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+        "crypto/key/account-pqc/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+        "crypto/key/account-pqc/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+        "crypto/key/active-validators/ed25519",
+        "crypto/key/certificate/908769e8d34477cc",
+        "crypto/key/certificate/9847e5653e5e9e84",
+        "crypto/key/certificate/c2ace7bc11323391"
+      ]
+    },
+    {
+      "ref": "crypto/protocol/tls/rpc-testnet.qore.host:443",
+      "dependsOn": [
+        "crypto/algorithm/x25519mlkem768",
+        "crypto/certificate/22cd45c412254fa4",
+        "crypto/certificate/1dfc1605fbad358d",
+        "crypto/certificate/76b27b80a58027dc",
+        "crypto/algorithm/aes-128-gcm",
+        "crypto/algorithm/hkdf-sha256",
+        "crypto/algorithm/sha-256",
+        "crypto/algorithm/ecdsa-p256"
+      ]
+    },
+    {
+      "ref": "crypto/certificate/1dfc1605fbad358d",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-sha384",
+        "crypto/key/certificate/908769e8d34477cc"
+      ]
+    },
+    {
+      "ref": "crypto/certificate/22cd45c412254fa4",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-sha256",
+        "crypto/key/certificate/c2ace7bc11323391"
+      ]
+    },
+    {
+      "ref": "crypto/certificate/76b27b80a58027dc",
+      "dependsOn": [
+        "crypto/algorithm/rsa-pkcs1v15-sha256",
+        "crypto/key/certificate/9847e5653e5e9e84"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-classical/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-secp256k1"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-classical/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-secp256k1"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-classical/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-secp256k1"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-classical/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-secp256k1"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-classical/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-secp256k1"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-kem/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "dependsOn": [
+        "crypto/algorithm/ml-kem-1024"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-pqc/qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf",
+      "dependsOn": [
+        "crypto/algorithm/ml-dsa-87"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-pqc/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k",
+      "dependsOn": [
+        "crypto/algorithm/ml-dsa-87"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-pqc/qor1qmjh62n42g60awt47qry7ah5f0rm5eulstekac",
+      "dependsOn": [
+        "crypto/algorithm/ml-dsa-87"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-pqc/qor1ua2dl0nuf3qxr5yfhr3x9ah5cdh9vw7qczvdj5",
+      "dependsOn": [
+        "crypto/algorithm/ml-dsa-87"
+      ]
+    },
+    {
+      "ref": "crypto/key/account-pqc/qor1v5npuskzymj2xsjk7hc5ft3w5c7mtwhyzv8fwp",
+      "dependsOn": [
+        "crypto/algorithm/ml-dsa-87"
+      ]
+    },
+    {
+      "ref": "crypto/key/active-validators/ed25519",
+      "dependsOn": [
+        "crypto/algorithm/ed25519"
+      ]
+    },
+    {
+      "ref": "crypto/key/certificate/908769e8d34477cc",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-p256"
+      ]
+    },
+    {
+      "ref": "crypto/key/certificate/9847e5653e5e9e84",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-p384"
+      ]
+    },
+    {
+      "ref": "crypto/key/certificate/c2ace7bc11323391",
+      "dependsOn": [
+        "crypto/algorithm/ecdsa-p256"
+      ]
+    }
+  ]
+}
