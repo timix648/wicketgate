@@ -4,7 +4,9 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { deriveUnifiedAccount, type UnifiedAccount } from "@qorechain/sdk";
+import { qledgerKeypairFromSeed } from "@qorechain/rdk";
 
 export const NET = {
   chainId: process.env.QORE_CHAIN_ID ?? "qorechain-diana",
@@ -47,5 +49,19 @@ export async function account(role: Role): Promise<UnifiedAccount> {
   cache.set(role, acc);
   return acc;
 }
+
+/**
+ * A role's qledger-v1 account (ML-DSA-44), derived from the role's recovery phrase with a
+ * domain tag, so no extra secret is stored. Same phrase, same ledger account, on any rollup.
+ */
+export async function ledgerKey(role: Role) {
+  const mnemonic = readKeyFile()[`WG_${role}_MNEMONIC`];
+  if (!mnemonic) throw new Error(`WG_${role}_MNEMONIC missing from ${KEYS_FILE}`);
+  const seed = createHash("sha256").update(`wicketgate:qledger:v1|${mnemonic}`).digest();
+  return qledgerKeypairFromSeed(seed);
+}
+
+/** Local, non-secret state (exit salts, ledger nonces) kept next to the key file. */
+export const STATE_DIR = join(homedir(), ".wicketgate");
 
 export const DEPLOYMENTS_FILE = new URL("../../../deployments/diana.json", import.meta.url);

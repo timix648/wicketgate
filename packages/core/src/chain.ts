@@ -1,6 +1,7 @@
 // Small helpers for reading the chain and sending hybrid-signed native transactions
 // from a unified eth-native account.
 import { StargateClient } from "@cosmjs/stargate";
+import { createRdkRegistry } from "@qorechain/rdk";
 import {
   EthNativeSigner,
   buildRegisterPqcKeyMsg,
@@ -56,7 +57,13 @@ export async function sendNative(
   const seq = await accountSeq(acc.cosmos);
   if (!seq) throw new Error(`${acc.cosmos} does not exist on chain yet: fund it first`);
   const gas = opts.gas ?? 600_000;
-  const signer = new EthNativeSigner(acc, { rest: NET.rest, signMode: opts.classical ? "classical" : "hybrid" });
+  // The SDK registry predates the v3.2.8 rollup messages; the RDK's registry knows all of them.
+  const rdk = messages.some((m) => m.typeUrl.startsWith("/qorechain.rdk."));
+  const signer = new EthNativeSigner(acc, {
+    rest: NET.rest,
+    signMode: opts.classical ? "classical" : "hybrid",
+    ...(rdk ? { registry: createRdkRegistry() as any } : {}),
+  });
   const res = await signer.signAndBroadcast(await getTransport(), {
     chainId: NET.chainId,
     accountNumber: seq.accountNumber,

@@ -28,12 +28,12 @@ async function main() {
 
   await openWindow(A, { blocks: 300, maxTxs: 1, maxValueUqor: await windowBudget(1, 1_000_000n), allowedTargets: [pool] });
   try {
-    const before = await publicClient.getBalance({ address: A.evm });
+    const before = await publicClient.getBalance({ address: A.evm as Address });
     const hash = await walletFor(A).writeContract({ address: pool, abi, functionName: "sweepToBeneficiary", args: [A.evm, salt] } as any);
     const rc = await publicClient.waitForTransactionReceipt({ hash });
     const code = await publicClient.getCode({ address: exitAddr });
     const after = await publicClient.getBalance({ address: exitAddr });
-    const gotBack = (await publicClient.getBalance({ address: A.evm })) - before;
+    const gotBack = (await publicClient.getBalance({ address: A.evm as Address })) - before;
     console.log(`sweepToBeneficiary: ${rc.status} ${hash} gas ${rc.gasUsed}`);
     console.log(`exit contract deployed at the predicted address: ${code && code !== "0x" ? "PASS" : "FAIL"}; balance left ${after} wei; beneficiary net change ${gotBack} wei (payment minus gas)`);
     console.log(rc.status === "success" && after === 0n && code && code !== "0x" ? "RESULT: exit addresses receive native payouts and can be swept" : "RESULT: FAIL");
