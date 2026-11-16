@@ -25,7 +25,7 @@ An optimistic rollup only pays a withdrawal after its challenge window: one hour
 | --- | --- |
 | Watcher replay | Works against the live testnet: rebuilds batch 0 of the only rollup on diana and matches both roots |
 | `pqcVerify` from contracts | Probed on the live testnet: accepts a real ML-DSA-87 signature, rejects a changed byte |
-| Contracts (`WatcherRegistry`, `ExitPool`, `ExitAddress`, `Directory`, `MemoBoard`) | Written; 31 Foundry tests passing against mock precompiles; not deployed yet |
+| Contracts (`WatcherRegistry`, `ExitPool`, `ExitAddress`, `Directory`, `MemoBoard`) | Deployed on diana (addresses in [deployments/diana.json](deployments/diana.json)); admin actions verified by two ML-DSA-87 signatures on chain; 3 watchers staked; 31 Foundry tests |
 | Own rollup, operator, wallet, board | Not started |
 
 Evidence for every claim is in [PROOF.md](PROOF.md).
