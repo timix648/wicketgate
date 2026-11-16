@@ -19,7 +19,8 @@
     "exit": "tsx src/exit.ts",
     "preview": "tsx src/preview-batch.ts",
     "lane": "tsx src/lane.ts",
-    "launch": "tsx src/launch-rollup.ts"
+    "launch": "tsx src/launch-rollup.ts",
+    "topup": "tsx src/topup.ts"
   },
   "dependencies": {
     "@qorechain/rdk": "0.9.0",

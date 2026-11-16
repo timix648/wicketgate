@@ -235,11 +235,15 @@ export class Watcher {
           address: pool, abi: POOL, functionName: "attestationMessage", args: [rollupKey, BigInt(t.index), t.facts],
         })) as Hex;
         const sig = pqSign(me, msg);
-        const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "attest", args: [rollupKey, BigInt(t.index), t.facts, sig] } as any);
+        // Fixed gas: an estimate made before another watcher's vote lands misses the costlier
+        // confirm-and-lock path that this vote may then trigger.
+        const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "attest", args: [rollupKey, BigInt(t.index), t.facts, sig], gas: 1_200_000n } as any);
         const rc = await publicClient.waitForTransactionReceipt({ hash });
         const v = verdicts.find((x) => x.index === t.index)!;
         v.attestationTx = rc.status === "success" ? hash : `reverted:${hash}`;
-        this.sent.add(`a:${keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint64" }], [rollupKey, BigInt(t.index)]))}`);
+        if (rc.status === "success") {
+          this.sent.add(`a:${keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint64" }], [rollupKey, BigInt(t.index)]))}`);
+        }
         this.log(`[${rollupId}] attested batch ${t.index}: ${rc.status} ${hash} (gas ${rc.gasUsed})`);
       }
     } finally {
