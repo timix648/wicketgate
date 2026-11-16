@@ -166,7 +166,12 @@ export class Watcher {
             chainProof: qledgerWithdrawalProof(NET.chainId, rollupId, ws, k).map((p) => hex(p)),
           })),
         });
-        toAttest.push({ index: i, facts: { stateRoot: hex(b.stateRoot), withdrawalsRoot: root32(b.withdrawalsRoot), exitRoot: tree.root } });
+        // Only batches still in their challenge window: once a batch is final its withdrawals can be
+        // paid by the chain directly, and confirming it would let an already-paid withdrawal be
+        // advanced a second time.
+        if (b.status === "submitted") {
+          toAttest.push({ index: i, facts: { stateRoot: hex(b.stateRoot), withdrawalsRoot: root32(b.withdrawalsRoot), exitRoot: tree.root } });
+        }
       } else {
         ledger = parent; // never build on a wrong batch
         const reason = !stateOk ? "state root differs from re-execution" : "withdrawals root differs from re-execution";

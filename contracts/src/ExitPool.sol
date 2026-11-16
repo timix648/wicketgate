@@ -93,6 +93,7 @@ contract ExitPool is DualAdmin {
     error WrongFacts();
     error TooLate();
     error ExitUsed();
+    error AlreadyPaid();
     error BadProof();
     error AlreadyAdvanced();
     error CoverExceeded();
@@ -288,6 +289,10 @@ contract ExitPool is DualAdmin {
 
         address exitAddr = exitAddressFor(beneficiary, salt);
         if (advanceOfExit[exitAddr] != bytes32(0)) revert ExitUsed();
+        // Funds or code at the exit address mean the withdrawal was already paid (and maybe swept):
+        // advancing it again would pay the same withdrawal twice.
+        // (Dust sent there by a griefer does not block the exit; any surplus is forwarded on settle.)
+        if (exitAddr.balance >= amountUqor * UQOR || exitAddr.code.length != 0) revert AlreadyPaid();
         if (!_verify(proof, f.exitRoot, exitLeaf(wIndex, exitAddr, amountUqor))) revert BadProof();
 
         id = keccak256(abi.encode(key, wIndex));
@@ -408,17 +413,22 @@ contract ExitPool is DualAdmin {
         return address(this).balance - watcherCreditsTotal;
     }
 
+    /// @dev Virtual shares and assets (as in OpenZeppelin's ERC-4626) make a first-depositor
+    /// share-inflation attack cost more than it can take.
+    uint256 private constant VIRTUAL_SHARES = 1e6;
+    uint256 private constant VIRTUAL_ASSETS = 1;
+
     function deposit() external payable nonReentrant returns (uint256 minted) {
         if (msg.value == 0) revert ZeroAmount();
         uint256 before = totalAssets() - msg.value;
-        minted = (totalShares == 0 || before == 0) ? msg.value : (msg.value * totalShares) / before;
+        minted = (msg.value * (totalShares + VIRTUAL_SHARES)) / (before + VIRTUAL_ASSETS);
         shares[msg.sender] += minted;
         totalShares += minted;
         emit Deposited(msg.sender, msg.value, minted);
     }
 
     function withdraw(uint256 shareAmount) external nonReentrant returns (uint256 amount) {
-        amount = (shareAmount * totalAssets()) / totalShares;
+        amount = (shareAmount * (totalAssets() + VIRTUAL_ASSETS)) / (totalShares + VIRTUAL_SHARES);
         if (amount > idleLiquidity()) revert NoLiquidity();
         shares[msg.sender] -= shareAmount;
         totalShares -= shareAmount;

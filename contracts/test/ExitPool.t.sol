@@ -407,6 +407,44 @@ contract ExitPoolTest is Base {
         pool.withdraw(sh / 2);
     }
 
+    function test_no_advance_for_a_withdrawal_already_paid() public {
+        (ExitPool.Facts memory f, bytes32[] memory proof) = confirmBatch(1);
+        address exitAddr = pool.exitAddressFor(alice, salt);
+        // the chain already paid the withdrawal to the exit address
+        vm.deal(exitAddr, AMOUNT_WEI);
+        vm.expectRevert(ExitPool.AlreadyPaid.selector);
+        exitAlice(1, f, proof);
+        // and once swept to the beneficiary, it still cannot be advanced
+        pool.sweepToBeneficiary(alice, salt);
+        vm.expectRevert(ExitPool.AlreadyPaid.selector);
+        exitAlice(1, f, proof);
+    }
+
+    function test_dust_at_exit_address_does_not_block_the_exit() public {
+        (ExitPool.Facts memory f, bytes32[] memory proof) = confirmBatch(1);
+        vm.deal(pool.exitAddressFor(alice, salt), 1); // a griefer sends 1 wei
+        exitAlice(1, f, proof); // still allowed
+    }
+
+    function test_first_depositor_cannot_inflate_shares() public {
+        ExitPool p2 = new ExitPool(adminA, adminB, registry);
+        address attacker = makeAddr("attacker");
+        vm.deal(attacker, 100 ether);
+        vm.prank(attacker);
+        p2.deposit{value: 1}(); // 1 wei
+        vm.prank(attacker);
+        (bool ok,) = address(p2).call{value: 50 ether}(""); // donate to inflate the share price
+        assertTrue(ok);
+        vm.deal(lp, 10 ether);
+        vm.prank(lp);
+        uint256 minted = p2.deposit{value: 10 ether}();
+        assertGt(minted, 0); // the victim still gets shares
+        // and the victim can take out almost all of what they put in
+        vm.prank(lp);
+        uint256 back = p2.withdraw(minted);
+        assertGt(back, 9.99 ether);
+    }
+
     // ================================================================= fuzz
 
     function testFuzz_advances_never_exceed_cover(uint96 amountUqor) public {

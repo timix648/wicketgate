@@ -64,4 +64,11 @@ export async function ledgerKey(role: Role) {
 /** Local, non-secret state (exit salts, ledger nonces) kept next to the key file. */
 export const STATE_DIR = join(homedir(), ".wicketgate");
 
-export const DEPLOYMENTS_FILE = new URL("../../../deployments/diana.json", import.meta.url);
+/** Deployed addresses. WICKETGATE_DEPLOYMENTS points at another file (e.g. deployments/diana-v1.json). */
+export const DEPLOYMENTS_FILE = process.env.WICKETGATE_DEPLOYMENTS
+  ? new URL(`file://${require_abs(process.env.WICKETGATE_DEPLOYMENTS)}`)
+  : new URL("../../../deployments/diana.json", import.meta.url);
+
+function require_abs(p: string) {
+  return p.startsWith("/") ? p : join(process.cwd(), p);
+}

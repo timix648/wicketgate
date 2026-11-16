@@ -19,7 +19,7 @@ async function main() {
   const exits = existsSync(EXITS) ? JSON.parse(readFileSync(EXITS, "utf8")) : [];
   let changed = false;
   for (const ex of exits) {
-    if (ex.advanceTx) continue;
+    if (ex.advanceTx || ex.sweptTx) continue; // already exited, or collected the normal way
     if ((await publicClient.readContract({ address: pool, abi, functionName: "advanceOfExit", args: [ex.exitAddr] })) !== ZERO) {
       ex.advanceTx = "already-advanced";
       changed = true;
@@ -45,8 +45,13 @@ async function main() {
       console.log(`batch ${batch.index}: exit proof does not verify; refusing`);
       continue;
     }
-    if ((b[6] as bigint) + BigInt(w.amountUqor) * 10n ** 12n > (b[5] as bigint)) {
-      console.log(`batch ${batch.index}: only ${Number(b[5] - b[6]) / 1e18} QOR of watcher stake left behind it; the pool will not advance ${Number(w.amountUqor) / 1e6} QOR`);
+    // Dry-run the exit against the pool first: it reverts if the watchers cannot lock enough
+    // stake (v2 locks at the advance), if the batch is contested, or if liquidity is short.
+    const exitArgs = [rollupKey, BigInt(batch.index), facts, BigInt(w.index), A.evm, ex.salt, BigInt(w.amountUqor), w.exitProof];
+    try {
+      await publicClient.simulateContract({ address: pool, abi, functionName: "instantExit", args: exitArgs, account: A.evm as Address } as any);
+    } catch (e: any) {
+      console.log(`batch ${batch.index}: the pool would refuse this exit (${e?.shortMessage ?? e?.message}); not sending`);
       continue;
     }
     console.log(`batch ${batch.index} confirmed by ${b[7].length} watchers with ${Number(b[5]) / 1e18} QOR at stake; exiting ${Number(w.amountUqor) / 1e6} QOR`);
@@ -55,7 +60,7 @@ async function main() {
       const before = await publicClient.getBalance({ address: A.evm as Address });
       const hash = await walletFor(A).writeContract({
         address: pool, abi, functionName: "instantExit",
-        args: [rollupKey, BigInt(batch.index), facts, BigInt(w.index), A.evm, ex.salt, BigInt(w.amountUqor), w.exitProof],
+        args: exitArgs, gas: 900_000n,
       } as any);
       const rc = await publicClient.waitForTransactionReceipt({ hash });
       const got = (await publicClient.getBalance({ address: A.evm as Address })) - before;

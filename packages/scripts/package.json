@@ -28,7 +28,9 @@
     "receipt": "tsx src/receipt.ts",
     "lp": "tsx src/lp.ts",
     "probe:ibc": "tsx src/probe-ibc.ts",
-    "exit:chain": "tsx src/exit-to-chain.ts"
+    "exit:chain": "tsx src/exit-to-chain.ts",
+    "leave": "tsx src/leave.ts",
+    "lp:withdraw": "tsx src/lp-withdraw.ts"
   },
   "dependencies": {
     "@qorechain/rdk": "0.9.0",

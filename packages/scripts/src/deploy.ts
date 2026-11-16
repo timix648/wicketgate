@@ -1,7 +1,7 @@
 // Deploys WatcherRegistry, ExitPool, Directory and MemoBoard from ADMIN_A, wires them
 // with both admins' ML-DSA-87 signatures, opens a lane for a rollup and seeds the pool.
 // Usage: pnpm deploy [rollup-id] [liquidity-qor]
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { encodeAbiParameters, keccak256, toHex, type Address, type Hex } from "viem";
 import { account, DEPLOYMENTS_FILE, NET } from "@wicketgate/core/env";
 import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
@@ -30,8 +30,13 @@ async function main() {
   try {
     const registry = await deploy("WatcherRegistry", [A.evm, B.evm, 5n * QOR, 2n * 3600n]);
     const pool = await deploy("ExitPool", [A.evm, B.evm, registry]);
-    const directory = await deploy("Directory", []);
-    const memoBoard = await deploy("MemoBoard", []);
+    // Directory and MemoBoard hold no funds and no admin: keep the existing ones when there are any
+    let prev: any = {};
+    try { prev = JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")); } catch {}
+    const directory = (prev.directory as Address) ?? (await deploy("Directory", []));
+    const memoBoard = (prev.memoBoard as Address) ?? (await deploy("MemoBoard", []));
+    if (prev.directory) console.log(`  Directory: ${directory} (kept)`);
+    if (prev.memoBoard) console.log(`  MemoBoard: ${memoBoard} (kept)`);
 
     const reg = artifact("WatcherRegistry");
     const ep = artifact("ExitPool");
@@ -75,6 +80,7 @@ async function main() {
 
     const out = {
       network: NET.chainId, evmChainId: NET.evmChainId, deployedAt: new Date().toISOString(),
+      version: 2, previous: prev.pool ? { registry: prev.registry, pool: prev.pool, file: "deployments/diana-v1.json" } : undefined,
       admins: [A.evm, B.evm], registry, pool, directory, memoBoard,
       lanes: { [ROLLUP]: { rollupKey, ...lane, lockPerWatcher: lane.lockPerWatcher.toString(), windowSecs: 3600, graceSecs: 1800 } },
     };

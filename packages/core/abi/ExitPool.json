@@ -1353,6 +1353,11 @@
  },
  {
   "type": "error",
+  "name": "AlreadyPaid",
+  "inputs": []
+ },
+ {
+  "type": "error",
   "name": "AlreadyVoted",
   "inputs": []
  },
