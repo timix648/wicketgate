@@ -79,6 +79,14 @@ If no honest watcher is running, a wrong batch can finalise and the chain will p
 | The operator stops batching | Any bonded account can submit batches on a based `qledger-v1` rollup; the board shows a stalled inbox |
 | Data withheld | Inbox entries are transactions in main-chain blocks; their commitments are kept for 648,000 blocks |
 
+## 6b. Exit to another chain over IBC
+
+| Threat | Why it is bounded |
+| --- | --- |
+| The relayer stops, so the IBC packet is never delivered | The transfer carries a 15-minute timeout; after it, the chain refunds the sender on QoreChain. Funds are delayed, never lost |
+| The counterparty credits the wrong address | The receiver is derived from the beneficiary's own secp256k1 key (`ripemd160(sha256(pubkey))`), so only the beneficiary controls it |
+| Wicketgate adds IBC risk to the pool | It does not: the pool pays the beneficiary on QoreChain first; the IBC leg is the beneficiary's own transfer and the pool takes no part in it |
+
 ## 7. Privacy
 
 Payment notes are sealed to the recipient with ML-KEM-1024 (QoreSeal). That hides their content only. Who paid whom, how much, when, and the size of each envelope remain public.
