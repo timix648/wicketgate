@@ -264,7 +264,18 @@ export class Watcher {
       this.log(`[${rollupId}] batch ${index}: local fraud check says the batch is right; not challenging`);
       return null;
     }
-    const r = await sendNative(this.cfg.me!, [challengeBatchMsg({ challenger: this.cfg.me!.cosmos, rollupId, batchIndex: index, proof })], { gas: 1_200_000 });
+    let r;
+    try {
+      r = await sendNative(this.cfg.me!, [challengeBatchMsg({ challenger: this.cfg.me!.cosmos, rollupId, batchIndex: index, proof })], { gas: 1_200_000 });
+    } catch (e: any) {
+      // another watcher got there first: the batch is already rejected
+      if (/is rejected|already finalized|already rejected/i.test(String(e?.message))) {
+        this.sent.add(key);
+        this.log(`[${rollupId}] batch ${index} was already rejected by another challenger`);
+        return "rejected-by-another-watcher";
+      }
+      throw e;
+    }
     this.sent.add(key);
     this.log(`[${rollupId}] CHALLENGED batch ${index}: ${explorerTx(r.transactionHash)}`);
     return r.transactionHash;

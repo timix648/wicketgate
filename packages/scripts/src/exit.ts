@@ -45,6 +45,10 @@ async function main() {
       console.log(`batch ${batch.index}: exit proof does not verify; refusing`);
       continue;
     }
+    if ((b[6] as bigint) + BigInt(w.amountUqor) * 10n ** 12n > (b[5] as bigint)) {
+      console.log(`batch ${batch.index}: only ${Number(b[5] - b[6]) / 1e18} QOR of watcher stake left behind it; the pool will not advance ${Number(w.amountUqor) / 1e6} QOR`);
+      continue;
+    }
     console.log(`batch ${batch.index} confirmed by ${b[7].length} watchers with ${Number(b[5]) / 1e18} QOR at stake; exiting ${Number(w.amountUqor) / 1e6} QOR`);
     await openWindow(A, { blocks: 300, maxTxs: 1, maxValueUqor: await windowBudget(1, 800_000n), allowedTargets: [pool] });
     try {
