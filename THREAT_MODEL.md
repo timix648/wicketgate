@@ -6,8 +6,8 @@ What Wicketgate protects, who might attack it, what they can do, and why the dam
 
 | Asset | Where it lives |
 | --- | --- |
-| Liquidity providers' QOR | `ExitPool` balance (about 320 QOR on 16 Nov) |
-| Watchers' stake | `WatcherRegistry` balance (350 QOR on 16 Nov: W1 100, W2 240, W3 10) |
+| Liquidity providers' QOR | `ExitPool` balance (about 400 QOR on 16 Nov) |
+| Watchers' stake | `WatcherRegistry` balance (200 QOR on 16 Nov: W1 50, W2 100, W3 50) |
 | Users' rollup funds | the rollup's deposit pool, under the chain's own `x/rdk` rules |
 | Users' withdrawals in flight | exit addresses, until swept to the pool or to the beneficiary |
 | Admin settings | lanes (window, grace, fee, quorum, stake per watcher) and registry parameters |
@@ -33,6 +33,8 @@ This is the Q-Day Drill scenario. The drill account is watcher W3 (`0xAC82Ffe561
 | `ExitPool.attest` as the watcher | Refused | Needs an ML-DSA-87 signature over the batch facts, checked on chain against the key the chain holds |
 | Admin functions (`setPool`, `setParams`, `setLane`) | Refused | Need ML-DSA-87 signatures from **both** admin accounts; `msg.sender` authorises nothing |
 | `ExitPool.withdraw` (provider funds) | Refused | Needs pool shares; the drill account holds none |
+
+**For the drill:** W3 holds 50 QOR of stake in the registry; no Wicketgate service uses W3, so its window stays closed; the drill-proof transaction is a native, hybrid-signed deposit into our rollup, so it needs no window either; and a monitor records W3's balance, sequence, window and stake every minute and alerts the team on any change we did not make. Its log is published after the drill.
 
 The worst a stolen classical key can do while a window **is** open is what that window allows. Wicketgate opens windows scoped to the one contract it calls, for one to a few transactions, for at most a few hundred blocks, with a value cap of gas plus the exact value being sent, and closes them in a `finally` block.
 
