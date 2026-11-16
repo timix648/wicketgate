@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, writeFileSync, chmodSync } from "node:fs";
 import { dirname } from "node:path";
 import { generateMnemonic, deriveUnifiedAccount } from "@qorechain/sdk";
-import { KEYS_FILE, ROLES } from "./lib/env.js";
+import { KEYS_FILE, ROLES } from "@wicketgate/core/env";
 
 async function main() {
   if (existsSync(KEYS_FILE)) {

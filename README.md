@@ -28,7 +28,8 @@ An optimistic rollup only pays a withdrawal after its challenge window: one hour
 | Watcher replay | Works against the live testnet: rebuilds batch 0 of the only rollup on diana and matches both roots |
 | `pqcVerify` from contracts | Probed on the live testnet: accepts a real ML-DSA-87 signature, rejects a changed byte |
 | Contracts (`WatcherRegistry`, `ExitPool`, `ExitAddress`, `Directory`, `MemoBoard`) | Deployed on diana (addresses in [deployments/diana.json](deployments/diana.json)); admin actions verified by two ML-DSA-87 signatures on chain; 3 watchers staked; 31 Foundry tests |
-| Own rollup, operator, wallet, board | Not started |
+| Watcher (`packages/watcher`) | Running on diana: two watchers re-execute every batch every 30 s, attest matching batches on chain and challenge wrong ones; batch 0 of the organiser's rollup is confirmed in the pool by both |
+| Own rollup, operator, wallet, board | In progress |
 
 Evidence for every claim is in [PROOF.md](PROOF.md). How AI was used, and what the team decided, is in [AI_USAGE.md](AI_USAGE.md).
 
@@ -41,6 +42,15 @@ npx tsx src/probe-replay.ts            # rebuild a rollup from chain data and co
 npx tsx src/probe-pqcverify.ts         # check the ML-DSA-87 verify precompile with eth_call
 cd ../../contracts && forge test       # contract tests
 ```
+
+## Run a watcher
+
+```bash
+cd packages/watcher
+npx tsx src/cli.ts --mode observe --rollup rdk-v328-e2e-mwd5v89d --feed ./feed     # needs no key
+```
+
+Observe mode rebuilds the rollup from chain data and writes verdicts and exit proofs to `./feed/<rollup>.json`. `--mode attest` and `--mode challenge` also sign and send attestations and fraud proofs; they need a staked watcher account.
 
 Neither probe needs a key or funds.
 

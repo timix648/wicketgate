@@ -21,6 +21,24 @@ importers:
         specifier: 2.1.8
         version: 2.1.8(@types/node@22.10.2)
 
+  packages/core:
+    dependencies:
+      '@cosmjs/stargate':
+        specifier: 0.39.0
+        version: 0.39.0
+      '@qorechain/pqc':
+        specifier: 0.2.3
+        version: 0.2.3
+      '@qorechain/rdk':
+        specifier: 0.9.0
+        version: 0.9.0(viem@2.21.54(typescript@5.6.3))
+      '@qorechain/sdk':
+        specifier: 0.14.0
+        version: 0.14.0(viem@2.21.54(typescript@5.6.3))
+      viem:
+        specifier: 2.21.54
+        version: 2.21.54(typescript@5.6.3)
+
   packages/scripts:
     dependencies:
       '@cosmjs/stargate':
@@ -38,6 +56,24 @@ importers:
       '@qorechain/sdk':
         specifier: 0.14.0
         version: 0.14.0(viem@2.21.54(typescript@5.6.3))
+      '@wicketgate/core':
+        specifier: workspace:*
+        version: link:../core
+      viem:
+        specifier: 2.21.54
+        version: 2.21.54(typescript@5.6.3)
+
+  packages/watcher:
+    dependencies:
+      '@qorechain/rdk':
+        specifier: 0.9.0
+        version: 0.9.0(viem@2.21.54(typescript@5.6.3))
+      '@qorechain/sdk':
+        specifier: 0.14.0
+        version: 0.14.0(viem@2.21.54(typescript@5.6.3))
+      '@wicketgate/core':
+        specifier: workspace:*
+        version: link:../core
       viem:
         specifier: 2.21.54
         version: 2.21.54(typescript@5.6.3)
@@ -1806,10 +1842,10 @@ snapshots:
   ox@0.1.2(typescript@5.6.3):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
-      '@noble/curves': 1.7.0
-      '@noble/hashes': 1.6.1
-      '@scure/bip32': 1.6.0
-      '@scure/bip39': 1.5.0
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
       abitype: 1.0.7(typescript@5.6.3)
       eventemitter3: 5.0.1
     optionalDependencies:
@@ -1978,8 +2014,8 @@ snapshots:
 
   webauthn-p256@0.0.10:
     dependencies:
-      '@noble/curves': 1.7.0
-      '@noble/hashes': 1.6.1
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
 
   why-is-node-running@2.3.0:
     dependencies:

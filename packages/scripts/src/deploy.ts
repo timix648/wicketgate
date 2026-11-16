@@ -3,8 +3,8 @@
 // Usage: pnpm deploy [rollup-id] [liquidity-qor]
 import { mkdirSync, writeFileSync } from "node:fs";
 import { encodeAbiParameters, keccak256, toHex, type Address, type Hex } from "viem";
-import { account, DEPLOYMENTS_FILE, NET } from "./lib/env.js";
-import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget } from "./lib/evm.js";
+import { account, DEPLOYMENTS_FILE, NET } from "@wicketgate/core/env";
+import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 
 const ROLLUP = process.argv[2] ?? "rdk-v328-e2e-mwd5v89d";
 const LIQUIDITY_QOR = BigInt(process.argv[3] ?? "20");

@@ -2,8 +2,8 @@
 // registry alone, which is closed straight after.
 import { readFileSync } from "node:fs";
 import type { Address } from "viem";
-import { account, DEPLOYMENTS_FILE, type Role } from "./lib/env.js";
-import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "./lib/evm.js";
+import { account, DEPLOYMENTS_FILE, type Role } from "@wicketgate/core/env";
+import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 
 const STAKE = 10n * 10n ** 18n;
 

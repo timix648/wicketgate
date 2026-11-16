@@ -48,4 +48,4 @@ export async function account(role: Role): Promise<UnifiedAccount> {
   return acc;
 }
 
-export const DEPLOYMENTS_FILE = new URL("../../../../deployments/diana.json", import.meta.url);
+export const DEPLOYMENTS_FILE = new URL("../../../deployments/diana.json", import.meta.url);

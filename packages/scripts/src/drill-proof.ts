@@ -1,7 +1,7 @@
 // Q-Day Drill proof: one normal hybrid-signed transaction from the drill account (W3),
 // a 1 uqor self-transfer. Paste the printed hash on the project page.
-import { account } from "./lib/env.js";
-import { sendNative, explorerTx } from "./lib/chain.js";
+import { account } from "@wicketgate/core/env";
+import { sendNative, explorerTx } from "@wicketgate/core/chain";
 
 async function main() {
   const w = await account("W3");

@@ -21,6 +21,7 @@
     "@qorechain/pqc": "0.2.3",
     "viem": "2.21.54",
     "@cosmjs/stargate": "0.39.0",
-    "@qorechain/evm": "0.14.0"
+    "@qorechain/evm": "0.14.0",
+    "@wicketgate/core": "workspace:*"
   }
 }

@@ -1,6 +1,6 @@
 // Prints each role's addresses, balance and post-quantum key status. Read-only.
-import { ROLES, account } from "./lib/env.js";
-import { balanceUqor, pqcStatus, qor } from "./lib/chain.js";
+import { ROLES, account } from "@wicketgate/core/env";
+import { balanceUqor, pqcStatus, qor } from "@wicketgate/core/chain";
 
 async function main() {
   for (const role of ROLES) {

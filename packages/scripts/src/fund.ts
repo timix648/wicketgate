@@ -1,7 +1,7 @@
 // Moves test QOR from ADMIN_A (funded by the faucet) to the other roles, then registers
 // every role's ML-DSA-87 key with a proof of possession. Safe to rerun.
-import { ROLES, account, type Role } from "./lib/env.js";
-import { balanceUqor, pqcStatus, registerPqc, sendNative, qor, explorerTx } from "./lib/chain.js";
+import { ROLES, account, type Role } from "@wicketgate/core/env";
+import { balanceUqor, pqcStatus, registerPqc, sendNative, qor, explorerTx } from "@wicketgate/core/chain";
 
 const TARGET_UQOR: Record<Role, bigint> = {
   ADMIN_A: 0n,

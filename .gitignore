@@ -9,3 +9,4 @@ contracts/cache/
 contracts/broadcast/*/dry-run/
 .next/
 coverage/
+feed/

@@ -21,10 +21,15 @@ export function walletFor(acc: UnifiedAccount) {
   return createWalletClient({ chain: diana, transport: http(NET.evm), account: privateKeyToAccount(acc.privateKey as Hex) });
 }
 
+/** ABI from packages/core/abi (always present); bytecode from contracts/out (after forge build). */
 export function artifact(name: string): { abi: Abi; bytecode: Hex } {
-  const url = new URL(`../../../../contracts/out/${name}.sol/${name}.json`, import.meta.url);
-  const j = JSON.parse(readFileSync(url, "utf8"));
-  return { abi: j.abi, bytecode: j.bytecode.object as Hex };
+  const abi = JSON.parse(readFileSync(new URL(`../abi/${name}.json`, import.meta.url), "utf8")) as Abi;
+  let bytecode = "0x" as Hex;
+  try {
+    const j = JSON.parse(readFileSync(new URL(`../../../contracts/out/${name}.sol/${name}.json`, import.meta.url), "utf8"));
+    bytecode = j.bytecode.object as Hex;
+  } catch {}
+  return { abi, bytecode };
 }
 
 /** Sign raw bytes with the account's ML-DSA-87 key (deterministic, as the chain verifies). */
