@@ -31,7 +31,7 @@ An optimistic rollup only pays a withdrawal after its challenge window: one hour
 | Watcher (`packages/watcher`) | Running on diana: two watchers re-execute every batch every 30 s, attest matching batches on chain and challenge wrong ones; batch 0 of the organiser's rollup is confirmed in the pool by both |
 | Own rollup, operator, wallet, board | In progress |
 
-Evidence for every claim is in [PROOF.md](PROOF.md). How AI was used, and what the team decided, is in [AI_USAGE.md](AI_USAGE.md).
+Evidence for every claim is in [PROOF.md](PROOF.md). The threat model is in [THREAT_MODEL.md](THREAT_MODEL.md) and the known limits in [LIMITS.md](LIMITS.md). How AI was used, and what the team decided, is in [AI_USAGE.md](AI_USAGE.md).
 
 ## Run the probes
 
