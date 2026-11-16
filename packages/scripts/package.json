@@ -17,7 +17,9 @@
     "seed": "tsx src/seed-ledger.ts",
     "probe:exit": "tsx src/probe-exit-address.ts",
     "exit": "tsx src/exit.ts",
-    "preview": "tsx src/preview-batch.ts"
+    "preview": "tsx src/preview-batch.ts",
+    "lane": "tsx src/lane.ts",
+    "launch": "tsx src/launch-rollup.ts"
   },
   "dependencies": {
     "@qorechain/rdk": "0.9.0",
