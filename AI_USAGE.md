@@ -4,7 +4,9 @@ This file is for the Best AI-Native Build award. It records what the team decide
 
 ## The team and the tools
 
-- **Team:** @timix648 (lead) and @da-b0s.
+- **Team:**
+  - @timix648 (lead): direction, product decisions, review, chain operations and everything published.
+  - @da-b0s: the frontend (wallet and rollup board), some backend jobs, and the demo.
 - **Coding agent:** Claude Code, running on the team's own server with shell access, and the QoreChain docs read as markdown (every page is available by appending `.md` to its URL).
 - **Other tools:** Foundry for contracts and tests, the QoreChain kits (`@qorechain/sdk`, `@qorechain/rdk`, `@qorechain/pqc`), the public diana endpoints and explorer.
 
@@ -46,3 +48,4 @@ The project's accounts are testnet-only. Their recovery phrases live in a file o
 | 16 Nov 2026 | Agent | Probes, contracts, tests, scripts |
 | 16 Nov 2026 | Team | Repository created and made public, faucet funding, project page, drill registration |
 | 16 Nov 2026 | Agent | Accounts registered, contracts deployed, watchers staked, proof recorded |
+| 16 Nov 2026 | Team | Roles set: @da-b0s owns the frontend, some backend jobs and the demo |
