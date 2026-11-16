@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*
+*.sqlite
+*.sqlite-journal
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/dry-run/
+.next/
+coverage/
