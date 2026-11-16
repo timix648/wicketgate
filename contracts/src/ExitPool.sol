@@ -11,7 +11,8 @@ import {ExitAddress} from "./ExitAddress.sol";
 /// have re-executed and signed with ML-DSA-87, and is repaid when the batch finalises.
 ///
 /// Safety rules:
-///  - Advances against a batch never exceed the stake its confirming watchers locked.
+///  - Advances against a batch never exceed the stake its confirming watchers locked; that stake
+///    is locked when the advance is made (v2), not when the batch is confirmed.
 ///  - One watcher attesting different facts marks the batch contested; nothing more is
 ///    advanced against it.
 ///  - An advance whose exit address is not funded by its due time is repaid from the
@@ -219,25 +220,49 @@ contract ExitPool is DualAdmin {
         emit Attested(rollupKey, batchIndex, msg.sender, fh);
 
         if (b.confirmedAt == 0 && !b.contested && v.length >= lane.quorum) {
-            _confirm(b, v, lane, fh);
+            _confirm(b, v, fh);
             emit BatchConfirmed(rollupKey, batchIndex, fh, b.coverWei);
         }
     }
 
-    function _confirm(BatchRec storage b, address[] storage v, Lane memory lane, bytes32 fh) private {
+    /// @dev v2: confirming records who stands behind the batch but locks nothing yet. Stake is
+    /// locked only when an exit is advanced against the batch (see _lockCover), so watchers can
+    /// confirm every batch they verify without tying up stake behind batches nobody exits from.
+    function _confirm(BatchRec storage b, address[] storage v, bytes32 fh) private {
         b.factsHash = fh;
         b.confirmedAt = uint64(block.timestamp);
-        uint256 cover;
         for (uint256 i = 0; i < v.length; i++) {
-            address w = v[i];
-            uint256 free = registry.freeStake(w);
-            uint256 amt = free < lane.lockPerWatcher ? free : lane.lockPerWatcher;
-            if (amt > 0) registry.lock(w, amt);
-            b.watchers.push(w);
-            b.lockedAmt.push(amt);
-            cover += amt;
+            b.watchers.push(v[i]);
+            b.lockedAmt.push(0);
         }
-        b.coverWei = cover;
+    }
+
+    /// @dev Lock confirming watchers' stake so that cover >= everything advanced against the batch,
+    /// at most `lockPerWatcher` from each, spread evenly first. Reverts CoverExceeded if they cannot.
+    function _lockCover(BatchRec storage b, Lane memory lane, uint256 amountWei) private {
+        uint256 have = b.coverWei - b.advancedWei;
+        if (have >= amountWei) return;
+        uint256 need = amountWei - have;
+        uint256 n = b.watchers.length;
+        uint256 per = (need + n - 1) / n;
+        uint256 got;
+        for (uint256 pass = 0; pass < 2 && got < need; pass++) {
+            for (uint256 i = 0; i < n && got < need; i++) {
+                address w = b.watchers[i];
+                uint256 room = lane.lockPerWatcher - b.lockedAmt[i];
+                uint256 free = registry.freeStake(w);
+                uint256 want = pass == 0 ? per : need - got;
+                uint256 take = want < room ? want : room;
+                if (free < take) take = free;
+                if (take > 0) {
+                    registry.lock(w, take);
+                    b.lockedAmt[i] += take;
+                    got += take;
+                }
+            }
+        }
+        if (got < need) revert CoverExceeded();
+        b.coverWei += got;
     }
 
     // =================================================================== exits
@@ -268,7 +293,7 @@ contract ExitPool is DualAdmin {
         id = keccak256(abi.encode(key, wIndex));
         if (advances[id].state != 0) revert AlreadyAdvanced();
         uint256 amountWei = amountUqor * UQOR;
-        if (b.advancedWei + amountWei > b.coverWei) revert CoverExceeded();
+        _lockCover(b, lane, amountWei);
         uint256 fee = (amountWei * lane.feeBps) / BPS;
         uint256 payout = amountWei - fee;
         if (payout > idleLiquidity()) revert NoLiquidity();
