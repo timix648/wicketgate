@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
-  "bin": { "wicketgate-watcher": "src/cli.ts" },
+  "bin": {
+    "wicketgate-watcher": "src/cli.ts"
+  },
   "scripts": {
     "start": "tsx src/cli.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -13,6 +15,7 @@
     "@wicketgate/core": "workspace:*",
     "@qorechain/rdk": "0.9.0",
     "@qorechain/sdk": "0.14.0",
-    "viem": "2.21.54"
+    "viem": "2.21.54",
+    "@qorechain/mcp": "0.1.0"
   }
 }

@@ -27,6 +27,14 @@ import { NET } from "@wicketgate/core/env";
 import { sendNative, explorerTx } from "@wicketgate/core/chain";
 import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 import { buildExitTree, ZERO_ROOT } from "@wicketgate/core/exit-tree";
+import { TOOLS as MCP_TOOLS, toolContext } from "@qorechain/mcp";
+import { restGet } from "@wicketgate/core/chain";
+
+const PQ_STATUS = MCP_TOOLS.find((t) => t.name === "get_pq_status")!;
+const MCP_CTX = toolContext({ defaultNetwork: "testnet" });
+
+/** Who submitted a batch, and whether the chain-verified ML-DSA-87 layer of that tx checks out (QoreChain MCP get_pq_status). */
+export interface Provenance { tx: string; height: number; signer: string | null; pqVerified: boolean | null; tier: string | null }
 
 export type Mode = "observe" | "attest" | "challenge";
 
@@ -72,7 +80,8 @@ const root32 = (r: string) => (r && r !== "0x" ? hex(r) : ZERO_ROOT);
 export class Watcher {
   private rest = new RestClient(NET.rest);
   private entryCache = new Map<string, QledgerEntry[]>();
-  private sent = new Set<string>(); // attestations/challenges sent this process, to avoid repeats while txs land
+  private sent = new Set<string>();
+  private provenance = new Map<string, Provenance>(); // by tx hash // attestations/challenges sent this process, to avoid repeats while txs land
   private log: (m: string) => void;
 
   constructor(private cfg: WatcherConfig) {
@@ -169,6 +178,13 @@ export class Watcher {
       inbox.headSequence > inbox.consumedSequence
         ? (await this.rest.getPostedData(rollupId, inbox.consumedSequence + 1).catch(() => undefined as any))?.height ?? null
         : null;
+    const subs = await this.submissions(rollupId).catch(() => new Map<number, Provenance[]>());
+    for (const v of verdicts) {
+      const all = subs.get(v.index) ?? [];
+      // the current batch at an index is the latest submission; earlier ones were rejected and rolled back
+      (v as any).submission = all[all.length - 1] ?? null;
+      if (all.length > 1) (v as any).replacedSubmissions = all.slice(0, -1);
+    }
     const pool = this.cfg.pool ? await this.poolState(rollupKey, verdicts.length) : null;
     if (pool) for (const v of verdicts) (v as any).pool = pool.batches[v.index] ?? null;
     const feed = {
@@ -186,6 +202,29 @@ export class Watcher {
     const m = verdicts.filter((v) => v.verdict === "match").length;
     this.log(`[${rollupId}] ${verdicts.length} batches: ${m} match, ${verdicts.filter((v) => v.verdict === "mismatch").length} mismatch, ${verdicts.filter((v) => v.verdict === "rejected-on-chain").length} rejected; inbox ${inbox.consumedSequence}/${inbox.headSequence}`);
     return feed;
+  }
+
+  /** Every batch-submitting transaction of a rollup, by batch index, oldest first, with its post-quantum provenance. */
+  private async submissions(rollupId: string): Promise<Map<number, Provenance[]>> {
+    const q = encodeURIComponent(`rdk_inbox_consumed.rollup_id='${rollupId}'`);
+    const { body } = await restGet<any>(`/cosmos/tx/v1beta1/txs?query=${q}&pagination.limit=100&order_by=ORDER_BY_ASC`);
+    const out = new Map<number, Provenance[]>();
+    for (const t of body?.tx_responses ?? []) {
+      if (t.code !== 0) continue;
+      const idx = t.events.filter((e: any) => e.type === "rdk_inbox_consumed").flatMap((e: any) => e.attributes).find((a: any) => a.key === "batch_index")?.value;
+      if (idx === undefined) continue;
+      let prov = this.provenance.get(t.txhash);
+      if (!prov) {
+        const r: any = await PQ_STATUS.handler({ network: "testnet", target: t.txhash }, MCP_CTX).catch(() => null);
+        const ts = r?.transaction_status;
+        prov = { tx: t.txhash, height: Number(t.height), signer: ts?.signer ?? null, pqVerified: ts?.verification?.verified ?? null, tier: ts?.tier ?? null };
+        if (prov.pqVerified !== null) this.provenance.set(t.txhash, prov);
+      }
+      const list = out.get(Number(idx)) ?? [];
+      list.push(prov);
+      out.set(Number(idx), list);
+    }
+    return out;
   }
 
   /** The pool's view of each batch, so readers of the feed need no contract calls. */
