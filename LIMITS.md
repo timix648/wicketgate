@@ -11,3 +11,5 @@ What Wicketgate does not do, or does not do yet. Kept current; dates are UTC.
 - **Our own rollup** needs about 13,000 QOR (stake, layer registration, bonds), requested from the organiser. Until then the settlement-receipt flow is shown on the organiser's rollup, whose anchors are signed by its creator, not by us.
 - **Relay and operator are run by the team.** They cannot forge or alter users' transactions, and users can always post to the inbox directly, but the convenience path depends on the team's server being up.
 - **Notes hide content only** (see THREAT_MODEL.md, section 7).
+- **Stake is locked at confirmation.** `ExitPool` locks each confirming watcher's stake when a batch reaches quorum, even if nothing is ever advanced against it. Watchers therefore attest on chain only batches that carry withdrawals that could be exited instantly; batches without one are still re-executed and reported in the feed. A later version of the pool should lock stake only when the first advance is made.
+

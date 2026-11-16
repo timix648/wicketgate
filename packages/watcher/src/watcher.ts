@@ -279,6 +279,12 @@ export class Watcher {
       const bk = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(t.index)] })) as Hex;
       const voted = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "voteOf", args: [bk, me.evm] })) as Hex;
       const v = verdicts.find((x) => x.index === t.index)!;
+      if (t.facts.exitRoot === ZERO_ROOT && voted === ZERO_ROOT) {
+        // nothing in this batch can be exited instantly, so no stake needs to stand behind it;
+        // the verdict is still published in the feed
+        v.attestationTx = "not-needed: no withdrawals to exit";
+        continue;
+      }
       if (voted !== ZERO_ROOT) {
         v.attestationTx = voted === factsHash(t.facts) ? "already-attested" : "attested-different-facts";
         continue;

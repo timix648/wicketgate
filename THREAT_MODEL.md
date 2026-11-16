@@ -6,8 +6,8 @@ What Wicketgate protects, who might attack it, what they can do, and why the dam
 
 | Asset | Where it lives |
 | --- | --- |
-| Liquidity providers' QOR | `ExitPool` balance (20 QOR today) |
-| Watchers' stake | `WatcherRegistry` balance (30 QOR today: 3 watchers x 10) |
+| Liquidity providers' QOR | `ExitPool` balance (about 320 QOR on 16 Nov) |
+| Watchers' stake | `WatcherRegistry` balance (350 QOR on 16 Nov: W1 100, W2 240, W3 10) |
 | Users' rollup funds | the rollup's deposit pool, under the chain's own `x/rdk` rules |
 | Users' withdrawals in flight | exit addresses, until swept to the pool or to the beneficiary |
 | Admin settings | lanes (window, grace, fee, quorum, stake per watcher) and registry parameters |

@@ -54,6 +54,21 @@ export async function sendNative(
   messages: EncodeObject[],
   opts: { gas?: number; classical?: boolean; memo?: string } = {},
 ) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await sendOnce(acc, messages, opts);
+    } catch (e: any) {
+      // another process signing for the same account took the sequence: re-read it and retry
+      if (attempt < 4 && /sequence mismatch|incorrect account sequence/i.test(String(e?.message))) {
+        await new Promise((r) => setTimeout(r, 1500 + attempt * 1500));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+async function sendOnce(acc: UnifiedAccount, messages: EncodeObject[], opts: { gas?: number; classical?: boolean; memo?: string }) {
   const seq = await accountSeq(acc.cosmos);
   if (!seq) throw new Error(`${acc.cosmos} does not exist on chain yet: fund it first`);
   const gas = opts.gas ?? 600_000;
