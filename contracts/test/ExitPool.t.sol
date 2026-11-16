@@ -153,17 +153,47 @@ contract ExitPoolTest is Base {
         pool.attest(rollupKey, 1, f, sign(w1, m));
     }
 
-    function test_quorum_confirms_and_locks_stake() public {
-        (ExitPool.Facts memory f,) = facts();
+    function test_quorum_confirms_without_locking_then_locks_on_exit() public {
+        (ExitPool.Facts memory f, bytes32[] memory proof) = facts();
         attestAs(w1, 1, f);
         (, uint64 confirmedAt,,,,,,,) = pool.getBatch(pool.batchKey(rollupKey, 1));
         assertEq(confirmedAt, 0);
         attestAs(w2, 1, f);
         (, uint64 c2,,,, uint256 cover,, address[] memory ws,) = pool.getBatch(pool.batchKey(rollupKey, 1));
         assertGt(c2, 0);
-        assertEq(cover, 2 * uint256(LOCK));
+        assertEq(cover, 0); // v2: nothing locked until an exit is advanced
         assertEq(ws.length, 2);
-        assertEq(registry.freeStake(w1), 10 ether - LOCK);
+        assertEq(registry.freeStake(w1), 10 ether);
+
+        exitAlice(1, f, proof); // 2 QOR
+        (,,,,, uint256 cover2, uint256 adv,, uint256[] memory locked) = pool.getBatch(pool.batchKey(rollupKey, 1));
+        assertEq(adv, AMOUNT_WEI);
+        assertGe(cover2, adv);
+        assertEq(locked[0], 1 ether); // spread evenly
+        assertEq(locked[1], 1 ether);
+        assertEq(registry.freeStake(w1), 9 ether);
+    }
+
+    function test_exit_locks_from_watchers_with_room() public {
+        // w1 has little free stake: the rest of the cover comes from w2
+        ExitPool.Lane memory lane = ExitPool.Lane(WINDOW, GRACE, 50, 2, 8 ether, true);
+        adminDo(address(pool), "setLane", abi.encode(rollupKey, lane), "");
+        (ExitPool.Facts memory f,) = facts();
+        attestAs(w1, 1, f);
+        attestAs(w2, 1, f);
+        vm.prank(w2);
+        registry.topUp{value: 10 ether}();
+        // 6 QOR withdrawal, w1 can give 8 max (has 10 free), w2 too: 3 + 3
+        address e = pool.exitAddressFor(alice, keccak256("big"));
+        bytes32[] memory leaves = new bytes32[](1);
+        leaves[0] = pool.exitLeaf(3, e, 6_000_000);
+        ExitPool.Facts memory g = ExitPool.Facts(keccak256("s9"), keccak256("w9"), leaves[0]);
+        attestAs(w1, 9, g);
+        attestAs(w2, 9, g);
+        pool.instantExit(rollupKey, 9, g, 3, alice, keccak256("big"), 6_000_000, new bytes32[](0));
+        (,,,,, uint256 cover,,, uint256[] memory locked) = pool.getBatch(pool.batchKey(rollupKey, 9));
+        assertEq(locked[0] + locked[1], cover);
+        assertGe(cover, 6 ether);
     }
 
     function test_one_dissenting_watcher_blocks_confirmation() public {
@@ -387,8 +417,8 @@ contract ExitPoolTest is Base {
         ExitPool.Facts memory f = ExitPool.Facts(keccak256("s"), keccak256("w"), leaves[0]);
         attestAs(w1, 5, f);
         attestAs(w2, 5, f);
-        (, , , , , uint256 cover, , ,) = pool.getBatch(pool.batchKey(rollupKey, 5));
-        if (uint256(amountUqor) * 1e12 > cover) {
+        // v2: the most a batch can take is lockPerWatcher from each confirming watcher
+        if (uint256(amountUqor) * 1e12 > 2 * uint256(LOCK)) {
             vm.expectRevert(ExitPool.CoverExceeded.selector);
         }
         pool.instantExit(rollupKey, 5, f, 1, alice, salt, amountUqor, new bytes32[](0));
