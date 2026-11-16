@@ -21,7 +21,8 @@
     "lane": "tsx src/lane.ts",
     "launch": "tsx src/launch-rollup.ts",
     "topup": "tsx src/topup.ts",
-    "stake": "tsx src/stake.ts"
+    "stake": "tsx src/stake.ts",
+    "memo": "tsx src/memo.ts"
   },
   "dependencies": {
     "@qorechain/rdk": "0.9.0",
@@ -30,6 +31,8 @@
     "viem": "2.21.54",
     "@cosmjs/stargate": "0.39.0",
     "@qorechain/evm": "0.14.0",
-    "@wicketgate/core": "workspace:*"
+    "@wicketgate/core": "workspace:*",
+    "@qorechain/qoreseal": "0.1.0",
+    "@qorechain/qoresign": "0.2.0"
   }
 }
