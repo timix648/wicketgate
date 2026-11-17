@@ -2,6 +2,8 @@
 
 Every claim Wicketgate makes about the chain, with how to check it. Dates are UTC.
 
+> **Explorer links:** explore.qore.network opens on mainnet. Press **Testnet** at the top right once (it is remembered in a cookie), then the links below open the testnet transactions. Every hash can also be read with `curl https://api-testnet.qore.host/cosmos/tx/v1beta1/txs/<HASH>` (native) or `eth_getTransactionReceipt` on `https://evm-testnet.qore.host` (EVM, `0x…`).
+
 | Date | Claim | How to check |
 | --- | --- | --- |
 | 16 Nov 2026 | Rebuilding rollup `rdk-v328-e2e-mwd5v89d` from chain data reproduces batch 0: state root `83274dd8c1e80acbe22bb5fb8bd054f08d5c020ecea632a3b650ffe685f387a7`, withdrawals root `75482e03e14c4ad163d4d8986f1133caa3d5ce7132538af8f7df84cf14167d98`, one withdrawal of 300,000 uqor | `npx tsx packages/scripts/src/probe-replay.ts` |
