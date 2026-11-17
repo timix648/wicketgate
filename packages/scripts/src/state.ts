@@ -18,7 +18,8 @@ async function main() {
       console.log(`  ${id} batch ${i}: confirmed ${new Date(Number(b[1]) * 1000).toISOString()} contested=${b[2]} released=${b[3]} open=${b[4]} cover=${q(b[5])} advanced=${q(b[6])} watchers=${b[7].length}`);
     }
   }
-  const exits = JSON.parse(readFileSync(`${process.env.HOME}/.wicketgate/exits.json`, "utf8"));
+  let exits: any[] = [];
+  try { exits = JSON.parse(readFileSync(`${process.env.HOME}/.wicketgate/exits.json`, "utf8")); } catch {} // only on the team's machine
   for (const e of exits) {
     const id = await rd(dep.pool, P, "advanceOfExit", [e.exitAddr]);
     if (/^0x0+$/.test(id)) { console.log(`  exit ${e.exitAddr} (${e.rollupId}): no advance`); continue; }
