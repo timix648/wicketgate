@@ -177,7 +177,7 @@ Accounts are **eth-native**: one secp256k1 key works on both the EVM and the nat
 | --- | --- | --- | --- |
 | 1 | `cd packages/scripts && npx tsx src/receipt.ts wicketgate-pay 3` | about 12 s | Six PASS lines, then a tampered receipt with `valid=false` |
 | 2 | `npx tsx src/state.ts` | about 15 s | The live pool: assets, watcher stakes, confirmed batches and advances |
-| 3 | `npx tsx src/probe-replay.ts wicketgate-pay` | about 30 s | Every batch of our rollup rebuilt from chain data with matching roots |
+| 3 | `npx tsx src/probe-replay.ts wicketgate-pay` | about 15 s | Every batch of our rollup rebuilt from chain data with matching roots |
 | 4 | `npx tsx src/probe-pqcverify.ts` | about 5 s | The testnet's ML-DSA-87 precompile accepting a real signature and rejecting a changed byte |
 | 5 | `cd ../watcher && npx tsx src/cli.ts --mode observe --rollup all --once --feed ./feed` | about 100 s | All rollups on QoreChain re-executed, every batch `match` |
 | 6 | `cd ../../contracts && git submodule update --init && forge test` | about 40 s | 38 tests and 4 invariants pass (needs [Foundry](https://getfoundry.sh)) |
@@ -270,6 +270,7 @@ All from `packages/scripts` unless noted. Each one prints the transaction hashes
 | `pnpm state` | Reads the pool and the registry |
 | `pnpm probe:ibc [channel] [prefix] [uqor]` | Checks that a relayer is carrying IBC packets |
 | `pnpm drill:proof` / `pnpm drill:monitor` | The Q-Day Drill proof transaction, and the minute-by-minute monitor |
+| `npx tsx src/disclose.ts "report"` | Seals a security report to our ML-KEM-1024 key (see [SECURITY.md](SECURITY.md)) |
 
 Services:
 
@@ -325,7 +326,7 @@ Kits used and what for:
 | `deployments/` | Live and earlier addresses, and the demo timeline |
 | `receipts/`, `cbom/`, `cards/` | A verified receipt, the QoreScan inventory, a signed recipient card |
 | `ops/start.sh` | Starts the services |
-| `PROOF.md`, `THREAT_MODEL.md`, `LIMITS.md`, `AI_USAGE.md` | Evidence, threat model, limits, how AI was used |
+| `PROOF.md`, `THREAT_MODEL.md`, `LIMITS.md`, `AI_USAGE.md`, `SECURITY.md` | Evidence, threat model, limits, how AI was used, sealed vulnerability reports |
 
 ---
 
