@@ -99,7 +99,14 @@ export class Watcher {
 
   async round(): Promise<void> {
     const index: Record<string, unknown>[] = [];
-    for (const rollupId of await this.rollupList()) {
+    let rollups: string[];
+    try {
+      rollups = await this.rollupList();
+    } catch (e: any) {
+      this.log(`could not list rollups: ${e?.message ?? e}`);
+      return;
+    }
+    for (const rollupId of rollups) {
       try {
         const feed = await this.checkRollup(rollupId);
         index.push({ rollupId, updatedAt: feed.updatedAt, batches: feed.batches.length, file: `${rollupId}.json` });

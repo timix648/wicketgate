@@ -24,7 +24,8 @@ async function main() {
   const w = new Watcher({ rollups, mode, me, pool, feedDir });
   console.log(`wicketgate watcher: mode=${mode} rollups=${rollups.join(",")} feed=${feedDir}${me ? ` as ${me.evm}` : ""}`);
   for (;;) {
-    await w.round();
+    // a watcher must outlive any network error: log it and try again next round
+    await w.round().catch((e) => console.error(`${new Date().toISOString()} round failed: ${e?.shortMessage ?? e?.message ?? e}`));
     if (process.argv.includes("--once")) break;
     await new Promise((r) => setTimeout(r, interval));
   }
