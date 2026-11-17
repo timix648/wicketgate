@@ -31,7 +31,9 @@
     "exit:chain": "tsx src/exit-to-chain.ts",
     "leave": "tsx src/leave.ts",
     "lp:withdraw": "tsx src/lp-withdraw.ts",
-    "drill:monitor": "tsx src/drill-monitor.ts"
+    "drill:monitor": "tsx src/drill-monitor.ts",
+    "swap": "tsx src/swap.ts",
+    "disclose": "tsx src/disclose.ts"
   },
   "dependencies": {
     "@qorechain/rdk": "0.9.0",
