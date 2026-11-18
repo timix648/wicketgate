@@ -53,7 +53,14 @@ async function main() {
   while (Date.now() < UNTIL) {
     await new Promise((r) => setTimeout(r, 60_000));
     let s;
-    try { s = await snapshot(); } catch (e: any) { appendFileSync(LOG, JSON.stringify({ t: new Date().toISOString(), error: String(e?.message ?? e) }) + "\n"); continue; }
+    try {
+      s = await snapshot();
+      if (s.w3Sequence === null) throw new Error("W3 account unreadable");
+    } catch (e: any) {
+      // a failed read is "unknown", never "zero": log it and compare again next minute
+      appendFileSync(LOG, JSON.stringify({ t: new Date().toISOString(), unknown: String(e?.message ?? e) }) + "\n");
+      continue;
+    }
     const ours = (() => { try { return readFileSync(OURS, "utf8").split("\n").filter(Boolean).map(Number); } catch { return []; } })();
     const changes: string[] = [];
     if (s.w3WindowOpen) changes.push("W3 HAS AN OPEN EVM WINDOW");

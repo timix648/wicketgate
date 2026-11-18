@@ -20,9 +20,11 @@ export async function restGet<T = any>(path: string): Promise<{ status: number; 
   return { status: r.status, body };
 }
 
+/** Throws when the balance cannot be read, so a failed read is never mistaken for an empty account. */
 export async function balanceUqor(address: string): Promise<bigint> {
-  const { body } = await restGet<any>(`/cosmos/bank/v1beta1/balances/${address}/by_denom?denom=uqor`);
-  return BigInt(body?.balance?.amount ?? 0);
+  const { status, body } = await restGet<any>(`/cosmos/bank/v1beta1/balances/${address}/by_denom?denom=uqor`);
+  if (status !== 200 || body?.balance?.amount === undefined) throw new Error(`balance of ${address} unreadable (HTTP ${status})`);
+  return BigInt(body.balance.amount);
 }
 
 export async function pqcStatus(address: string): Promise<{ registered: boolean; proven: boolean }> {
@@ -36,7 +38,8 @@ export async function pqcStatus(address: string): Promise<{ registered: boolean;
 
 export async function accountSeq(address: string): Promise<{ accountNumber: number; sequence: number } | undefined> {
   const { status, body } = await restGet<any>(`/cosmos/auth/v1beta1/accounts/${address}`);
-  if (status !== 200) return undefined;
+  if (status === 404) return undefined; // the account does not exist yet
+  if (status !== 200) throw new Error(`account ${address} unreadable (HTTP ${status})`);
   const a = body?.account?.base_account ?? body?.account;
   return { accountNumber: Number(a.account_number), sequence: Number(a.sequence ?? 0) };
 }
