@@ -1,0 +1,8 @@
+{
+  "twin": "0x8340ff2736de1f358313038ccdd6cc11a0ab2f2c",
+  "deployTx": "0x6333514069b8efc3b3c09f7f38e6087ac0b0cdf296b796a1040b8bfd098ad645",
+  "watcher": "0x718Ed43CBA438b9d7095e56787B315ab433903cc",
+  "liquidityQor": 10,
+  "deployedAt": "2026-11-18T18:07:05.560Z",
+  "note": "DEMO ONLY: deliberately vulnerable classical (ecrecover) twin of ExitPool for the Q-Day simulation"
+}

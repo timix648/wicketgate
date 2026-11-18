@@ -5,7 +5,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { deriveUnifiedAccount, type UnifiedAccount } from "@qorechain/sdk";
+import { deriveUnifiedAccount, unifiedAccountFromSeed, type UnifiedAccount } from "@qorechain/sdk";
 import { qledgerKeypairFromSeed } from "@qorechain/rdk";
 
 export const NET = {
@@ -71,4 +71,22 @@ export const DEPLOYMENTS_FILE = process.env.WICKETGATE_DEPLOYMENTS
 
 function require_abs(p: string) {
   return p.startsWith("/") ? p : join(process.cwd(), p);
+}
+
+/**
+ * The two accounts of the Q-Day simulation (packages/scripts/src/qday-*.ts):
+ *  - W4, a watcher whose secp256k1 key is deliberately weak (a 40-bit scalar), standing in for any
+ *    classical key after Q-Day; its ML-DSA-87 key comes from a separate full-strength secret;
+ *  - MALLORY, the attacker: an ordinary account.
+ * Both live in the key file like every other role. The attacker script never reads them.
+ */
+export async function qdayAccount(name: "W4" | "MALLORY"): Promise<UnifiedAccount> {
+  const k = readKeyFile();
+  if (name === "MALLORY") {
+    if (!k.WG_MALLORY_MNEMONIC) throw new Error("WG_MALLORY_MNEMONIC missing: run qday-setup.ts first");
+    return deriveUnifiedAccount(k.WG_MALLORY_MNEMONIC);
+  }
+  if (!k.WG_W4_WEAK_KEY || !k.WG_W4_PQC_SECRET) throw new Error("W4 keys missing: run qday-setup.ts first");
+  const seed = Buffer.from(k.WG_W4_WEAK_KEY.replace(/^0x/, "").padStart(64, "0"), "hex");
+  return unifiedAccountFromSeed(new Uint8Array(seed), { pqcSecret: new Uint8Array(Buffer.from(k.WG_W4_PQC_SECRET, "hex")) });
 }

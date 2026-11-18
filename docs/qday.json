@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2026-11-18T18:15:05.575Z",
+  "victim": {
+    "cosmos": "qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0",
+    "evm": "0x718Ed43CBA438b9d7095e56787B315ab433903cc"
+  },
+  "attacker": "0xba14130016B64515E1C4833Ba01C3126a7998B2A",
+  "crack": {
+    "seconds": 49,
+    "at": "2026-11-18T18:02:47.652Z"
+  },
+  "twin": "0x8340ff2736de1f358313038ccdd6cc11a0ab2f2c",
+  "pool": "0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a",
+  "registry": "0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad",
+  "closed": {
+    "at": "2026-11-18T18:13:40.930Z",
+    "before": {
+      "w4Qor": 6.698125,
+      "w4StakeQor": 5,
+      "w4Active": true,
+      "poolQor": 400.0105,
+      "twinQor": 10,
+      "w4Sequence": 4
+    },
+    "after": {
+      "w4Qor": 6.698125,
+      "w4StakeQor": 5,
+      "w4Active": true,
+      "poolQor": 400.0105,
+      "twinQor": 10,
+      "w4Sequence": 4
+    },
+    "attempts": [
+      {
+        "target": "W4's funds",
+        "layer": "QoreChain: hybrid signatures",
+        "what": "Move W4's balance to the attacker, signed with the stolen secp256k1 key only",
+        "refused": true,
+        "result": "Broadcasting transaction failed with code 20 (codespace: pqc). Log: account qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0 has a registered PQC key and must include the hybrid signature extension (hybrid "
+      },
+      {
+        "target": "W4's funds",
+        "layer": "QoreChain: hybrid signatures",
+        "what": "The same, with an ML-DSA-87 signature from a guessed key",
+        "refused": true,
+        "result": "Broadcasting transaction failed with code 21 (codespace: pqc). Log: PQC signature verification failed for qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0: hybrid PQC signature verification failed"
+      },
+      {
+        "target": "W4's funds",
+        "layer": "QoreChain: hybrid signatures",
+        "what": "Open an EVM window for W4 with the stolen key",
+        "refused": true,
+        "result": "Broadcasting transaction failed with code 20 (codespace: pqc). Log: account qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0 has a registered PQC key and must include the hybrid signature extension (hybrid "
+      },
+      {
+        "target": "W4's stake",
+        "layer": "QoreChain: EVM windows",
+        "what": "requestLeave from W4, an EVM transaction signed with the stolen key",
+        "refused": true,
+        "result": "failed to broadcast transaction: account qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0 has no open EVM authorisation window; open one with MsgOpenEVMWindow, signed on the Cosmos lane with the account's p"
+      },
+      {
+        "target": "ClassicalTwin",
+        "layer": "QoreChain: ecrecover outside a window",
+        "what": "Confirm an invented batch in the twin with W4's stolen signature (submitted by the attacker)",
+        "refused": true,
+        "result": "reverted: NotWatcher"
+      },
+      {
+        "target": "Wicketgate",
+        "layer": "Wicketgate: ML-DSA-87 via pqcVerify",
+        "what": "Attest the invented batch in W4's name in ExitPool (submitted by the attacker)",
+        "refused": true,
+        "result": "reverted: NotWatcher"
+      }
+    ],
+    "onChainEvidence": "The twin refusal is not only an `eth_call`: on the first run, while W4's window was closed, the attacker's real attestation and drain transactions to ClassicalTwin both reverted on chain (drain `0x9bd76db94c2e75c139983d4ac9f756ecc1d4a1f81cd05ad0b83626ed1ee599d0`), because `ecrecover` returned no signer for W4."
+  },
+  "drain": {
+    "attestTx": "0x96222ef7f2626bbabf0b2899bed98357292a18a3d2838a6f52d609df175622b3",
+    "drainTx": "0x1fe3b0a98f3227a900cc695d1b0c5e79435151decb2b77f4c6f58f82464cd8ef",
+    "stolenQor": 10
+  },
+  "open": {
+    "at": "2026-11-18T18:15:28.780Z",
+    "before": {
+      "w4Qor": 6.608125,
+      "w4StakeQor": 5,
+      "w4Active": true,
+      "poolQor": 400.0105,
+      "twinQor": 10,
+      "w4Sequence": 5
+    },
+    "after": {
+      "w4Qor": 6.574375,
+      "w4StakeQor": 5,
+      "w4Active": true,
+      "poolQor": 400.0105,
+      "twinQor": 0,
+      "w4Sequence": 6
+    },
+    "attempts": [
+      {
+        "target": "ClassicalTwin",
+        "layer": "ecrecover inside W4's window",
+        "what": "Confirm the invented batch with W4's stolen signature, then exit the twin's whole balance to the attacker",
+        "refused": false,
+        "result": "ACCEPTED: 10 QOR stolen. attest 0x96222ef7f2626bbabf0b2899bed98357292a18a3d2838a6f52d609df175622b3, drain 0x1fe3b0a98f3227a900cc695d1b0c5e79435151decb2b77f4c6f58f82464cd8ef"
+      },
+      {
+        "target": "Wicketgate",
+        "layer": "Wicketgate: ML-DSA-87 via pqcVerify",
+        "what": "Attest the invented batch as W4 itself, a real EVM transaction inside W4's window, signed with the stolen key",
+        "refused": true,
+        "result": "reverted on chain: BadSignature(0x718Ed43CBA438b9d7095e56787B315ab433903cc) (0x5bdd09e7d012623971f05e943e88e6f8a16b33d3812f1d72e14dae7141142ccf)"
+      },
+      {
+        "target": "W4's stake",
+        "layer": "QoreChain: window scope",
+        "what": "requestLeave from W4 inside its window (the registry is not in the window's scope)",
+        "refused": true,
+        "result": "failed to broadcast transaction: the EVM authorisation window for qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0 does not admit this transaction: the window does not list 0x0d3e791d4b71f57Ab95f501E60A8572"
+      }
+    ]
+  }
+}

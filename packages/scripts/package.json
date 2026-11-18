@@ -35,18 +35,21 @@
     "swap": "tsx src/swap.ts",
     "disclose": "tsx src/disclose.ts",
     "metrics": "tsx src/metrics.ts",
-    "redteam": "tsx src/redteam.ts"
+    "redteam": "tsx src/redteam.ts",
+    "qday:crack": "tsx src/qday-crack.ts",
+    "qday:attack": "tsx src/qday-attack.ts"
   },
   "dependencies": {
-    "@qorechain/rdk": "0.9.0",
-    "@qorechain/sdk": "0.14.0",
-    "@qorechain/pqc": "0.2.3",
-    "viem": "2.21.54",
     "@cosmjs/stargate": "0.39.0",
+    "@noble/curves": "1.9.7",
+    "@noble/hashes": "1.8.0",
     "@qorechain/evm": "0.14.0",
-    "@wicketgate/core": "workspace:*",
+    "@qorechain/pqc": "0.2.3",
     "@qorechain/qoreseal": "0.1.0",
     "@qorechain/qoresign": "0.2.0",
-    "@noble/hashes": "1.8.0"
+    "@qorechain/rdk": "0.9.0",
+    "@qorechain/sdk": "0.14.0",
+    "@wicketgate/core": "workspace:*",
+    "viem": "2.21.54"
   }
 }

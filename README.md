@@ -19,10 +19,23 @@ A wicket gate is the small door cut into a large castle gate: people pass throug
 | **31 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
 | **45 of 45 batches re-executed, across 4 rollups** | 3 of those rollups are run by other teams; our watchers found them without being told |
 | **1 of 1 wrong batches caught, in 5 seconds** | The fraud proof landed 4 blocks after the bad batch; the submitter's 1,000 QOR bond was slashed |
+| **Q-Day, simulated: the classical pool lost 10 QOR, Wicketgate lost 0** | A watcher's secp256k1 key was broken from its on-chain public key in 49 s. With it, the attacker drained an `ecrecover` twin of our pool, while Wicketgate refused the same key on chain ([below](#q-day-simulated-on-chain)) |
 | **18 of 18 attacks refused, on the live contracts** | Forged and replayed ML-DSA-87 signatures, invented and redirected withdrawals, double exits, early slashing, stolen liquidity: each replayed against the pool's real state at the block of a real exit, each refused by the check meant for it ([docs/REDTEAM.md](docs/REDTEAM.md)) |
 | **38 hours under the Q-Day Drill, 0 transactions we did not send** | The drill account (W3) was handed to the organisers' attack drill; a monitor checks it every minute, and its 50 QOR stake is untouched |
 
 The full breakdown, every exit and its transaction is in [docs/METRICS.md](docs/METRICS.md). Re-run both yourself, no key needed: `cd packages/scripts && npx tsx src/metrics.ts && npx tsx src/redteam.ts`.
+
+
+### Q-Day, simulated on chain
+
+The hackathon asks what happens on Q-Day, when a quantum computer can turn any secp256k1 public key into its private key. We ran it on the testnet. Watcher **W4** has a deliberately weak 40-bit secp256k1 key (the stand-in for Shor's algorithm) and a full-strength ML-DSA-87 key. It watches two pools that differ only in how they check its signature: **ClassicalTwin**, which uses `ecrecover` like most bridges and fast-exit pools today, and **Wicketgate**.
+
+1. **The key falls.** The attacker read W4's public key from the chain and recovered the private key in **49 s** on one CPU core.
+2. **W4's EVM window closed: QoreChain stops it.** The stolen key could not move W4's funds, open a window, touch its stake or pass `ecrecover` in the twin: QoreChain refused all five, and ExitPool refused the sixth.
+3. **W4's routine window open: the classical pool falls.** Watchers open windows to work. While W4's window was open, the chain accepted the stolen classical signature, and the attacker confirmed an invented batch and **drained ClassicalTwin's 10 QOR** (attest `0x96222ef7f262…`, drain `0x1fe3b0a98f32…`).
+4. **Same key, same open window: Wicketgate holds.** The attacker sent an attestation from W4 itself; ExitPool reverted it on chain with **`BadSignature`**, because it checks ML-DSA-87 inside the contract. Pool assets did not move.
+
+**QoreChain's windows protect you while they are closed; Wicketgate protects you while they are open.** Full write-up with every hash: [docs/QDAY.md](docs/QDAY.md).
 
 ---
 
@@ -200,10 +213,11 @@ Compiler settings, for anyone rebuilding the contracts: solc 0.8.24, optimizer o
 | 3 | `npx tsx src/probe-replay.ts wicketgate-pay` | about 15 s | Every batch of our rollup rebuilt from chain data with matching roots |
 | 4 | `npx tsx src/probe-pqcverify.ts` | about 5 s | The testnet's ML-DSA-87 precompile accepting a real signature and rejecting a changed byte |
 | 5 | `cd ../watcher && npx tsx src/cli.ts --mode observe --rollup all --once --feed ./feed` | about 100 s | All rollups on QoreChain re-executed, every batch `match` |
-| 6 | `cd ../../contracts && git submodule update --init && forge test` | about 40 s | 38 tests and 4 invariants pass (needs [Foundry](https://getfoundry.sh)) |
+| 6 | `cd ../../contracts && git submodule update --init && forge test` | about 40 s | 40 tests and 4 invariants pass (2 of the tests cover the Q-Day demo twin) (needs [Foundry](https://getfoundry.sh)) |
 | 7 | `forge build && cd ../packages/scripts && npx tsx src/verify-bytecode.ts` | about 30 s | The deployed contracts' runtime code matches this source byte for byte (the explorer has no source verification); the PQC precompile addresses are in the code |
 | 8 | `npx tsx src/redteam.ts` (in `packages/scripts`) | about 10 s | 18 attacks against the live pool, each `REFUSED` by its named check, and 3 honest controls `ACCEPTED` at the same blocks |
 | 9 | `npx tsx src/metrics.ts` | about 40 s | Every headline number on this page, recomputed from chain data |
+| 10 | `npx tsx src/qday-crack.ts qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0` | about 50 s | W4's private key recovered from its on-chain public key (the 40-bit key is the only simulated part); the evidence of what it could and could not do is in [docs/QDAY.md](docs/QDAY.md) |
 
 **Evidence:**
 
@@ -348,7 +362,8 @@ Kits used and what for:
 | `packages/operator/` | The batcher, relay worker and withdrawal keeper |
 | `packages/scripts/` | Probes, deployment and demo scripts |
 | `packages/scripts/src/metrics.ts`, `redteam.ts` | The numbers recomputed from chain data, and 18 attacks replayed against the live contracts |
-| `docs/METRICS.md`, `docs/REDTEAM.md` | Their latest output (raw data in `docs/metrics.json`, `docs/redteam.json`) |
+| `contracts/demo/ClassicalTwin.sol`, `packages/scripts/src/qday-*.ts` | The Q-Day simulation: a deliberately vulnerable `ecrecover` twin of the pool, the key cracker, the victim's routine window and the attack |
+| `docs/METRICS.md`, `docs/REDTEAM.md`, `docs/QDAY.md` | Their latest output (raw data in `docs/metrics.json`, `docs/redteam.json`, `docs/qday.json`) |
 | `deployments/` | Live and earlier addresses, and the demo timeline |
 | `receipts/`, `cbom/`, `cards/` | A verified receipt, the QoreScan inventory, a signed recipient card |
 | `ops/start.sh` | Starts the services |
@@ -403,6 +418,7 @@ Notes for the QoreChain team, from two weeks of building on v3.2.8:
 - **QoreSeal's `buildRegisterKemKeyMessage`** returns pre-encoded bytes, which the eth-native signer cannot embed; an object form would make it work everywhere.
 - **The MCP server is useful inside programs too**, not only for assistants: we call `get_pq_status` directly from the watcher.
 - **EVM gas is billed at no less than half the gas limit.** Our attestations used 340,000 to 426,000 gas but were billed 600,000 because we sent a 1,200,000 limit; a tight limit cut the cost of a vote by about a third. Worth a line in the EVM docs.
+- **`ecrecover` is window-gated for post-quantum accounts (v3.2.8), and that is a strong default.** We measured both sides on chain: with the account's window closed, a stolen classical key fails `ecrecover` and our classical twin pool could not be touched; with a routine window open that admits the contract, the same stolen key drained it. Contracts that hold value on QoreChain should check ML-DSA-87 themselves, through `pqcVerify`, rather than rely on windows being closed; a short note saying so next to the window reference would help builders.
 - **A read-only precompile for RDK batch status** (status, state root, finalisation height) would let EVM contracts like ours react to a rejected batch at once, instead of waiting for an unpaid exit to fall due.
 
 ---
