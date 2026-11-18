@@ -14,10 +14,10 @@ A wicket gate is the small door cut into a large castle gate: people pass throug
 
 | | |
 | --- | --- |
-| **48× faster on testnet, about 8,000× at the 7-day default** | 7 instant exits, median **75 s** from the batch reaching the chain to the money arriving, against **3,600 s** for the same withdrawals through the normal path |
+| **50× faster on testnet, about 8,400× at the 7-day default** | 27 instant exits, median **72 s** from the batch reaching the chain to the money arriving, against **3,600 s** for the same withdrawals through the normal path |
 | **20 exits, 100 QOR, in 57 seconds, from one batch; the 21st refused by the stake cap** | Stress run: the pool paid until the 100 QOR its two confirming watchers had locked behind the batch was used up, then refused the next exit with `CoverExceeded` ([docs/STRESS.md](docs/STRESS.md)) |
-| **64 QOR paid out instantly, 0 QOR lost** | Every advance whose batch has finalised was repaid by the chain (7 of 7, one of them from another team's rollup); **0 defaults**; liquidity providers lost nothing and earned the fees |
-| **31 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
+| **164 QOR paid out instantly, 0 QOR lost** | Every advance whose batch has finalised was repaid by the chain (27 of 27, including one from another team's rollup); **0 defaults**; liquidity providers lost nothing and earned the fees |
+| **33 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
 | **45 of 45 batches re-executed, across 4 rollups** | 3 of those rollups are run by other teams; our watchers found them without being told |
 | **1 of 1 wrong batches caught, in 5 seconds** | The fraud proof landed 4 blocks after the bad batch; the submitter's 1,000 QOR bond was slashed |
 | **Q-Day, simulated: the classical pool lost 10 QOR, Wicketgate lost 0** | A watcher's secp256k1 key was broken from its on-chain public key in 49 s. With it, the attacker drained an `ecrecover` twin of our pool, while Wicketgate refused the same key on chain ([below](#q-day-simulated-on-chain)) |

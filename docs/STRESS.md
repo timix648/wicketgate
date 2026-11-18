@@ -37,3 +37,7 @@ The pool never advances more against a batch than the stake its confirming watch
 | 20 | 5 | 112 | 450,000 | `0x46e6710ec7cb8bf4c996848029da15b3063e585eb4946dd1ee3dcbc34f209e6f` |
 
 The two attestations that confirmed batch 11 were the first sent with the lower 560,000 gas limit: billed 340,052 and 426,441 gas (0.038 and 0.048 QOR), against 600,000 (0.0675 QOR) each before.
+
+## Repayment
+
+After batch 11 finalised (about 21:00 UTC), the operator's keeper executed all 20 withdrawals to their exit addresses and settled all 20 advances (state 2). The pool's outstanding balance returned to 0 and no watcher stake was slashed. The 21st withdrawal, which the stake cap kept off the instant path, was collected the normal way once the batch finalised: the chain paid its exit address (`E0FDB1CDF9920C424684240046596EB308E3F809B9D0A1F7780435734F0BEC73`) and `sweepToBeneficiary` returned the 1 QOR to its owner (`0x9efeaabc0d0f2f916570088a597571f9d67f405d3a1a90e15422ad4dec22e1f4`). So every one of the 21 withdrawals reached its owner: 20 in seconds, 1 after the window.

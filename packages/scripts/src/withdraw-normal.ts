@@ -1,6 +1,6 @@
 // The normal (slow) path for a saved exit withdrawal that was never advanced: once its batch has
 // finalised, execute the chain's MsgExecuteWithdrawal to the exit address, then sweep the exit
-// address to the beneficiary with ExitPool.sweepToBeneficiary. Usage: pnpm withdraw
+// address to the beneficiary with ExitPool.sweepToBeneficiary. Usage: pnpm withdraw [exit address]
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -21,9 +21,13 @@ async function main() {
   const { abi } = artifact("ExitPool");
   const rest = new RestClient(NET.rest);
   const exits = JSON.parse(readFileSync(EXITS, "utf8"));
+  const only = process.argv[2]?.toLowerCase(); // optional: one exit address
   for (const ex of exits) {
-    if (ex.sweptTx) continue;
+    if (only && ex.exitAddr.toLowerCase() !== only) continue;
+    // advanced by this pool or an earlier pool version: the instant path already handled it
+    if (ex.sweptTx || ex.advanceTx) continue;
     if ((await publicClient.readContract({ address: pool, abi, functionName: "advanceOfExit", args: [ex.exitAddr] })) !== ZERO) continue;
+    try {
     // find the finalised batch that carries this withdrawal
     const env = { chainId: NET.chainId, rollupId: ex.rollupId };
     const ledger = new QledgerLedger();
@@ -58,6 +62,9 @@ async function main() {
       ex.sweptTx = hash as Hex;
     } finally {
       await closeWindow(A);
+    }
+    } catch (e: any) {
+      console.log(`${ex.exitAddr}: ${String(e?.shortMessage ?? e?.message ?? e).split("\n")[0]}`);
     }
   }
   writeFileSync(EXITS, JSON.stringify(exits, null, 2));
