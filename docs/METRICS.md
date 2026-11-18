@@ -1,6 +1,6 @@
 # Wicketgate in numbers
 
-Generated 2026-11-18T09:18:39.040Z from public chain data at EVM block 10,307,471 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
+Generated 2026-11-18T09:24:11.020Z from public chain data at EVM block 10,307,699 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
 
 ![Time until the money arrives, instant exit against the normal path](images/time-to-funds.svg)
 
@@ -59,7 +59,7 @@ Generated 2026-11-18T09:18:39.040Z from public chain data at EVM block 10,307,47
 
 | | |
 | --- | --- |
-| Watched | 2026-11-16T20:15:27.435Z to 2026-11-18T09:18:06.492Z (37.04 h, 2,197 snapshots) |
+| Watched | 2026-11-16T20:15:27.435Z to 2026-11-18T09:24:08.771Z (37.14 h, 2,203 snapshots) |
 | Transactions from the drill account that were not ours | **0** |
 | Drill account's stake now | 50 QOR |
 

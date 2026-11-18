@@ -65,7 +65,14 @@ async function main() {
   }
 
   // instant exits: when the money arrived, against when the batch was posted and when it finalised
-  const localExits: any[] = existsSync(`${process.env.HOME}/.wicketgate/exits.json`) ? JSON.parse(readFileSync(`${process.env.HOME}/.wicketgate/exits.json`, "utf8")) : [];
+  // the withdrawal requests' hashes: from the exit log on the machine that made them, else from the
+  // last committed metrics.json (public hashes; their block times are re-read from chain below)
+  const committed = new URL("docs/metrics.json", ROOT);
+  const previous: any = existsSync(committed) ? JSON.parse(readFileSync(committed, "utf8")) : {};
+  const localExits: any[] = existsSync(`${process.env.HOME}/.wicketgate/exits.json`)
+    ? JSON.parse(readFileSync(`${process.env.HOME}/.wicketgate/exits.json`, "utf8"))
+    : [];
+  for (const x of previous.exits ?? []) if (x.withdrawalPostTx && x.exitAddr && !localExits.some((l) => l.exitAddr?.toLowerCase() === x.exitAddr.toLowerCase())) localExits.push({ exitAddr: x.exitAddr, postTx: x.withdrawalPostTx });
   const exitRows = [];
   for (const e of exits) {
     const b = keyToBatch.get(String(e.batchKey).toLowerCase());
@@ -87,7 +94,7 @@ async function main() {
     }
     exitRows.push({
       pool: e.version, rollupId: b?.rollupId, batchIndex: b?.index, batchStatus: status,
-      amountQor: qor(e.amountWei), feeQor: qor(e.feeWei), exitTx: e.tx, withdrawalPostTx: local?.postTx,
+      amountQor: qor(e.amountWei), feeQor: qor(e.feeWei), exitTx: e.tx, exitAddr: e.exitAddr, withdrawalPostTx: local?.postTx,
       gasUsed: Number(rc.gasUsed), gasCostQor: qor(rc.gasUsed * rc.effectiveGasPrice),
       secondsFromRequest: requestedAt ? paidAt - requestedAt : undefined,
       secondsAfterBatchPosted: submittedAt ? paidAt - submittedAt : undefined,
@@ -107,7 +114,7 @@ async function main() {
   const bad = fraud.find((e: any) => /flipped/.test(e.label)), chal = fraud.find((e: any) => /challenges/.test(e.label));
 
   // the drill account, if this machine runs the monitor
-  let drill: any;
+  let drill: any = previous.drill ? { ...previous.drill, note: "carried over from the last run on the machine that runs the drill monitor" } : undefined;
   const mon = `${process.env.HOME}/.wicketgate/drill/monitor.jsonl`;
   if (existsSync(mon)) {
     const rows = readFileSync(mon, "utf8").trim().split("\n").map((l) => JSON.parse(l));
