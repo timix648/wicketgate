@@ -174,6 +174,9 @@ Accounts are **eth-native**: one secp256k1 key works on both the EVM and the nat
 
 **Five minutes, no account:**
 
+Compiler settings, for anyone rebuilding the contracts: solc 0.8.24, optimizer on with 200 runs, EVM version `paris` ([contracts/foundry.toml](contracts/foundry.toml)).
+
+
 | Step | Command (from a fresh clone, after `pnpm install`) | Time | What you should see |
 | --- | --- | --- | --- |
 | 1 | `cd packages/scripts && npx tsx src/receipt.ts wicketgate-pay 3` | about 12 s | Six PASS lines, then a tampered receipt with `valid=false` |
@@ -182,6 +185,7 @@ Accounts are **eth-native**: one secp256k1 key works on both the EVM and the nat
 | 4 | `npx tsx src/probe-pqcverify.ts` | about 5 s | The testnet's ML-DSA-87 precompile accepting a real signature and rejecting a changed byte |
 | 5 | `cd ../watcher && npx tsx src/cli.ts --mode observe --rollup all --once --feed ./feed` | about 100 s | All rollups on QoreChain re-executed, every batch `match` |
 | 6 | `cd ../../contracts && git submodule update --init && forge test` | about 40 s | 38 tests and 4 invariants pass (needs [Foundry](https://getfoundry.sh)) |
+| 7 | `forge build && cd ../packages/scripts && npx tsx src/verify-bytecode.ts` | about 30 s | The deployed contracts' runtime code matches this source byte for byte (the explorer has no source verification); the PQC precompile addresses are in the code |
 
 **Evidence:**
 
@@ -269,6 +273,7 @@ All from `packages/scripts` unless noted. Each one prints the transaction hashes
 | `pnpm bad [rollup]` | Fraud demo: a second submitter posts a batch with a wrong state root (stop the honest operator first) |
 | `pnpm lp <QOR>` / `pnpm lp:withdraw` | Add or remove pool liquidity |
 | `pnpm state` | Reads the pool and the registry |
+| `npx tsx src/verify-bytecode.ts` | Proves the deployed contracts are this source (needs `forge build`) |
 | `pnpm probe:ibc [channel] [prefix] [uqor]` | Checks that a relayer is carrying IBC packets |
 | `pnpm drill:proof` / `pnpm drill:monitor` | The Q-Day Drill proof transaction, and the minute-by-minute monitor |
 | `npx tsx src/disclose.ts "report"` | Seals a security report to our ML-KEM-1024 key (see [SECURITY.md](SECURITY.md)) |
