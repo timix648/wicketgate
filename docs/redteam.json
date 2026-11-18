@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-18T09:21:02.877Z",
-  "evmBlock": 10307589,
+  "generatedAt": "2026-11-18T10:16:27.241Z",
+  "evmBlock": 10309921,
   "pool": "0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a",
   "registry": "0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad",
   "attacker": "0xbad0000000000000000000000000000000000bad",
@@ -12,6 +12,36 @@
   },
   "passed": 18,
   "total": 18,
+  "controlsOk": true,
+  "controls": [
+    {
+      "id": "C1",
+      "threat": "The real 3 QOR exit, by its real sender",
+      "who": "the real sender",
+      "at": "block 10213994",
+      "expect": "accepted",
+      "got": "accepted",
+      "asExpected": true
+    },
+    {
+      "id": "C2",
+      "threat": "The real attestation, by its watcher",
+      "who": "the real watcher",
+      "at": "block 10213574",
+      "expect": "accepted",
+      "got": "accepted",
+      "asExpected": true
+    },
+    {
+      "id": "C3",
+      "threat": "The real two-admin setLane, unchanged",
+      "who": "anyone",
+      "at": "block 10213433",
+      "expect": "accepted",
+      "got": "accepted",
+      "asExpected": true
+    }
+  ],
   "results": [
     {
       "id": "A1",

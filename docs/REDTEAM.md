@@ -1,6 +1,6 @@
 # Red team: 18 of 18 attacks refused
 
-Generated 2026-11-18T09:21:02.877Z at EVM block 10,307,589 by `npx tsx packages/scripts/src/redteam.ts` (no key needed, about 30 s).
+Generated 2026-11-18T10:16:27.241Z at EVM block 10,309,921 by `npx tsx packages/scripts/src/redteam.ts` (no key needed, about 30 s).
 
 Each attack is an `eth_call` against the live ExitPool v2.1 (`0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a`) and WatcherRegistry (`0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad`) on diana, from an address with no role (`0xbad0000000000000000000000000000000000bad`) or from a real watcher's address. Where timing matters, it runs against the chain's state at the exact block of a real exit, so the batch is confirmed and its challenge window is open, as it would be for a live attacker. The signatures, facts, proofs and salts are the real ones, read back from these transactions: the 3 QOR exit [`0xa4e4fd21cc…`], the vigil-1 exit [`0x4e0914e372…`], a watcher attestation [`0xbae9d8f17c…`] and a two-admin `setLane` [`0x279aed1dae…`].
 
@@ -24,6 +24,14 @@ Each attack is an `eth_call` against the live ExitPool v2.1 (`0xc5350ba167a5ac3c
 | A16 | Withdraw liquidity the attacker never deposited | attacker | now | ✅ `Panic(17)` |
 | A17 | Raise the fee to 10% by replaying both admins' real signatures on a changed lane | attacker | block 10213433 (signatures still within their deadline) | ✅ `BadSignature` |
 | A18 | Slash a watcher's stake directly in the registry | attacker | now | ✅ `NotPool` |
+
+**Controls.** The honest version of each kind of call, at the same blocks, is accepted, so every refusal above is the named check doing its job and not the harness failing:
+
+| # | Honest call | At | Result |
+| --- | --- | --- | --- |
+| C1 | The real 3 QOR exit, by its real sender | block 10213994 | ✅ accepted |
+| C2 | The real attestation, by its watcher | block 10213574 | ✅ accepted |
+| C3 | The real two-admin setLane, unchanged | block 10213433 | ✅ accepted |
 
 What the refusals mean:
 

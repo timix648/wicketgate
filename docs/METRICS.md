@@ -1,6 +1,6 @@
 # Wicketgate in numbers
 
-Generated 2026-11-18T09:24:11.020Z from public chain data at EVM block 10,307,699 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
+Generated 2026-11-18T10:17:07.023Z from public chain data at EVM block 10,309,927 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
 
 ![Time until the money arrives, instant exit against the normal path](images/time-to-funds.svg)
 
@@ -20,13 +20,13 @@ Generated 2026-11-18T09:24:11.020Z from public chain data at EVM block 10,307,69
 | | |
 | --- | --- |
 | QOR paid out instantly | **64 QOR** (largest single exit 50 QOR) |
-| Advances whose batch has finalised | 6, of which repaid: **6** |
+| Advances whose batch has finalised | 7, of which repaid: **7** |
 | Defaults | **0** |
 | Losses for liquidity providers | **0 QOR** |
 | Fees charged (0.3%) | 0.192 QOR |
-| Median time from advance to the pool being repaid | 59.08 min |
+| Median time from advance to the pool being repaid | 59.1 min |
 | Median gas cost of an instant exit | 0.0318554 QOR |
-| Liquidity in the live pool | 400.0123 QOR |
+| Liquidity in the live pool | 400.0105 QOR |
 
 ## Post-quantum security
 
@@ -59,7 +59,7 @@ Generated 2026-11-18T09:24:11.020Z from public chain data at EVM block 10,307,69
 
 | | |
 | --- | --- |
-| Watched | 2026-11-16T20:15:27.435Z to 2026-11-18T09:24:08.771Z (37.14 h, 2,203 snapshots) |
+| Watched | 2026-11-16T20:15:27.435Z to 2026-11-18T10:16:34.028Z (38.02 h, 2,255 snapshots) |
 | Transactions from the drill account that were not ours | **0** |
 | Drill account's stake now | 50 QOR |
 
@@ -73,4 +73,4 @@ Generated 2026-11-18T09:24:11.020Z from public chain data at EVM block 10,307,69
 | wicketgate-pay #7 | v1 | 5 | 75 s | 60 min | yes | `0x9f40176fa3…` |
 | wicketgate-pay #9 | v1 | 2 | 41 s | 60 min | yes | `0x297b3e6de1…` |
 | wicketgate-pay #10 | v2.1 | 3 | 10 min | 60 min | yes | `0xa4e4fd21cc…` |
-| vigil-1 #28 | v2.1 | 2 | 77 s | submitted | not due yet | `0x4e0914e372…` |
+| vigil-1 #28 | v2.1 | 2 | 77 s | 60 min | yes | `0x4e0914e372…` |
