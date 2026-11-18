@@ -6,7 +6,8 @@
 // enough quantum computer. This script reads NO key file: only the public REST endpoint.
 // Prints the recovered private key (it is a throwaway testnet key made weak on purpose) and writes
 // it to a file for the next step. Usage: npx tsx src/qday-crack.ts <qor1… address> [out-file]
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { politeFetch } from "@wicketgate/core/polite";
 
@@ -66,6 +67,7 @@ async function main() {
   const priv = `0x${found.toString(16).padStart(64, "0")}`;
   console.log(`\nPRIVATE KEY RECOVERED in ${((t2 - t0) / 1000).toFixed(1)} s (table ${((t1 - t0) / 1000).toFixed(1)} s, search ${((t2 - t1) / 1000).toFixed(1)} s)`);
   console.log(`  ${priv}  (${BITS}-bit; checks: k·G equals the on-chain public key)`);
+  mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify({ address, publicKey: `0x${pubHex}`, privateKey: priv, seconds: Number(((t2 - t0) / 1000).toFixed(1)), at: new Date().toISOString() }, null, 2) + "\n", { mode: 0o600 });
   console.log(`written to ${out}`);
 }
