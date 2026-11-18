@@ -60,7 +60,7 @@ async function main() {
       const before = await publicClient.getBalance({ address: A.evm as Address });
       const hash = await walletFor(A).writeContract({
         address: pool, abi, functionName: "instantExit",
-        args: exitArgs, gas: 900_000n,
+        args: exitArgs, gas: 600_000n,
       } as any);
       const rc = await publicClient.waitForTransactionReceipt({ hash });
       const got = (await publicClient.getBalance({ address: A.evm as Address })) - before;

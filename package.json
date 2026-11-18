@@ -17,7 +17,8 @@
     "qday:crack": "cd packages/scripts && tsx src/qday-crack.ts",
     "qday:attack": "cd packages/scripts && tsx src/qday-attack.ts",
     "receipts": "cd packages/scripts && tsx src/receipts-all.ts",
-    "receipt:verify": "cd packages/scripts && tsx src/verify-receipt.ts"
+    "receipt:verify": "cd packages/scripts && tsx src/verify-receipt.ts",
+    "stress": "cd packages/scripts && tsx src/stress.ts"
   },
   "devDependencies": {
     "typescript": "5.6.3",

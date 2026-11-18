@@ -15,6 +15,7 @@ A wicket gate is the small door cut into a large castle gate: people pass throug
 | | |
 | --- | --- |
 | **48× faster on testnet, about 8,000× at the 7-day default** | 7 instant exits, median **75 s** from the batch reaching the chain to the money arriving, against **3,600 s** for the same withdrawals through the normal path |
+| **20 exits, 100 QOR, in 57 seconds, from one batch; the 21st refused by the stake cap** | Stress run: the pool paid until the 100 QOR its two confirming watchers had locked behind the batch was used up, then refused the next exit with `CoverExceeded` ([docs/STRESS.md](docs/STRESS.md)) |
 | **64 QOR paid out instantly, 0 QOR lost** | Every advance whose batch has finalised was repaid by the chain (7 of 7, one of them from another team's rollup); **0 defaults**; liquidity providers lost nothing and earned the fees |
 | **31 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
 | **45 of 45 batches re-executed, across 4 rollups** | 3 of those rollups are run by other teams; our watchers found them without being told |
@@ -218,6 +219,7 @@ Compiler settings, for anyone rebuilding the contracts: solc 0.8.24, optimizer o
 | 8 | `npx tsx src/redteam.ts` (in `packages/scripts`) | about 10 s | 18 attacks against the live pool, each `REFUSED` by its named check, and 3 honest controls `ACCEPTED` at the same blocks |
 | 9 | `npx tsx src/metrics.ts` | about 40 s | Every headline number on this page, recomputed from chain data |
 | 10 | `npx tsx src/qday-crack.ts qor1wx8dg096gw9e6uy4u4nc0vc44dpnjq7vlc88v0` | about 50 s | W4's private key recovered from its on-chain public key (the 40-bit key is the only simulated part); the evidence of what it could and could not do is in [docs/QDAY.md](docs/QDAY.md) |
+| 11 | `npx tsx src/receipts-all.ts` | about 2 min | A settlement receipt for every batch of our rollup, each re-read from the chain, all valid |
 
 **Evidence:**
 
