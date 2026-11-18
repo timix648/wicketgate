@@ -15,7 +15,9 @@
     "metrics": "cd packages/scripts && tsx src/metrics.ts",
     "redteam": "cd packages/scripts && tsx src/redteam.ts",
     "qday:crack": "cd packages/scripts && tsx src/qday-crack.ts",
-    "qday:attack": "cd packages/scripts && tsx src/qday-attack.ts"
+    "qday:attack": "cd packages/scripts && tsx src/qday-attack.ts",
+    "receipts": "cd packages/scripts && tsx src/receipts-all.ts",
+    "receipt:verify": "cd packages/scripts && tsx src/verify-receipt.ts"
   },
   "devDependencies": {
     "typescript": "5.6.3",

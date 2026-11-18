@@ -5,6 +5,7 @@ set -u
 REPO="git@github.com:timix648/wicketgate-feed.git"
 SRC="${WICKETGATE_FEED_SRC:-$HOME/.wicketgate/feed-w1}"
 DIR="${WICKETGATE_FEED_REPO:-$HOME/.wicketgate/feed-repo}"
+SCRIPTS="$(cd "$(dirname "$0")/../scripts" && pwd)"   # absolute: the loop below changes directory
 while true; do
   if [ ! -d "$DIR/.git" ]; then
     if timeout 60 git ls-remote "$REPO" >/dev/null 2>&1; then
@@ -16,6 +17,12 @@ while true; do
   fi
   if [ -d "$SRC" ] && ls "$SRC"/*.json >/dev/null 2>&1; then
     cp "$SRC"/*.json "$DIR"/
+    # every 30 minutes: a verified settlement receipt for every batch of our rollup
+    n=$(( ${n:-0} + 1 ))
+    if [ $(( n % 6 )) -eq 1 ]; then
+      ( cd "$SCRIPTS" && WICKETGATE_RECEIPTS_DIR="$DIR/receipts" timeout 900 npx tsx src/receipts-all.ts wicketgate-pay >/dev/null 2>&1 ) \
+        && echo "$(date -u +%FT%TZ) receipts refreshed" || echo "$(date -u +%FT%TZ) receipts refresh failed"
+    fi
     [ -f "$DIR/README.md" ] || printf '# Wicketgate watcher feed\n\nVerdicts and exit proofs published by a Wicketgate watcher every 5 minutes. See https://github.com/timix648/wicketgate.\n' > "$DIR/README.md"
     cd "$DIR"
     git add -A

@@ -37,7 +37,9 @@
     "metrics": "tsx src/metrics.ts",
     "redteam": "tsx src/redteam.ts",
     "qday:crack": "tsx src/qday-crack.ts",
-    "qday:attack": "tsx src/qday-attack.ts"
+    "qday:attack": "tsx src/qday-attack.ts",
+    "receipts": "tsx src/receipts-all.ts",
+    "receipt:verify": "tsx src/verify-receipt.ts"
   },
   "dependencies": {
     "@cosmjs/stargate": "0.39.0",

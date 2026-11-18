@@ -122,7 +122,7 @@ All six Protocol Builders requirements are shown live on the testnet:
 | --- | --- |
 | ML-DSA-signed batches | Every `wicketgate-pay` batch carries the creator's ML-DSA-87 anchor (4,627-byte signature): `GET https://api-testnet.qore.host/qorechain/multilayer/v1/anchor/wicketgate-pay` |
 | Withdrawal | Instant exits (1, 1, 2, 3, 5 and 50 QOR) and a normal withdrawal through `MsgExecuteWithdrawal`, all in [PROOF.md](PROOF.md) |
-| Verified settlement receipt | [receipts/wicketgate-pay-batch-3.json](receipts/wicketgate-pay-batch-3.json); re-run with `npx tsx src/receipt.ts wicketgate-pay 3` |
+| Verified settlement receipt | **One for every batch**: [receipts/wicketgate-pay/](receipts/wicketgate-pay/index.json), 11 of 11 valid with all 6 checks each, refreshed every 30 minutes in the [public feed](https://github.com/timix648/wicketgate-feed/tree/main/receipts/wicketgate-pay). Rebuild them all with `npx tsx src/receipts-all.ts`, or check any receipt file against the chain with `npx tsx src/verify-receipt.ts <file>` |
 | Watchtower | The watcher: it caught a wrong batch and its fraud proof landed **5 seconds** later; the submitter lost its **1,000 QOR** bond |
 | ML-KEM data protection | A sealed payment note on chain that only its recipient can open ([PROOF.md](PROOF.md)) |
 | Threat model | [THREAT_MODEL.md](THREAT_MODEL.md) |
@@ -144,7 +144,7 @@ Every row is a measured result on the testnet. Hashes and how to check each one 
 | Largest single instant exit | **50 QOR** | |
 | Instant exit from a rollup run by another team | **2 QOR from `vigil-1`**, paid before its batch finalised | Nobody else offers exits on rollups they do not run |
 | Batches re-executed on a fresh clone | **42 of 42 match**, across 3 rollups, one of them run by another team | |
-| Settlement receipt checks | **6 of 6 pass**; a tampered copy fails | |
+| Settlement receipts | **11 of 11 batches** have a receipt passing all 6 checks; one changed nibble in a copy fails 5 of them | |
 | Contract tests | **38 tests and 4 invariants**, line coverage 91.7% (ExitPool 98%) | |
 | Classical signature checks in our contracts | **0** (QoreScan inventory) | Every authorisation goes through ML-DSA-87 |
 
