@@ -294,6 +294,7 @@ All from `packages/scripts` unless noted. Each one prints the transaction hashes
 | `pnpm deploy [rollup] [liquidityQOR]` | Deploys WatcherRegistry and ExitPool (keeps Directory and MemoBoard), wires them with both admins' ML-DSA-87 signatures, opens a lane, seeds liquidity |
 | `pnpm lane <rollup> [windowSecs] [graceSecs] [feeBps] [quorum] [lockQOR]` | Opens or changes a pool lane (two ML-DSA-87 admin signatures) |
 | `pnpm join W1=50 W2=100` | Watchers join the registry with stake |
+| `npx tsx src/onboard-watcher.ts <NAME> [stake]` | Anyone becomes a watcher with their own key: registers its ML-DSA-87 key and joins with stake ([docs/WATCHERS.md](docs/WATCHERS.md)) |
 | `pnpm stake W1=40` | Watchers add stake |
 | `pnpm leave W1 [--finish]` | Ask to leave; `--finish` collects the stake after the delay |
 | `pnpm launch [rollup]` | Creates our rollup (10,000 QOR stake, 1% burned), bonds the submitter, opens its lane |
@@ -365,6 +366,7 @@ Kits used and what for:
 | `packages/scripts/` | Probes, deployment and demo scripts |
 | `packages/scripts/src/metrics.ts`, `redteam.ts` | The numbers recomputed from chain data, and 18 attacks replayed against the live contracts |
 | `contracts/demo/ClassicalTwin.sol`, `packages/scripts/src/qday-*.ts` | The Q-Day simulation: a deliberately vulnerable `ecrecover` twin of the pool, the key cracker, the victim's routine window and the attack |
+| `docs/WATCHERS.md` | How anyone runs a watcher, from no-key observing to signing with stake |
 | `docs/METRICS.md`, `docs/REDTEAM.md`, `docs/QDAY.md` | Their latest output (raw data in `docs/metrics.json`, `docs/redteam.json`, `docs/qday.json`) |
 | `deployments/` | Live and earlier addresses, and the demo timeline |
 | `receipts/`, `cbom/`, `cards/` | A verified receipt, the QoreScan inventory, a signed recipient card |

@@ -40,7 +40,8 @@
     "qday:attack": "tsx src/qday-attack.ts",
     "receipts": "tsx src/receipts-all.ts",
     "receipt:verify": "tsx src/verify-receipt.ts",
-    "stress": "tsx src/stress.ts"
+    "stress": "tsx src/stress.ts",
+    "watcher:onboard": "tsx src/onboard-watcher.ts"
   },
   "dependencies": {
     "@cosmjs/stargate": "0.39.0",

@@ -37,10 +37,15 @@ function readKeyFile(): Record<string, string> {
   return out;
 }
 
-const cache = new Map<Role, UnifiedAccount>();
+const cache = new Map<string, UnifiedAccount>();
 
-/** The unified (eth-native) account for a role: one key on both the EVM and native lanes. */
-export async function account(role: Role): Promise<UnifiedAccount> {
+/**
+ * The unified (eth-native) account for a role: one key on both the EVM and native lanes. Any
+ * name works, not only the team's roles: an outside watcher puts WG_<NAME>_MNEMONIC in its own
+ * key file and runs with `--as <NAME>` (see docs/WATCHERS.md).
+ */
+export async function account(role: Role | string): Promise<UnifiedAccount> {
+  if (!/^[A-Z][A-Z0-9_]{0,31}$/.test(role)) throw new Error(`account name "${role}" must be upper case letters, digits or _`);
   const hit = cache.get(role);
   if (hit) return hit;
   const mnemonic = readKeyFile()[`WG_${role}_MNEMONIC`];
@@ -54,7 +59,7 @@ export async function account(role: Role): Promise<UnifiedAccount> {
  * A role's qledger-v1 account (ML-DSA-44), derived from the role's recovery phrase with a
  * domain tag, so no extra secret is stored. Same phrase, same ledger account, on any rollup.
  */
-export async function ledgerKey(role: Role) {
+export async function ledgerKey(role: Role | string) {
   const mnemonic = readKeyFile()[`WG_${role}_MNEMONIC`];
   if (!mnemonic) throw new Error(`WG_${role}_MNEMONIC missing from ${KEYS_FILE}`);
   const seed = createHash("sha256").update(`wicketgate:qledger:v1|${mnemonic}`).digest();

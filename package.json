@@ -18,7 +18,8 @@
     "qday:attack": "cd packages/scripts && tsx src/qday-attack.ts",
     "receipts": "cd packages/scripts && tsx src/receipts-all.ts",
     "receipt:verify": "cd packages/scripts && tsx src/verify-receipt.ts",
-    "stress": "cd packages/scripts && tsx src/stress.ts"
+    "stress": "cd packages/scripts && tsx src/stress.ts",
+    "watcher:onboard": "cd packages/scripts && tsx src/onboard-watcher.ts"
   },
   "devDependencies": {
     "typescript": "5.6.3",

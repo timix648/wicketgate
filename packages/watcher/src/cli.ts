@@ -20,7 +20,7 @@ async function main() {
   try {
     pool ??= JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")).pool;
   } catch {}
-  if (mode !== "observe") me = await account((arg("as", "W1") as Role));
+  if (mode !== "observe") me = await account(arg("as", "W1") as string);
   const w = new Watcher({ rollups, mode, me, pool, feedDir });
   console.log(`wicketgate watcher: mode=${mode} rollups=${rollups.join(",")} feed=${feedDir}${me ? ` as ${me.evm}` : ""}`);
   for (;;) {
