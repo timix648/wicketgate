@@ -6,6 +6,7 @@
 import { readFileSync } from "node:fs";
 import {
   RestClient,
+  isRestNotFound,
   QledgerLedger,
   EMPTY_INBOX_ACC,
   executeQledger,
@@ -31,6 +32,7 @@ import { NET, DEPLOYMENTS_FILE } from "@wicketgate/core/env";
 import { sendNative, explorerTx, restGet } from "@wicketgate/core/chain";
 import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 import { recipientAddress } from "@wicketgate/core/exit-tree";
+import { politeFetch } from "@wicketgate/core/polite";
 
 export interface OperatorConfig {
   rollupId: string;
@@ -46,7 +48,9 @@ const POOL = artifact("ExitPool").abi;
 const hex = (v: Uint8Array | string) => `0x${(typeof v === "string" ? v : bytesToHex(v)).replace(/^0x/, "").toLowerCase()}` as Hex;
 
 export class Operator {
-  private rest = new RestClient(NET.rest);
+  private rest = new RestClient(NET.rest, { fetch: politeFetch as any });
+  private entryCache = new Map<string, any[]>();
+  private checkpoint?: { upto: number; ledger: QledgerLedger; acc: Uint8Array | string; finalized: { index: number; withdrawals: QledgerWithdrawal[] }[] };
   private log: (m: string) => void;
   private pool: Address;
   private settled = new Set<string>();
@@ -73,22 +77,32 @@ export class Operator {
   private async rebuild() {
     const { rollupId } = this.cfg;
     const env = { chainId: NET.chainId, rollupId };
-    const ledger = new QledgerLedger();
-    let acc: Uint8Array | string = EMPTY_INBOX_ACC;
-    const finalized: { index: number; withdrawals: QledgerWithdrawal[] }[] = [];
-    for (let i = 0; ; i++) {
+    const cp = this.checkpoint;
+    const ledger = cp ? cp.ledger.clone() : new QledgerLedger();
+    let acc: Uint8Array | string = cp ? cp.acc : EMPTY_INBOX_ACC;
+    const finalized: { index: number; withdrawals: QledgerWithdrawal[] }[] = cp ? [...cp.finalized] : [];
+    let prefixFinal = true;
+    for (let i = cp ? cp.upto : 0; ; i++) {
       let b;
       try {
         b = await this.rest.getBatch(rollupId, i);
-      } catch {
-        break;
+      } catch (e) {
+        if (isRestNotFound(e)) break;
+        throw e;
       }
-      if (b.status === "rejected") continue;
-      const entries = await fetchQledgerEntries(this.rest, { chainId: NET.chainId, rollupId, from: b.inboxStart, to: b.inboxEnd, accFrom: acc });
+      if (b.status === "rejected") { prefixFinal = false; continue; }
+      const key = `${b.inboxStart}:${b.inboxEnd}:${typeof acc === "string" ? acc : bytesToHex(acc)}`;
+      const entries = this.entryCache.get(key) ?? await fetchQledgerEntries(this.rest, { chainId: NET.chainId, rollupId, from: b.inboxStart, to: b.inboxEnd, accFrom: acc });
+      this.entryCache.set(key, entries);
       const result = executeQledger(env, ledger, entries);
       if (hex(result.stateRoot) !== hex(b.stateRoot)) throw new Error(`batch ${i} does not match re-execution; refusing to build on it`);
       acc = qledgerAccumulate({ chainId: NET.chainId, rollupId, from: b.inboxStart, accFrom: acc, entries });
       if (b.status === "finalized") finalized.push({ index: i, withdrawals: result.withdrawals });
+      if (prefixFinal && b.status === "finalized") {
+        this.checkpoint = { upto: i + 1, ledger: ledger.clone(), acc, finalized: [...finalized] };
+      } else {
+        prefixFinal = false;
+      }
     }
     return { ledger, finalized };
   }

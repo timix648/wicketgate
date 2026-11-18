@@ -8,6 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   RestClient,
+  isRestNotFound,
   QledgerLedger,
   EMPTY_INBOX_ACC,
   executeQledger,
@@ -29,6 +30,7 @@ import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, win
 import { buildExitTree, ZERO_ROOT } from "@wicketgate/core/exit-tree";
 import { TOOLS as MCP_TOOLS, toolContext } from "@qorechain/mcp";
 import { restGet } from "@wicketgate/core/chain";
+import { politeFetch } from "@wicketgate/core/polite";
 
 const PQ_STATUS = MCP_TOOLS.find((t) => t.name === "get_pq_status")!;
 const MCP_CTX = toolContext({ defaultNetwork: "testnet" });
@@ -74,14 +76,21 @@ const POOL = artifact("ExitPool").abi;
 const hex = (v: Uint8Array | string) => `0x${(typeof v === "string" ? v : bytesToHex(v)).replace(/^0x/, "").toLowerCase()}` as Hex;
 const factsHash = (f: { stateRoot: Hex; withdrawalsRoot: Hex; exitRoot: Hex }) =>
   keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }, { type: "bytes32" }], [f.stateRoot, f.withdrawalsRoot, f.exitRoot]));
+/** ExitPool.batchKey, computed locally. */
+const batchKeyOf = (rollupKey: Hex, i: number) =>
+  keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint64" }], [rollupKey, BigInt(i)]));
 /** The chain stores an empty withdrawals root; the contract needs 32 bytes. */
 const root32 = (r: string) => (r && r !== "0x" ? hex(r) : ZERO_ROOT);
 
 export class Watcher {
-  private rest = new RestClient(NET.rest);
+  private rest = new RestClient(NET.rest, { fetch: politeFetch as any });
   private entryCache = new Map<string, QledgerEntry[]>();
   private sent = new Set<string>();
-  private provenance = new Map<string, Provenance>(); // by tx hash // attestations/challenges sent this process, to avoid repeats while txs land
+  private provenance = new Map<string, Provenance>(); // by tx hash
+  /** Per rollup: the ledger after its longest prefix of finalised batches, and their verdicts. */
+  private checkpoints = new Map<string, { upto: number; ledger: QledgerLedger; acc: Uint8Array | string; verdicts: BatchVerdict[] }>();
+  /** Pool state of batches that can no longer change (released, or final and never confirmed). */
+  private poolCache = new Map<string, any>(); // attestations/challenges sent this process, to avoid repeats while txs land
   private log: (m: string) => void;
 
   constructor(private cfg: WatcherConfig) {
@@ -133,23 +142,29 @@ export class Watcher {
     if ((rollup as any).executionVm && (rollup as any).executionVm !== "qledger-v1") {
       throw new Error(`execution VM ${(rollup as any).executionVm} is not qledger-v1; nothing to re-execute`);
     }
-    let ledger = new QledgerLedger();
-    let acc: Uint8Array | string = EMPTY_INBOX_ACC;
-    const verdicts: BatchVerdict[] = [];
+    const cp = this.checkpoints.get(rollupId);
+    let ledger = cp ? cp.ledger.clone() : new QledgerLedger();
+    let acc: Uint8Array | string = cp ? cp.acc : EMPTY_INBOX_ACC;
+    const verdicts: BatchVerdict[] = cp ? cp.verdicts.map((v) => ({ ...v })) : [];
     const toAttest: { index: number; facts: { stateRoot: Hex; withdrawalsRoot: Hex; exitRoot: Hex } }[] = [];
+    // extend the checkpoint while batches are final and match; anything after is re-checked every round
+    let prefixFinal = true;
 
-    for (let i = 0; ; i++) {
+    for (let i = cp ? cp.upto : 0; ; i++) {
       let b;
       try {
         b = await this.rest.getBatch(rollupId, i);
-      } catch {
-        break;
+      } catch (e) {
+        if (isRestNotFound(e)) break; // the end of the batch list
+        throw e; // anything else fails the round loudly; never check only part of a rollup
       }
       const base = {
         index: i, status: b.status, inboxStart: b.inboxStart, inboxEnd: b.inboxEnd, submittedTime: b.submittedTime,
         stateRoot: hex(b.stateRoot), withdrawalsRoot: b.withdrawalsRoot ? hex(b.withdrawalsRoot) : "0x",
       };
       if (b.status === "rejected") {
+        // not cached: the chain may reuse a rejected batch's index for a resubmission
+        prefixFinal = false;
         verdicts.push({ ...base, verdict: "rejected-on-chain", reason: "rejected by a fraud proof; its inbox range was rolled back" });
         continue;
       }
@@ -179,8 +194,14 @@ export class Watcher {
         if (b.status === "submitted") {
           toAttest.push({ index: i, facts: { stateRoot: hex(b.stateRoot), withdrawalsRoot: root32(b.withdrawalsRoot), exitRoot: tree.root } });
         }
+        if (prefixFinal && b.status === "finalized") {
+          this.checkpoints.set(rollupId, { upto: i + 1, ledger: ledger.clone(), acc, verdicts: verdicts.map((v) => ({ ...v })) });
+        } else {
+          prefixFinal = false;
+        }
       } else {
         ledger = parent; // never build on a wrong batch
+        prefixFinal = false;
         const reason = !stateOk ? "state root differs from re-execution" : "withdrawals root differs from re-execution";
         const v: BatchVerdict = { ...base, verdict: "mismatch", reason, challengeTx: null };
         if (b.status === "submitted" && this.cfg.mode === "challenge") {
@@ -204,7 +225,7 @@ export class Watcher {
       (v as any).submission = all[all.length - 1] ?? null;
       if (all.length > 1) (v as any).replacedSubmissions = all.slice(0, -1);
     }
-    const pool = this.cfg.pool ? await this.poolState(rollupKey, verdicts.length) : null;
+    const pool = this.cfg.pool ? await this.poolState(rollupKey, verdicts.length, new Map(verdicts.map((v) => [v.index, v.status]))) : null;
     if (pool) for (const v of verdicts) (v as any).pool = pool.batches[v.index] ?? null;
     const feed = {
       version: 1,
@@ -247,14 +268,16 @@ export class Watcher {
   }
 
   /** The pool's view of each batch, so readers of the feed need no contract calls. */
-  private async poolState(rollupKey: Hex, n: number) {
+  private async poolState(rollupKey: Hex, n: number, verdictsStatus: Map<number, string> = new Map()) {
     const pool = this.cfg.pool!;
     const l = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "lanes", args: [rollupKey] })) as any[];
     const lane = { windowSecs: Number(l[0]), graceSecs: Number(l[1]), feeBps: Number(l[2]), quorum: Number(l[3]), lockPerWatcherQor: Number(l[4]) / 1e18, enabled: Boolean(l[5]) };
     const batches: Record<number, unknown> = {};
     if (!lane.enabled) return { lane, batches };
     for (let i = 0; i < n; i++) {
-      const bk = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(i)] })) as Hex;
+      const bk = batchKeyOf(rollupKey, i);
+      const hit = this.poolCache.get(bk);
+      if (hit) { batches[i] = hit; continue; }
       const b = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
       batches[i] = {
         batchKey: bk,
@@ -267,6 +290,8 @@ export class Watcher {
         advancedQor: Number(b[6]) / 1e18,
         watchers: b[7],
       };
+      const final = (verdictsStatus.get(i) ?? "") === "finalized";
+      if (b[3] || (final && b[1] === 0n)) this.poolCache.set(bk, batches[i]);
     }
     return { lane, batches };
   }
@@ -285,7 +310,8 @@ export class Watcher {
     const now = BigInt(Math.floor(Date.now() / 1000));
     const toRelease: Hex[] = [];
     for (let i = 0; i < batchCount; i++) {
-      const bk = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(i)] })) as Hex;
+      const bk = batchKeyOf(rollupKey, i);
+      if (this.poolCache.has(bk) || this.sent.has(`r:${bk}`)) continue; // released, or nothing to release
       const b = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
       const confirmedAt = b[1] as bigint, released = b[3] as boolean, open = Number(b[4]);
       const mine = (b[7] as string[]).some((w) => w.toLowerCase() === me.evm.toLowerCase());
@@ -295,7 +321,7 @@ export class Watcher {
     }
     const pending: typeof todo = [];
     for (const t of todo) {
-      const bk = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(t.index)] })) as Hex;
+      const bk = batchKeyOf(rollupKey, t.index);
       const voted = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "voteOf", args: [bk, me.evm] })) as Hex;
       const v = verdicts.find((x) => x.index === t.index)!;
       if (t.facts.exitRoot === ZERO_ROOT && voted === ZERO_ROOT) {

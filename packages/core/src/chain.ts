@@ -10,11 +10,12 @@ import {
 } from "@qorechain/sdk";
 type EncodeObject = { typeUrl: string; value: unknown };
 import { NET } from "./env.js";
+import { politeFetch } from "./polite.js";
 
 const UA = { "User-Agent": "wicketgate-scripts/0.1" };
 
 export async function restGet<T = any>(path: string): Promise<{ status: number; body: T }> {
-  const r = await fetch(NET.rest + path, { headers: UA });
+  const r = await politeFetch(NET.rest + path, { headers: UA });
   const body = (await r.json().catch(() => ({}))) as T;
   return { status: r.status, body };
 }
