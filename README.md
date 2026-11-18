@@ -52,7 +52,7 @@ cd ../watcher && npx tsx src/cli.ts --mode observe --rollup all --once --feed ./
 
 ![The watcher on a fresh clone re-executes all three qledger-v1 rollups on the testnet, 42 batches, all matching](docs/images/watcher-observe.png)
 
-The watcher rebuilt each rollup from data on the main chain alone and found that every batch matches its re-execution, including `vigil-1`, a rollup run by another team. The result is written to `./feed/<rollup>.json`. The same feed, updated every 5 minutes by our own watcher, is public at
+The watcher rebuilt each rollup from data on the main chain alone and found that every batch matches its re-execution, including `vigil-1`, a rollup run by another team. Wicketgate is not tied to our own rollup: on 18 November it paid an **instant exit from `vigil-1`**, against a batch Vigil's operator submitted and our watchers verified. The result is written to `./feed/<rollup>.json`. The same feed, updated every 5 minutes by our own watcher, is public at
 `https://raw.githubusercontent.com/timix648/wicketgate-feed/main/wicketgate-pay.json`.
 
 With Docker instead of Node:
@@ -113,6 +113,7 @@ Every row is a measured result on the testnet. Hashes and how to check each one 
 | Fraud proof after a wrong batch was submitted | **5 s** (heights 10,195,562 to 10,195,566) | The challenge window is 3,600 s |
 | Bad submitter's bond | **1,000 QOR slashed**: 500 burned, 500 paid to our watcher | |
 | Largest single instant exit | **50 QOR** | |
+| Instant exit from a rollup run by another team | **2 QOR from `vigil-1`**, paid before its batch finalised | Nobody else offers exits on rollups they do not run |
 | Batches re-executed on a fresh clone | **42 of 42 match**, across 3 rollups, one of them run by another team | |
 | Settlement receipt checks | **6 of 6 pass**; a tampered copy fails | |
 | Contract tests | **38 tests and 4 invariants**, line coverage 91.7% (ExitPool 98%) | |

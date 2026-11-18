@@ -17,4 +17,5 @@ start wicketgate-w1     "$ROOT/packages/watcher"  "npx tsx src/cli.ts --mode cha
 start wicketgate-w2     "$ROOT/packages/watcher"  "npx tsx src/cli.ts --mode challenge --as W2 --rollup $ROLLUPS --interval 10 --feed $HOME/.wicketgate/feed-w2" w2
 start wicketgate-op-pay "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup wicketgate-pay --interval 10" op-pay
 start wicketgate-op-e2e "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup rdk-v328-e2e-mwd5v89d --interval 10" op-e2e
+start wicketgate-op-vigil "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-1 --interval 30" op-vigil   # not bonded there: only pays out and settles withdrawals behind our advances
 start wicketgate-feed   "$ROOT/packages/watcher"  "./publish-feed.sh" feed
