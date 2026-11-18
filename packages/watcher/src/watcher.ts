@@ -361,8 +361,10 @@ export class Watcher {
         })) as Hex;
         const sig = pqSign(me, msg);
         // Fixed gas: an estimate made before another watcher's vote lands misses the costlier
-        // confirm-and-lock path that this vote may then trigger.
-        const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "attest", args: [rollupKey, BigInt(t.index), t.facts, sig], gas: 1_200_000n } as any);
+        // confirming path that this vote may then trigger. The chain bills at least half the
+        // limit, so the limit is kept close to need: on pool v2.1 a vote uses about 340,000 gas
+        // and a confirming vote about 426,000 (measured 18 Nov); 560,000 leaves 31% headroom.
+        const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "attest", args: [rollupKey, BigInt(t.index), t.facts, sig], gas: 560_000n } as any);
         const rc = await publicClient.waitForTransactionReceipt({ hash });
         const v = verdicts.find((x) => x.index === t.index)!;
         v.attestationTx = rc.status === "success" ? hash : `reverted:${hash}`;

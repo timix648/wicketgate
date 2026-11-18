@@ -402,6 +402,8 @@ Notes for the QoreChain team, from two weeks of building on v3.2.8:
 - **The RDK transaction client** expects a cosmjs signer, so eth-native accounts (one key on both lanes) need the SDK's `EthNativeSigner` and the message builders instead.
 - **QoreSeal's `buildRegisterKemKeyMessage`** returns pre-encoded bytes, which the eth-native signer cannot embed; an object form would make it work everywhere.
 - **The MCP server is useful inside programs too**, not only for assistants: we call `get_pq_status` directly from the watcher.
+- **EVM gas is billed at no less than half the gas limit.** Our attestations used 340,000 to 426,000 gas but were billed 600,000 because we sent a 1,200,000 limit; a tight limit cut the cost of a vote by about a third. Worth a line in the EVM docs.
+- **A read-only precompile for RDK batch status** (status, state root, finalisation height) would let EVM contracts like ours react to a rejected batch at once, instead of waiting for an unpaid exit to fall due.
 
 ---
 
