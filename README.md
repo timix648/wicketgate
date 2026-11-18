@@ -19,9 +19,10 @@ A wicket gate is the small door cut into a large castle gate: people pass throug
 | **31 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
 | **45 of 45 batches re-executed, across 4 rollups** | 3 of those rollups are run by other teams; our watchers found them without being told |
 | **1 of 1 wrong batches caught, in 5 seconds** | The fraud proof landed 4 blocks after the bad batch; the submitter's 1,000 QOR bond was slashed |
+| **18 of 18 attacks refused, on the live contracts** | Forged and replayed ML-DSA-87 signatures, invented and redirected withdrawals, double exits, early slashing, stolen liquidity: each replayed against the pool's real state at the block of a real exit, each refused by the check meant for it ([docs/REDTEAM.md](docs/REDTEAM.md)) |
 | **37 hours under the Q-Day Drill, 0 transactions we did not send** | The drill account (W3) was handed to the organisers' attack drill; a monitor checks it every minute, and its 50 QOR stake is untouched |
 
-The full breakdown, every exit and its transaction is in [docs/METRICS.md](docs/METRICS.md). Re-run it yourself in under a minute, no key needed: `cd packages/scripts && npx tsx src/metrics.ts`.
+The full breakdown, every exit and its transaction is in [docs/METRICS.md](docs/METRICS.md). Re-run both yourself, no key needed: `cd packages/scripts && npx tsx src/metrics.ts && npx tsx src/redteam.ts`.
 
 ---
 
@@ -201,6 +202,8 @@ Compiler settings, for anyone rebuilding the contracts: solc 0.8.24, optimizer o
 | 5 | `cd ../watcher && npx tsx src/cli.ts --mode observe --rollup all --once --feed ./feed` | about 100 s | All rollups on QoreChain re-executed, every batch `match` |
 | 6 | `cd ../../contracts && git submodule update --init && forge test` | about 40 s | 38 tests and 4 invariants pass (needs [Foundry](https://getfoundry.sh)) |
 | 7 | `forge build && cd ../packages/scripts && npx tsx src/verify-bytecode.ts` | about 30 s | The deployed contracts' runtime code matches this source byte for byte (the explorer has no source verification); the PQC precompile addresses are in the code |
+| 8 | `npx tsx src/redteam.ts` (in `packages/scripts`) | about 10 s | 18 attacks against the live pool, each `REFUSED` by its named check, and 3 honest controls `ACCEPTED` at the same blocks |
+| 9 | `npx tsx src/metrics.ts` | about 40 s | Every headline number on this page, recomputed from chain data |
 
 **Evidence:**
 
@@ -344,6 +347,8 @@ Kits used and what for:
 | `packages/watcher/` | The watcher, its CLI and the feed publisher |
 | `packages/operator/` | The batcher, relay worker and withdrawal keeper |
 | `packages/scripts/` | Probes, deployment and demo scripts |
+| `packages/scripts/src/metrics.ts`, `redteam.ts` | The numbers recomputed from chain data, and 18 attacks replayed against the live contracts |
+| `docs/METRICS.md`, `docs/REDTEAM.md` | Their latest output (raw data in `docs/metrics.json`, `docs/redteam.json`) |
 | `deployments/` | Live and earlier addresses, and the demo timeline |
 | `receipts/`, `cbom/`, `cards/` | A verified receipt, the QoreScan inventory, a signed recipient card |
 | `ops/start.sh` | Starts the services |

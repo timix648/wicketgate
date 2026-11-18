@@ -2,6 +2,8 @@
 
 What Wicketgate protects, who might attack it, what they can do, and why the damage is bounded. It describes the code in this repository as deployed on the `qorechain-diana` testnet (addresses in [deployments/diana.json](deployments/diana.json)).
 
+**Tested, not just argued.** 18 of the attacks below are replayed against the live contracts by `npx tsx packages/scripts/src/redteam.ts`, each against the pool's real state at the block of a real exit, with honest controls at the same blocks. The latest run is in [docs/REDTEAM.md](docs/REDTEAM.md): 18 of 18 refused, each by the check meant for it.
+
 ## What is at stake
 
 | Asset | Where it lives |

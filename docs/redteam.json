@@ -1,0 +1,197 @@
+{
+  "generatedAt": "2026-11-18T09:21:02.877Z",
+  "evmBlock": 10307589,
+  "pool": "0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a",
+  "registry": "0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad",
+  "attacker": "0xbad0000000000000000000000000000000000bad",
+  "sources": {
+    "payExit": "0xa4e4fd21cceb52815c7461eb267e2725332ccc1e176c4ddae03bf56465004a54",
+    "vigilExit": "0x4e0914e3727930742de619e2394d4fdd84cf186523d4e760e1e6b17c2740f811",
+    "attestation": "0xbae9d8f17c9a8d4e5825271c6b5deda6fe04665192c62abbe58a6746e5082fa3",
+    "setLane": "0x279aed1dae4211d012ebb954a38ff52e3754486492dffaf65cd9c7882deb1771"
+  },
+  "passed": 18,
+  "total": 18,
+  "results": [
+    {
+      "id": "A1",
+      "threat": "A stranger attests a batch",
+      "who": "attacker",
+      "at": "now",
+      "expect": "NotWatcher",
+      "got": "NotWatcher",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A2",
+      "threat": "Forge a watcher's ML-DSA-87 signature (a quantum attacker who has the address but not the key)",
+      "who": "a real watcher's address",
+      "at": "now",
+      "expect": "BadSignature",
+      "got": "BadSignature",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A3",
+      "threat": "Replay a watcher's real signature on another batch",
+      "who": "a real watcher's address",
+      "at": "now",
+      "expect": "BadSignature",
+      "got": "BadSignature",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A4",
+      "threat": "Replay a watcher's real signature with different facts (a fake exit root)",
+      "who": "a real watcher's address",
+      "at": "now",
+      "expect": "BadSignature",
+      "got": "BadSignature",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A5",
+      "threat": "A watcher votes twice on the same batch",
+      "who": "a real watcher's address",
+      "at": "now",
+      "expect": "AlreadyVoted",
+      "got": "AlreadyVoted",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A6",
+      "threat": "Exit against a batch nobody has verified",
+      "who": "attacker",
+      "at": "now",
+      "expect": "NotConfirmed",
+      "got": "NotConfirmed",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A7",
+      "threat": "Exit with forged facts (the attacker's own exit tree)",
+      "who": "attacker",
+      "at": "block 10213994 (batch confirmed, window open)",
+      "expect": "WrongFacts",
+      "got": "WrongFacts",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A8",
+      "threat": "Invent a 300 QOR withdrawal in a verified batch",
+      "who": "attacker",
+      "at": "block 10213994",
+      "expect": "BadProof",
+      "got": "BadProof",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A9",
+      "threat": "Front-run a real exit and redirect it to the attacker",
+      "who": "attacker",
+      "at": "block 10213994",
+      "expect": "BadProof",
+      "got": "BadProof",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A10",
+      "threat": "Take the same exit twice (replay the real exit call)",
+      "who": "attacker",
+      "at": "block 10213995 (right after it was paid)",
+      "expect": "ExitUsed",
+      "got": "ExitUsed",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A11",
+      "threat": "Exit after the challenge window closed",
+      "who": "the real beneficiary",
+      "at": "now",
+      "expect": "TooLate",
+      "got": "TooLate",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A12",
+      "threat": "Write off an advance early to slash the watchers",
+      "who": "attacker",
+      "at": "block 10305609 (vigil-1 exit just paid)",
+      "expect": "NotDue",
+      "got": "NotDue",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A13",
+      "threat": "Free the watchers' stake while an advance is open",
+      "who": "attacker",
+      "at": "block 10305609",
+      "expect": "NotDue",
+      "got": "NotDue",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A14",
+      "threat": "Mark an unpaid advance as repaid",
+      "who": "attacker",
+      "at": "block 10305609",
+      "expect": "NotFunded",
+      "got": "NotFunded",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A15",
+      "threat": "Sweep an exit address while the pool's advance on it is open",
+      "who": "attacker",
+      "at": "block 10305609",
+      "expect": "StillOpen",
+      "got": "StillOpen",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A16",
+      "threat": "Withdraw liquidity the attacker never deposited",
+      "who": "attacker",
+      "at": "now",
+      "expect": "Panic(17)",
+      "got": "Panic(17)",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A17",
+      "threat": "Raise the fee to 10% by replaying both admins' real signatures on a changed lane",
+      "who": "attacker",
+      "at": "block 10213433 (signatures still within their deadline)",
+      "expect": "BadSignature",
+      "got": "BadSignature",
+      "refused": true,
+      "asExpected": true
+    },
+    {
+      "id": "A18",
+      "threat": "Slash a watcher's stake directly in the registry",
+      "who": "attacker",
+      "at": "now",
+      "expect": "NotPool",
+      "got": "NotPool",
+      "refused": true,
+      "asExpected": true
+    }
+  ]
+}
