@@ -33,7 +33,8 @@
     "lp:withdraw": "tsx src/lp-withdraw.ts",
     "drill:monitor": "tsx src/drill-monitor.ts",
     "swap": "tsx src/swap.ts",
-    "disclose": "tsx src/disclose.ts"
+    "disclose": "tsx src/disclose.ts",
+    "metrics": "tsx src/metrics.ts"
   },
   "dependencies": {
     "@qorechain/rdk": "0.9.0",

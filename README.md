@@ -10,6 +10,19 @@ A wicket gate is the small door cut into a large castle gate: people pass throug
 
 > Built for **Build Before Q-Day**, the QoreChain Developer Fest, in the **Protocol Builders** category. Everything runs on the `qorechain-diana` testnet. Every number on this page is backed by a transaction hash in [PROOF.md](PROOF.md).
 
+### Wicketgate in numbers (18 Nov 2026, recomputed from the chain by `pnpm metrics`)
+
+| | |
+| --- | --- |
+| **48× faster on testnet, about 8,000× at the 7-day default** | 7 instant exits, median **75 s** from the batch reaching the chain to the money arriving, against **3,600 s** for the same withdrawals through the normal path |
+| **64 QOR paid out instantly, 0 QOR lost** | Every advance whose batch has finalised was repaid by the chain (6 of 6); **0 defaults**; liquidity providers lost nothing and earned the fees |
+| **31 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
+| **45 of 45 batches re-executed, across 4 rollups** | 3 of those rollups are run by other teams; our watchers found them without being told |
+| **1 of 1 wrong batches caught, in 5 seconds** | The fraud proof landed 4 blocks after the bad batch; the submitter's 1,000 QOR bond was slashed |
+| **37 hours under the Q-Day Drill, 0 transactions we did not send** | The drill account (W3) was handed to the organisers' attack drill; a monitor checks it every minute, and its 50 QOR stake is untouched |
+
+The full breakdown, every exit and its transaction is in [docs/METRICS.md](docs/METRICS.md). Re-run it yourself in under a minute, no key needed: `cd packages/scripts && npx tsx src/metrics.ts`.
+
 ---
 
 ## Contents
@@ -104,7 +117,9 @@ All six Protocol Builders requirements are shown live on the testnet:
 
 ## Results and proof
 
-Every row is a measured result on the testnet. Hashes and how to check each one are in [PROOF.md](PROOF.md).
+Every row is a measured result on the testnet. Hashes and how to check each one are in [PROOF.md](PROOF.md); the aggregate figures come from [docs/METRICS.md](docs/METRICS.md).
+
+![Time until the money arrives for each instant exit, against the normal path: 36 s to 10 min instead of 60 min](docs/images/time-to-funds.svg)
 
 | Result | Number | Compared with |
 | --- | --- | --- |

@@ -11,7 +11,8 @@
     "test": "pnpm -r --if-present test && cd contracts && forge test",
     "typecheck": "pnpm -r --if-present typecheck",
     "abi": "cd contracts && forge build && cd .. && for c in WatcherRegistry ExitPool Directory MemoBoard; do node -e \"const j=require('./contracts/out/'+process.argv[1]+'.sol/'+process.argv[1]+'.json');require('fs').writeFileSync('packages/core/abi/'+process.argv[1]+'.json',JSON.stringify(j.abi,null,1))\" $c; done",
-    "cbom": "npx -y @qorechain/qorescan@0.1.0 scan --name wicketgate --network testnet --solidity contracts/src --tls rpc-testnet.qore.host:443 --out cbom/wicketgate.cdx.json"
+    "cbom": "npx -y @qorechain/qorescan@0.1.0 scan --name wicketgate --network testnet --solidity contracts/src --tls rpc-testnet.qore.host:443 --out cbom/wicketgate.cdx.json",
+    "metrics": "cd packages/scripts && tsx src/metrics.ts"
   },
   "devDependencies": {
     "typescript": "5.6.3",

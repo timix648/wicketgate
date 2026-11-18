@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="308" viewBox="0 0 780 308" font-family="ui-sans-serif,system-ui,Segoe UI,Arial">
+<style>.bg{fill:#ffffff}.t{fill:#111827;font-size:16px;font-weight:600}.l{fill:#374151;font-size:12px}.v{fill:#4b5563;font-size:11px}.b{font-weight:700;fill:#047857}.n{fill:#d1d5db}.i{fill:#059669}
+@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.t{fill:#e6edf3}.l{fill:#c9d1d9}.v{fill:#8b949e}.b{fill:#3fb950}.n{fill:#30363d}.i{fill:#2ea043}}</style>
+<rect width="100%" height="100%" class="bg"/>
+<text x="20" y="28" class="t">Time until the money arrives, measured on chain</text>
+<rect x="20" y="38" width="10" height="10" class="i"/><text x="36" y="47" class="l">Wicketgate instant exit (after the batch is posted)</text>
+<rect x="340" y="38" width="10" height="10" class="n"/><text x="356" y="47" class="l">Normal path (until the batch finalises)</text>
+<text x="220" y="76" text-anchor="end" class="l">1 QOR · rdk-v328-e2e… #1</text>
+<rect x="230" y="62" width="479.86670369341846" height="10" rx="2" class="n"/>
+<rect x="230" y="75" width="13.196334351569021" height="10" rx="2" class="i"/>
+<text x="715.8667036934185" y="71" class="v">60 min</text>
+<text x="249.19633435156902" y="84" class="v b">99 s</text>
+<text x="220" y="110" text-anchor="end" class="l">1 QOR · wicketgate-pay #1</text>
+<rect x="230" y="96" width="479.86670369341846" height="10" rx="2" class="n"/>
+<rect x="230" y="109" width="4.798667036934177" height="10" rx="2" class="i"/>
+<text x="715.8667036934185" y="105" class="v">60 min</text>
+<text x="240.79866703693418" y="118" class="v b">36 s</text>
+<text x="220" y="144" text-anchor="end" class="l">50 QOR · wicketgate-pay #6</text>
+<rect x="230" y="130" width="479.86670369341846" height="10" rx="2" class="n"/>
+<rect x="230" y="143" width="9.597334073868382" height="10" rx="2" class="i"/>
+<text x="715.8667036934185" y="139" class="v">60 min</text>
+<text x="245.59733407386838" y="152" class="v b">72 s</text>
+<text x="220" y="178" text-anchor="end" class="l">5 QOR · wicketgate-pay #7</text>
+<rect x="230" y="164" width="479.86670369341846" height="10" rx="2" class="n"/>
+<rect x="230" y="177" width="9.997222993612894" height="10" rx="2" class="i"/>
+<text x="715.8667036934185" y="173" class="v">60 min</text>
+<text x="245.9972229936129" y="186" class="v b">75 s</text>
+<text x="220" y="212" text-anchor="end" class="l">2 QOR · wicketgate-pay #9</text>
+<rect x="230" y="198" width="479.86670369341846" height="10" rx="2" class="n"/>
+<rect x="230" y="211" width="5.465148569841716" height="10" rx="2" class="i"/>
+<text x="715.8667036934185" y="207" class="v">60 min</text>
+<text x="241.46514856984172" y="220" class="v b">41 s</text>
+<text x="220" y="246" text-anchor="end" class="l">3 QOR · wicketgate-pay #10</text>
+<rect x="230" y="232" width="480" height="10" rx="2" class="n"/>
+<rect x="230" y="245" width="83.1768953068592" height="10" rx="2" class="i"/>
+<text x="716" y="241" class="v">60 min</text>
+<text x="319.1768953068592" y="254" class="v b">10 min</text>
+<text x="20" y="294" class="v">Testnet challenge window is 1 hour; the RDK default is 7 days. Source: docs/metrics.json</text>
+</svg>
