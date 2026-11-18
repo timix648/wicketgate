@@ -1,5 +1,5 @@
 // Q-Day Drill proof: a normal project action from the drill account (W3), hybrid-signed on the
-// native lane so no EVM window is ever opened: W3 deposits 0.5 QOR into its own ledger account on
+// native lane so no EVM window is ever opened: W3 deposits 1 QOR (the rollup minimum) into its own ledger account on
 // the wicketgate-pay rollup. Paste the printed hash on the project page (accepted until 19 Nov).
 // Falls back to a 1 uqor self-transfer if the deposit fails.
 import { depositToRollupMsg, bytesToHex } from "@qorechain/rdk";
@@ -21,8 +21,8 @@ async function main() {
   const l = await ledgerKey("W3");
   await markOurs(w.cosmos);
   try {
-    const r = await sendNative(w, [depositToRollupMsg({ depositor: w.cosmos, rollupId: "wicketgate-pay", account: l.accountId, amount: "500000" })], { gas: 500_000, memo: "wicketgate drill proof" });
-    console.log(`drill proof: W3 deposited 0.5 QOR into wicketgate-pay (ledger ${bytesToHex(l.accountId).slice(0, 16)}…)\ntx ${r.transactionHash}\n${explorerTx(r.transactionHash)}`);
+    const r = await sendNative(w, [depositToRollupMsg({ depositor: w.cosmos, rollupId: "wicketgate-pay", account: l.accountId, amount: "1000000" })], { gas: 500_000, memo: "wicketgate drill proof" });
+    console.log(`drill proof: W3 deposited 1 QOR into wicketgate-pay (ledger ${bytesToHex(l.accountId).slice(0, 16)}…)\ntx ${r.transactionHash}\n${explorerTx(r.transactionHash)}`);
   } catch (e: any) {
     console.log(`deposit failed (${e?.message}); sending a self-transfer instead`);
     const r = await sendNative(w, [{ typeUrl: "/cosmos.bank.v1beta1.MsgSend", value: { fromAddress: w.cosmos, toAddress: w.cosmos, amount: [{ denom: "uqor", amount: "1" }] } }], { memo: "wicketgate drill proof" });
