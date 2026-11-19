@@ -20,4 +20,5 @@ start wicketgate-w2     "$ROOT/packages/watcher"  "npx tsx src/cli.ts --mode cha
 start wicketgate-op-pay "$ROOT/packages/operator" "WICKETGATE_ALERTS=1 WICKETGATE_ALERT_ENV=/opt/opportunity-hunter/.env npx tsx src/cli.ts --rollup wicketgate-pay --interval 20" op-pay
 start wicketgate-op-e2e "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup rdk-v328-e2e-mwd5v89d --interval 20" op-e2e
 start wicketgate-op-vigil "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-1 --interval 30" op-vigil   # not bonded there: only pays out and settles withdrawals behind our advances
+start wicketgate-op-vigilpay "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-pay-1 --interval 30" op-vigilpay   # likewise for vigil-pay-1 (another team's rollup)
 start wicketgate-feed   "$ROOT/packages/watcher"  "./publish-feed.sh" feed
