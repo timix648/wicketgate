@@ -234,9 +234,11 @@ contract ExitPoolTest is Base {
         assertEq(state, pool.SETTLED());
         assertEq(pool.outstandingWei(), 0);
         assertEq(exitAddr.balance, 0);
-        // watchers get 30% of the fee, split between the two confirmers
+        // watchers get 30% of the fee, split between the two confirmers; v3: the keeper (here the
+        // test contract, which called settle) is credited 10%; providers keep the other 60%
         assertEq(pool.watcherCredit(w1), fee * 3000 / 10_000 / 2);
-        assertEq(pool.totalAssets(), assetsBefore - fee * 3000 / 10_000 / 2 * 2);
+        assertEq(pool.watcherCredit(address(this)), fee * 1000 / 10_000);
+        assertEq(pool.totalAssets(), assetsBefore - fee * 3000 / 10_000 / 2 * 2 - fee * 1000 / 10_000);
         assertGt(pool.totalAssets(), 100 ether); // providers earned the rest
     }
 
@@ -331,8 +333,11 @@ contract ExitPoolTest is Base {
         (,,,, uint256 slashedWei,,,, uint8 state) = pool.advances(id);
         assertEq(state, pool.DEFAULTED());
         assertEq(slashedWei, AMOUNT_WEI);
-        // pool is made whole: it lost the payout, regained the full amount from stake
-        assertEq(pool.totalAssets(), assetsBefore);
+        // pool is made whole: it lost the payout, regained the full amount from stake; v3: the
+        // keeper who wrote it off is credited 10% of the fee the pool kept at payout
+        (,,, uint256 feeWei,,,,,) = pool.advances(id);
+        assertEq(pool.watcherCredit(address(this)), feeWei * 1000 / 10_000);
+        assertEq(pool.totalAssets(), assetsBefore - feeWei * 1000 / 10_000);
         assertEq(registry.freeStake(w1) + _locked(w1), s1 - 1 ether);
         assertEq(registry.freeStake(w3), 10 ether); // non-confirming watcher untouched
     }

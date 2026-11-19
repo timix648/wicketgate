@@ -40,6 +40,7 @@ contract WatcherRegistry is DualAdmin {
     event Locked(address indexed watcher, uint256 amount);
     event Unlocked(address indexed watcher, uint256 amount);
     event Slashed(address indexed watcher, uint256 amount, address to);
+    event Penalized(address indexed watcher, uint256 amount, address to);
 
     modifier onlyPool() {
         if (msg.sender != pool) revert NotPool();
@@ -133,6 +134,23 @@ contract WatcherRegistry is DualAdmin {
         w.stake -= amount;
         _send(to, amount);
         emit Slashed(account, amount, to);
+    }
+
+    /// @notice v3: punish a watcher proven to have signed two different results for one batch.
+    /// Takes up to `amount` of its free stake (locked stake keeps backing open advances) and
+    /// removes it from the active set at once; what is left returns after the leave delay.
+    function penalize(address account, uint256 amount, address to) external onlyPool nonReentrant returns (uint256 taken) {
+        Watcher storage w = watchers[account];
+        uint256 free = w.stake - w.locked;
+        taken = amount < free ? amount : free;
+        w.stake -= taken;
+        if (w.active) {
+            w.active = false;
+            w.leaveAfter = uint64(block.timestamp) + leaveDelay;
+            emit LeaveRequested(account, w.leaveAfter);
+        }
+        if (taken > 0) _send(to, taken);
+        emit Penalized(account, taken, to);
     }
 
     // ---------------------------------------------------------------- admin
