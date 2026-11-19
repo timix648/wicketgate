@@ -1,6 +1,6 @@
 # Wicketgate in numbers
 
-Generated 2026-11-18T21:29:33.035Z from public chain data at EVM block 10,338,186 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
+Generated 2026-11-19T12:04:46.077Z from public chain data at EVM block 10,372,098 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
 
 ![Time until the money arrives, instant exit against the normal path](images/time-to-funds.svg)
 
@@ -32,19 +32,19 @@ Generated 2026-11-18T21:29:33.035Z from public chain data at EVM block 10,338,18
 
 | | |
 | --- | --- |
-| Watcher attestations whose ML-DSA-87 signature was verified on chain (`pqcVerify`) | **33**, from 2 watchers |
-| Batches confirmed by a quorum of PQ-signed attestations | 16 |
-| Average gas of one attestation, signature check included | 569,391 |
-| Batch submissions whose ML-DSA-87 layer the watchers checked (MCP `get_pq_status`) | 49 |
+| Watcher attestations whose ML-DSA-87 signature was verified on chain (`pqcVerify`) | **35**, from 2 watchers |
+| Batches confirmed by a quorum of PQ-signed attestations | 17 |
+| Average gas of one attestation, signature check included | 558,746 |
+| Batch submissions whose ML-DSA-87 layer the watchers checked (MCP `get_pq_status`) | 62 |
 | Classical signature checks (`ecrecover`) in our contracts | **0** ([CBOM](../cbom/wicketgate.cdx.json)) |
 
 ## Independent verification
 
 | | |
 | --- | --- |
-| Rollups our watchers follow | **4**, of which 3 we do not run |
-| Batches re-executed from chain data | **49** (49 match) |
-| Wrong batches kept on record after the chain replaced them | 5 |
+| Rollups our watchers follow | **5**, of which 4 we do not run |
+| Batches re-executed from chain data | **62** (61 match) |
+| Wrong batches kept on record after the chain replaced them | 9 |
 
 ## Fraud
 
@@ -59,7 +59,7 @@ Generated 2026-11-18T21:29:33.035Z from public chain data at EVM block 10,338,18
 
 | | |
 | --- | --- |
-| Watched | 2026-11-16T20:15:27.435Z to 2026-11-18T21:29:15.657Z (49.23 h, 2,918 snapshots) |
+| Watched | 2026-11-16T20:15:27.435Z to 2026-11-19T12:03:55.906Z (63.81 h, 3,777 snapshots) |
 | Transactions from the drill account that were not ours | **0** |
 | Drill account's stake now | 50 QOR |
 
