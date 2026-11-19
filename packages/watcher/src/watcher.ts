@@ -86,6 +86,17 @@ const root32 = (r: string) => (r && r !== "0x" ? hex(r) : ZERO_ROOT);
 
 const BLIND_ALERT_S = Number(process.env.WICKETGATE_BLIND_ALERT_S ?? 180);
 
+/** Seconds since the chain's latest block, or undefined if the RPC cannot be read. */
+async function chainStalledFor(): Promise<number | undefined> {
+  try {
+    const res = await fetch(`${NET.rpc}/status`, { signal: AbortSignal.timeout(15_000) });
+    const t = (await res.json())?.result?.sync_info?.latest_block_time;
+    return t ? (Date.now() - Date.parse(t)) / 1000 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export class Watcher {
   private rest = robustRest(new RestClient(NET.rest, { fetch: politeFetch as any }));
   private lastOk = new Map<string, number>(); // per rollup: when it was last fully verified
@@ -135,7 +146,14 @@ export class Watcher {
         const blindFor = (Date.now() - this.lastOk.get(rollupId)!) / 1000;
         if (blindFor >= BLIND_ALERT_S) {
           this.blind.add(rollupId);
-          await alert(`blind:${rollupId}`, `BLIND on ${rollupId} for ${Math.round(blindFor / 60)} min: cannot verify its batches, so a wrong batch could finalise unchallenged. Last error: ${err.slice(0, 300)}`);
+          // a stopped chain (a planned upgrade, say) blinds everyone but also stops the clock on
+          // batches: report that instead of a false fraud warning
+          const stalled = await chainStalledFor();
+          if (stalled !== undefined && stalled > 120) {
+            await alert("chain-halted", `the chain has produced no block for ${Math.round(stalled / 60)} min (an upgrade?); watching resumes when it does.`);
+          } else {
+            await alert(`blind:${rollupId}`, `BLIND on ${rollupId} for ${Math.round(blindFor / 60)} min: cannot verify its batches, so a wrong batch could finalise unchallenged. Last error: ${err.slice(0, 300)}`);
+          }
         }
       }
     }
