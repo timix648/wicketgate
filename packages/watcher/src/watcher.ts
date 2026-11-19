@@ -31,6 +31,7 @@ import { buildExitTree, ZERO_ROOT } from "@wicketgate/core/exit-tree";
 import { TOOLS as MCP_TOOLS, toolContext } from "@qorechain/mcp";
 import { restGet } from "@wicketgate/core/chain";
 import { politeFetch } from "@wicketgate/core/polite";
+import { robustRest } from "@wicketgate/core/robust-rest";
 
 const PQ_STATUS = MCP_TOOLS.find((t) => t.name === "get_pq_status")!;
 const MCP_CTX = toolContext({ defaultNetwork: "testnet" });
@@ -83,7 +84,7 @@ const batchKeyOf = (rollupKey: Hex, i: number) =>
 const root32 = (r: string) => (r && r !== "0x" ? hex(r) : ZERO_ROOT);
 
 export class Watcher {
-  private rest = new RestClient(NET.rest, { fetch: politeFetch as any });
+  private rest = robustRest(new RestClient(NET.rest, { fetch: politeFetch as any }));
   private entryCache = new Map<string, QledgerEntry[]>();
   private sent = new Set<string>();
   private provenance = new Map<string, Provenance>(); // by tx hash

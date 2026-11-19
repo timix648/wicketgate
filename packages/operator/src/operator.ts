@@ -33,6 +33,7 @@ import { sendNative, explorerTx, restGet } from "@wicketgate/core/chain";
 import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 import { recipientAddress } from "@wicketgate/core/exit-tree";
 import { politeFetch } from "@wicketgate/core/polite";
+import { robustRest } from "@wicketgate/core/robust-rest";
 
 export interface OperatorConfig {
   rollupId: string;
@@ -48,7 +49,7 @@ const POOL = artifact("ExitPool").abi;
 const hex = (v: Uint8Array | string) => `0x${(typeof v === "string" ? v : bytesToHex(v)).replace(/^0x/, "").toLowerCase()}` as Hex;
 
 export class Operator {
-  private rest = new RestClient(NET.rest, { fetch: politeFetch as any });
+  private rest = robustRest(new RestClient(NET.rest, { fetch: politeFetch as any }));
   private entryCache = new Map<string, any[]>();
   private checkpoint?: { upto: number; ledger: QledgerLedger; acc: Uint8Array | string; finalized: { index: number; withdrawals: QledgerWithdrawal[] }[] };
   private log: (m: string) => void;

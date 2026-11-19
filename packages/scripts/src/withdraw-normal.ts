@@ -10,6 +10,7 @@ import {
 import type { Address, Hex } from "viem";
 import { account, NET, STATE_DIR, DEPLOYMENTS_FILE } from "@wicketgate/core/env";
 import { sendNative, explorerTx } from "@wicketgate/core/chain";
+import { robustRest } from "@wicketgate/core/robust-rest";
 import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 
 const EXITS = join(STATE_DIR, "exits.json");
@@ -19,7 +20,7 @@ async function main() {
   const A = await account("ADMIN_A");
   const pool = JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")).pool as Address;
   const { abi } = artifact("ExitPool");
-  const rest = new RestClient(NET.rest);
+  const rest = robustRest(new RestClient(NET.rest));
   const exits = JSON.parse(readFileSync(EXITS, "utf8"));
   const only = process.argv[2]?.toLowerCase(); // optional: one exit address
   for (const ex of exits) {
