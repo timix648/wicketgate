@@ -178,7 +178,7 @@ contract InvariantsTest is Base {
         vm.prank(w2);
         registry.topUp{value: 80 ether}();
         // v3: a rising fee and exposure caps, so the invariants cover those paths too
-        setRisk(3000, 400, 4 ether, 60 ether);
+        setRisk(3000, 400, 4 ether, 60 ether, 0.05 ether); // v3.1: and an execution fee for keepers
         handler = new PoolHandler(pool, registry, rollupKey, [w1, w2, w3], lp, adminA, adminB);
         targetContract(address(handler));
     }
@@ -196,6 +196,11 @@ contract InvariantsTest is Base {
     /// v2 also counted the watchers' credits on the providers' side.)
     function invariant_providers_never_lose() public view {
         assertGe(pool.totalAssets() + handler.withdrawn(), handler.deposited());
+    }
+
+    /// v3.1: execution fees held for keepers are covered by what the pool is owed.
+    function invariant_pending_tips_covered() public view {
+        assertLe(pool.pendingTipsWei(), pool.outstandingWei());
     }
 
     /// v3: what each rollup owes adds up to what the pool is owed.

@@ -10,7 +10,7 @@ import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, win
 
 const POOL = JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")).pool as Address;
 const P = artifact("ExitPool").abi;
-const STATUS = ["OK", "PAUSED", "NOT_CONFIRMED", "CONTESTED", "TOO_LATE", "EXIT_TOO_LARGE", "LANE_FULL", "COVER", "LIQUIDITY"];
+const STATUS = ["OK", "PAUSED", "NOT_CONFIRMED", "CONTESTED", "TOO_LATE", "EXIT_TOO_LARGE", "LANE_FULL", "COVER", "LIQUIDITY", "TOO_SMALL"];
 
 async function adminMsg(action: string, deadline: bigint) {
   const nonce = (await publicClient.readContract({ address: POOL, abi: P, functionName: "adminNonce", args: [] })) as bigint;

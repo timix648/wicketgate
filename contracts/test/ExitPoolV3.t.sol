@@ -79,7 +79,7 @@ contract ExitPoolV3Test is Base {
         assertEq(bps, 55);
         uint256 before = alice.balance;
         bytes32 id = exit1(1, f, p1);
-        (,,, uint256 feeWei,,,,,) = pool.advances(id);
+        (,,, uint256 feeWei,,,,,,) = pool.advances(id);
         assertEq(feeWei, AMOUNT_WEI * 55 / 10_000);
         assertEq(alice.balance - before, AMOUNT_WEI - feeWei);
     }
@@ -92,7 +92,7 @@ contract ExitPoolV3Test is Base {
     }
 
     function callSetRisk(uint16 k, uint16 m, uint128 e, uint128 o) external {
-        pool.setRisk(rollupKey, ExitPool.Risk(k, m, e, o), block.timestamp + 1, "", "");
+        pool.setRisk(rollupKey, ExitPool.Risk(k, m, e, o, 0), block.timestamp + 1, "", "");
     }
 
     // ================================================================= exposure caps
@@ -123,7 +123,7 @@ contract ExitPoolV3Test is Base {
     function test_keeper_is_credited_and_claims() public {
         (ExitPool.Facts memory f, bytes32[] memory p1,) = confirm(1);
         bytes32 id = exit1(1, f, p1);
-        (,,, uint256 feeWei,,,,,) = pool.advances(id);
+        (,,, uint256 feeWei,,,,,,) = pool.advances(id);
         vm.deal(pool.exitAddressFor(alice, SALT1), AMOUNT_WEI);
         address keeper = makeAddr("keeper");
         vm.prank(keeper);
@@ -140,7 +140,7 @@ contract ExitPoolV3Test is Base {
         vm.deal(pool.exitAddressFor(alice, SALT1), AMOUNT_WEI);
         KeeperNoReceive k = new KeeperNoReceive();
         k.settle(pool, id);
-        (,,,,,,,, uint8 state) = pool.advances(id);
+        (,,,,,,,, uint8 state,) = pool.advances(id);
         assertEq(state, pool.SETTLED());
         assertGt(pool.watcherCredit(address(k)), 0);
     }
@@ -148,7 +148,7 @@ contract ExitPoolV3Test is Base {
     function test_keeper_is_credited_for_a_write_off() public {
         (ExitPool.Facts memory f, bytes32[] memory p1,) = confirm(1);
         bytes32 id = exit1(1, f, p1);
-        (,,, uint256 feeWei,,,,,) = pool.advances(id);
+        (,,, uint256 feeWei,,,,,,) = pool.advances(id);
         vm.warp(block.timestamp + WINDOW + GRACE + 1);
         address keeper = makeAddr("keeper");
         vm.prank(keeper);
@@ -309,5 +309,63 @@ contract ExitPoolV3Test is Base {
         (att, conf,,,) = pool.stats(w3);
         assertEq(att, 0);
         assertEq(conf, 0);
+    }
+
+    // ================================================================= v3.1: keeper execution fee
+
+    function test_execution_fee_is_paid_by_the_user_and_held_for_the_keeper() public {
+        setRisk(0, 0, 0, 0, 0.08 ether);
+        (ExitPool.Facts memory f, bytes32[] memory p1,) = confirm(1);
+        uint256 before = alice.balance;
+        uint256 assetsBefore = pool.totalAssets();
+        bytes32 id = exit1(1, f, p1);
+        (,,, uint256 feeWei,,,,,, uint256 tipWei) = pool.advances(id);
+        assertEq(tipWei, 0.08 ether);
+        assertEq(alice.balance - before, AMOUNT_WEI - feeWei - 0.08 ether); // the user pays fee and execution fee
+        assertEq(pool.pendingTipsWei(), 0.08 ether);
+        assertEq(pool.totalAssets(), assetsBefore + feeWei); // providers gain the fee only, never the held tip
+        vm.deal(pool.exitAddressFor(alice, SALT1), AMOUNT_WEI);
+        address keeper = makeAddr("keeper");
+        vm.prank(keeper);
+        pool.settle(id);
+        assertEq(pool.watcherCredit(keeper), feeWei * 1000 / 10_000 + 0.08 ether);
+        assertEq(pool.pendingTipsWei(), 0);
+    }
+
+    function test_execution_fee_goes_to_whoever_writes_off() public {
+        setRisk(0, 0, 0, 0, 0.08 ether);
+        (ExitPool.Facts memory f, bytes32[] memory p1,) = confirm(1);
+        bytes32 id = exit1(1, f, p1);
+        (,,, uint256 feeWei,,,,,,) = pool.advances(id);
+        vm.warp(block.timestamp + WINDOW + GRACE + 1);
+        address keeper = makeAddr("keeper");
+        vm.prank(keeper);
+        pool.markDefault(id);
+        assertEq(pool.watcherCredit(keeper), feeWei * 1000 / 10_000 + 0.08 ether);
+        assertEq(pool.pendingTipsWei(), 0);
+    }
+
+    function test_exit_smaller_than_its_fees_is_refused() public {
+        setRisk(0, 0, 0, 0, 1 ether); // a 1 QOR execution fee (the maximum)
+        // one 0.9 QOR withdrawal: smaller than the fees it would pay
+        address exitAddr = pool.exitAddressFor(alice, SALT1);
+        ExitPool.Facts memory f = ExitPool.Facts(keccak256("s"), keccak256("w"), pool.exitLeaf(7, exitAddr, 900_000));
+        attestAs(w1, 1, f);
+        attestAs(w2, 1, f);
+        (uint8 status,,,) = pool.quote(rollupKey, 1, 900_000);
+        assertEq(status, pool.Q_TOO_SMALL());
+        vm.expectRevert(ExitPool.ExitTooSmall.selector);
+        pool.instantExit(rollupKey, 1, f, 7, alice, SALT1, 900_000, new bytes32[](0));
+        (status,,,) = pool.quote(rollupKey, 1, 2_000_000); // a 2 QOR exit still clears the fees
+        assertEq(status, pool.Q_OK());
+    }
+
+    function test_execution_fee_is_bounded() public {
+        vm.expectRevert(ExitPool.BadRisk.selector);
+        this.callSetRiskTip(1.5 ether);
+    }
+
+    function callSetRiskTip(uint128 tip) external {
+        pool.setRisk(rollupKey, ExitPool.Risk(0, 0, 0, 0, tip), block.timestamp + 1, "", "");
     }
 }

@@ -230,7 +230,7 @@ contract ExitPoolTest is Base {
         vm.deal(exitAddr, AMOUNT_WEI);
         uint256 assetsBefore = pool.totalAssets();
         pool.settle(id);
-        (,,,,,,,, uint8 state) = pool.advances(id);
+        (,,,,,,,, uint8 state,) = pool.advances(id);
         assertEq(state, pool.SETTLED());
         assertEq(pool.outstandingWei(), 0);
         assertEq(exitAddr.balance, 0);
@@ -330,12 +330,12 @@ contract ExitPoolTest is Base {
         uint256 assetsBefore = pool.totalAssets();
         uint256 s1 = registry.freeStake(w1) + _locked(w1);
         pool.markDefault(id);
-        (,,,, uint256 slashedWei,,,, uint8 state) = pool.advances(id);
+        (,,,, uint256 slashedWei,,,, uint8 state,) = pool.advances(id);
         assertEq(state, pool.DEFAULTED());
         assertEq(slashedWei, AMOUNT_WEI);
         // pool is made whole: it lost the payout, regained the full amount from stake; v3: the
         // keeper who wrote it off is credited 10% of the fee the pool kept at payout
-        (,,, uint256 feeWei,,,,,) = pool.advances(id);
+        (,,, uint256 feeWei,,,,,,) = pool.advances(id);
         assertEq(pool.watcherCredit(address(this)), feeWei * 1000 / 10_000);
         assertEq(pool.totalAssets(), assetsBefore - feeWei * 1000 / 10_000);
         assertEq(registry.freeStake(w1) + _locked(w1), s1 - 1 ether);
@@ -358,7 +358,7 @@ contract ExitPoolTest is Base {
         pool.markDefault(id);
         vm.deal(pool.exitAddressFor(alice, salt), AMOUNT_WEI);
         pool.settle(id);
-        (,,,,,,,, uint8 state) = pool.advances(id);
+        (,,,,,,,, uint8 state,) = pool.advances(id);
         assertEq(state, pool.RECOVERED());
         assertEq(pool.watcherCredit(w1), 1 ether);
         assertEq(pool.watcherCredit(w2), 1 ether);

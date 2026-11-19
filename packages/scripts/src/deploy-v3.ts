@@ -18,7 +18,7 @@ const LANE_T = [{ type: "bytes32" }, { type: "tuple", components: [
 ] }] as const;
 const RISK_T = [{ type: "bytes32" }, { type: "tuple", components: [
   { name: "kinkBps", type: "uint16" }, { name: "maxFeeBps", type: "uint16" },
-  { name: "maxExitWei", type: "uint128" }, { name: "maxOutstandingWei", type: "uint128" },
+  { name: "maxExitWei", type: "uint128" }, { name: "maxOutstandingWei", type: "uint128" }, { name: "keeperTipWei", type: "uint128" },
 ] }] as const;
 
 async function main() {
@@ -70,17 +70,18 @@ async function main() {
         await send(p.address, ep.abi, "setLane", [rollupKey, lane, deadline, sa, sb]);
       }
       // v3 risk: the base fee up to 50% utilisation, rising to 3% at 100%; one exit at most one
-      // watcher's lock (so a batch serves at least `quorum` exits); a rollup at most 40% of 400 QOR
-      const risk = { kinkBps: 5000, maxFeeBps: 300, maxExitWei: lane.lockPerWatcher, maxOutstandingWei: 160n * QOR };
+      // watcher's lock (so a batch serves at least `quorum` exits); a rollup at most 40% of 400 QOR;
+      // v3.1: a 0.08 QOR execution fee per exit, held for the keeper who settles it (covers its gas)
+      const risk = { kinkBps: 5000, maxFeeBps: 300, maxExitWei: lane.lockPerWatcher, maxOutstandingWei: 160n * QOR, keeperTipWei: 80_000_000_000_000_000n };
       {
         const payload = encodeAbiParameters(RISK_T, [rollupKey, risk]);
         const [sa, sb] = await sigs(p.address, ep.abi, "setRisk", payload, deadline);
         await send(p.address, ep.abi, "setRisk", [rollupKey, risk, deadline, sa, sb]);
       }
-      outLanes[rollupId] = { ...l, risk: { ...risk, maxExitWei: risk.maxExitWei.toString(), maxOutstandingWei: risk.maxOutstandingWei.toString() } };
+      outLanes[rollupId] = { ...l, risk: { ...risk, maxExitWei: risk.maxExitWei.toString(), maxOutstandingWei: risk.maxOutstandingWei.toString(), keeperTipWei: risk.keeperTipWei.toString() } };
     }
     const out = {
-      network: NET.chainId, evmChainId: NET.evmChainId, deployedAt: new Date().toISOString(), version: "3.0",
+      network: NET.chainId, evmChainId: NET.evmChainId, deployedAt: new Date().toISOString(), version: "3.1",
       deployBlock: Number(r.block), previous: { registry: LIVE.registry, pool: LIVE.pool, file: "deployments/diana.json" },
       admins: [A.evm, B.evm], registry: r.address, pool: p.address, directory: LIVE.directory, memoBoard: LIVE.memoBoard, lanes: outLanes,
     };

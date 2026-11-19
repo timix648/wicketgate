@@ -23,7 +23,7 @@ import {ExitAddress} from "./ExitAddress.sol";
 /// by two of its own ML-DSA-87 signatures, to have signed two different results for one batch;
 /// an emergency pause that can only stop new payouts; a quote() view; per-watcher stats.
 contract ExitPool is DualAdmin {
-    string public constant VERSION = "3.0";
+    string public constant VERSION = "3.1";
     bytes32 public constant ATTEST_TYPEHASH = keccak256("Wicketgate.Attestation.v1");
     uint256 public constant UQOR = 1e12; // 1 uqor in wei on the QoreChain EVM
     uint256 public constant WATCHER_FEE_SHARE_BPS = 3000;
@@ -50,6 +50,7 @@ contract ExitPool is DualAdmin {
         uint16 maxFeeBps; // fee at 100% utilisation (capped at 10%)
         uint128 maxExitWei; // largest single exit
         uint128 maxOutstandingWei; // most this rollup may owe the pool at once
+        uint128 keeperTipWei; // fixed execution fee the exiting user pays, held for whoever settles (v3.1)
     }
 
     struct WatcherStats {
@@ -70,6 +71,7 @@ contract ExitPool is DualAdmin {
     uint8 public constant Q_LANE_FULL = 6;
     uint8 public constant Q_COVER = 7;
     uint8 public constant Q_LIQUIDITY = 8;
+    uint8 public constant Q_TOO_SMALL = 9;
 
     struct Facts {
         bytes32 stateRoot;
@@ -100,6 +102,7 @@ contract ExitPool is DualAdmin {
         bytes32 salt;
         uint64 dueBy;
         uint8 state;
+        uint256 tipWei; // v3.1: execution fee held for the keeper who settles or writes it off
     }
 
     WatcherRegistry public immutable registry;
@@ -125,6 +128,7 @@ contract ExitPool is DualAdmin {
     mapping(bytes32 => mapping(address => bool)) public equivocated;
     mapping(address => WatcherStats) public stats;
     bool public paused;
+    uint256 public pendingTipsWei; // v3.1: execution fees owed back to future keepers, not provider assets
 
     error LaneDisabled();
     error NotWatcher();
@@ -154,6 +158,7 @@ contract ExitPool is DualAdmin {
     error SameFacts();
     error AlreadyReported();
     error BadRisk();
+    error ExitTooSmall();
 
     event LaneSet(bytes32 indexed rollupKey, Lane lane);
     event Attested(bytes32 indexed rollupKey, uint64 indexed batchIndex, address indexed watcher, bytes32 factsHash);
@@ -378,12 +383,15 @@ contract ExitPool is DualAdmin {
         BatchRec storage b = _batches[key];
         Lane memory lane = lanes[rollupKey];
         uint256 fee = _checkRiskAndFee(rollupKey, amountWei);
+        uint256 tip = risk[rollupKey].keeperTipWei;
+        if (fee + tip >= amountWei) revert ExitTooSmall();
         _lockCover(b, lane, amountWei);
-        uint256 payout = amountWei - fee;
+        uint256 payout = amountWei - fee - tip;
         if (payout > idleLiquidity()) revert NoLiquidity();
 
         uint64 dueBy = b.confirmedAt + lane.windowSecs + lane.graceSecs;
-        advances[id] = Advance(beneficiary, exitAddr, amountWei, fee, 0, key, salt, dueBy, OPEN);
+        advances[id] = Advance(beneficiary, exitAddr, amountWei, fee, 0, key, salt, dueBy, OPEN, tip);
+        pendingTipsWei += tip;
         advanceOfExit[exitAddr] = id;
         b.advancedWei += amountWei;
         b.openAdvances += 1;
@@ -411,7 +419,8 @@ contract ExitPool is DualAdmin {
             b.advancedWei -= a.amountWei;
             b.openAdvances -= 1;
             _creditWatchers(b, (a.feeWei * WATCHER_FEE_SHARE_BPS) / BPS);
-            tip = (a.feeWei * KEEPER_FEE_SHARE_BPS) / BPS;
+            tip = (a.feeWei * KEEPER_FEE_SHARE_BPS) / BPS + a.tipWei;
+            pendingTipsWei -= a.tipWei;
             emit Settled(id, got);
         } else {
             // Repaid after it was written off: give the slashed stake back to the watchers.
@@ -460,7 +469,8 @@ contract ExitPool is DualAdmin {
         }
         a.slashedWei = total;
         emit Defaulted(id, total);
-        _payKeeper(id, (a.feeWei * KEEPER_FEE_SHARE_BPS) / BPS);
+        pendingTipsWei -= a.tipWei;
+        _payKeeper(id, (a.feeWei * KEEPER_FEE_SHARE_BPS) / BPS + a.tipWei);
     }
 
     // =================================================================== v3: equivocation
@@ -533,7 +543,7 @@ contract ExitPool is DualAdmin {
 
     /// @notice Pool assets: cash plus advances still to be repaid, minus what watchers are owed.
     function totalAssets() public view returns (uint256) {
-        return address(this).balance + outstandingWei - watcherCreditsTotal;
+        return address(this).balance + outstandingWei - watcherCreditsTotal - pendingTipsWei;
     }
 
     function idleLiquidity() public view returns (uint256) {
@@ -598,10 +608,11 @@ contract ExitPool is DualAdmin {
         BatchRec storage b = _batches[batchKey(rollupKey, batchIndex)];
         Lane memory lane = lanes[rollupKey];
         Risk memory r = risk[rollupKey];
-        feeWei = (amountWei * feeBpsFor(rollupKey, amountWei)) / BPS;
-        payoutWei = amountWei - feeWei;
+        feeWei = (amountWei * feeBpsFor(rollupKey, amountWei)) / BPS + r.keeperTipWei; // includes the execution fee
+        payoutWei = feeWei < amountWei ? amountWei - feeWei : 0;
         coverRoomWei = _coverRoom(b, lane);
         if (paused) status = Q_PAUSED;
+        else if (feeWei >= amountWei) status = Q_TOO_SMALL;
         else if (b.confirmedAt == 0) status = Q_NOT_CONFIRMED;
         else if (b.contested) status = Q_CONTESTED;
         else if (block.timestamp > uint256(b.confirmedAt) + lane.windowSecs) status = Q_TOO_LATE;
@@ -648,7 +659,7 @@ contract ExitPool is DualAdmin {
     function setRisk(bytes32 rollupKey, Risk calldata r, uint256 deadline, bytes calldata sigA, bytes calldata sigB)
         external
     {
-        if (r.maxFeeBps > 1000 || r.kinkBps >= BPS) revert BadRisk();
+        if (r.maxFeeBps > 1000 || r.kinkBps >= BPS || r.keeperTipWei > 1 ether) revert BadRisk();
         _requireAdmins("setRisk", abi.encode(rollupKey, r), deadline, sigA, sigB);
         risk[rollupKey] = r;
         emit RiskSet(rollupKey, r);

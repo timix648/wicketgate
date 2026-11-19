@@ -208,6 +208,19 @@
  },
  {
   "type": "function",
+  "name": "Q_TOO_SMALL",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "RECOVERED",
   "inputs": [],
   "outputs": [
@@ -418,6 +431,11 @@
     "name": "state",
     "type": "uint8",
     "internalType": "uint8"
+   },
+   {
+    "name": "tipWei",
+    "type": "uint256",
+    "internalType": "uint256"
    }
   ],
   "stateMutability": "view"
@@ -928,6 +946,19 @@
  },
  {
   "type": "function",
+  "name": "pendingTipsWei",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "quote",
   "inputs": [
    {
@@ -1109,6 +1140,11 @@
     "name": "maxOutstandingWei",
     "type": "uint128",
     "internalType": "uint128"
+   },
+   {
+    "name": "keeperTipWei",
+    "type": "uint128",
+    "internalType": "uint128"
    }
   ],
   "stateMutability": "view"
@@ -1228,6 +1264,11 @@
      },
      {
       "name": "maxOutstandingWei",
+      "type": "uint128",
+      "internalType": "uint128"
+     },
+     {
+      "name": "keeperTipWei",
       "type": "uint128",
       "internalType": "uint128"
      }
@@ -1911,6 +1952,11 @@
       "name": "maxOutstandingWei",
       "type": "uint128",
       "internalType": "uint128"
+     },
+     {
+      "name": "keeperTipWei",
+      "type": "uint128",
+      "internalType": "uint128"
      }
     ]
    }
@@ -2050,6 +2096,11 @@
  {
   "type": "error",
   "name": "ExitTooLarge",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "ExitTooSmall",
   "inputs": []
  },
  {

@@ -105,7 +105,13 @@ abstract contract Base is Test {
     }
 
     function setRisk(uint16 kinkBps, uint16 maxFeeBps, uint128 maxExitWei, uint128 maxOutstandingWei) internal {
-        adminDo(address(pool), "setRisk", abi.encode(rollupKey, ExitPool.Risk(kinkBps, maxFeeBps, maxExitWei, maxOutstandingWei)), "");
+        setRisk(kinkBps, maxFeeBps, maxExitWei, maxOutstandingWei, 0);
+    }
+
+    function setRisk(uint16 kinkBps, uint16 maxFeeBps, uint128 maxExitWei, uint128 maxOutstandingWei, uint128 keeperTipWei)
+        internal
+    {
+        adminDo(address(pool), "setRisk", abi.encode(rollupKey, ExitPool.Risk(kinkBps, maxFeeBps, maxExitWei, maxOutstandingWei, keeperTipWei)), "");
     }
 
     function setLane(uint8 quorum, uint16 feeBps) internal {

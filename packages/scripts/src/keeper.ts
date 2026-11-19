@@ -125,7 +125,12 @@ async function round(me: Awaited<ReturnType<typeof account>>) {
   }
   // 2. EVM lane: settle, write off, release, claim
   const work = await due(me.evm as Address);
-  const credit = (await publicClient.readContract({ address: POOL, abi: P, functionName: "watcherCredit", args: [me.evm] })) as bigint;
+  // count the credit this round's settlements will add (each pays its execution fee and 10% of its fee)
+  let credit = (await publicClient.readContract({ address: POOL, abi: P, functionName: "watcherCredit", args: [me.evm] })) as bigint;
+  for (const w of work) if (w.fn === "settle" || w.fn === "markDefault") {
+    const a = (await publicClient.readContract({ address: POOL, abi: P, functionName: "advances", args: w.args })) as any[];
+    credit += (a[3] * 1000n) / 10_000n + (a[9] ?? 0n);
+  }
   const claim = credit >= CLAIM_ABOVE && credit > 0n;
   if (!work.length && !claim) return log(`${advanceIds.size} advances and ${batches.size} batches watched; nothing due; credit ${Number(credit) / 1e18} QOR`);
   const n = work.length + (claim ? 1 : 0);
