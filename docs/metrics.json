@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-18T21:29:33.035Z",
+  "generatedAt": "2026-11-19T12:04:46.077Z",
   "chain": "qorechain-diana",
-  "evmBlock": 10338186,
+  "evmBlock": 10372098,
   "pools": [
     {
       "version": "1",
@@ -46,21 +46,21 @@
     "medianExitGasCostQor": 0.050625
   },
   "postQuantum": {
-    "attestationsVerifiedOnChain": 33,
+    "attestationsVerifiedOnChain": 35,
     "distinctWatchers": 2,
-    "batchesConfirmed": 16,
-    "avgAttestGas": 569391,
-    "batchSubmissionsWithVerifiedMlDsaLayer": 49,
+    "batchesConfirmed": 17,
+    "avgAttestGas": 558746,
+    "batchSubmissionsWithVerifiedMlDsaLayer": 62,
     "classicalSignatureChecksInContracts": 0
   },
   "verification": {
-    "rollupsWatched": 4,
-    "rollupsWeDoNotRun": 3,
-    "batchesReExecuted": 49,
-    "matches": 49,
-    "mismatchesInStoredHistory": 0,
-    "replacedSubmissionsKept": 5,
-    "inboxEntriesReplayed": 106
+    "rollupsWatched": 5,
+    "rollupsWeDoNotRun": 4,
+    "batchesReExecuted": 62,
+    "matches": 61,
+    "mismatchesInStoredHistory": 1,
+    "replacedSubmissionsKept": 9,
+    "inboxEntriesReplayed": 126
   },
   "fraud": {
     "badBatchesSubmitted": 1,
@@ -74,9 +74,9 @@
   },
   "drill": {
     "from": "2026-11-16T20:15:27.435Z",
-    "to": "2026-11-18T21:29:15.657Z",
-    "snapshots": 2918,
-    "hours": 49.23,
+    "to": "2026-11-19T12:03:55.906Z",
+    "snapshots": 3777,
+    "hours": 63.81,
     "transactionsNotOurs": 0,
     "stakeQorNow": 50,
     "windowEverOpenedByOthers": false

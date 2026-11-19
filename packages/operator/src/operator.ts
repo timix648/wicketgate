@@ -33,6 +33,10 @@ import { sendNative, explorerTx, restGet } from "@wicketgate/core/chain";
 import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 import { recipientAddress } from "@wicketgate/core/exit-tree";
 import { politeFetch } from "@wicketgate/core/polite";
+import { robustRest } from "@wicketgate/core/robust-rest";
+import { alert } from "@wicketgate/core/alert";
+import { join } from "node:path";
+import { STATE_DIR } from "@wicketgate/core/env";
 
 export interface OperatorConfig {
   rollupId: string;
@@ -45,10 +49,15 @@ export interface OperatorConfig {
 
 const ZERO = `0x${"00".repeat(32)}` as Hex;
 const POOL = artifact("ExitPool").abi;
+/** A withdrawals root as comparable hex; an empty root (no withdrawals) is "". */
+const wroot = (r: Uint8Array | string | undefined) => {
+  const h = (typeof r === "string" ? r : r ? bytesToHex(r) : "").replace(/^0x/, "").toLowerCase();
+  return /^0*$/.test(h) ? "" : h;
+};
 const hex = (v: Uint8Array | string) => `0x${(typeof v === "string" ? v : bytesToHex(v)).replace(/^0x/, "").toLowerCase()}` as Hex;
 
 export class Operator {
-  private rest = new RestClient(NET.rest, { fetch: politeFetch as any });
+  private rest = robustRest(new RestClient(NET.rest, { fetch: politeFetch as any }));
   private entryCache = new Map<string, any[]>();
   private checkpoint?: { upto: number; ledger: QledgerLedger; acc: Uint8Array | string; finalized: { index: number; withdrawals: QledgerWithdrawal[] }[] };
   private log: (m: string) => void;
@@ -96,6 +105,14 @@ export class Operator {
       this.entryCache.set(key, entries);
       const result = executeQledger(env, ledger, entries);
       if (hex(result.stateRoot) !== hex(b.stateRoot)) throw new Error(`batch ${i} does not match re-execution; refusing to build on it`);
+      // the withdrawals root too: a batch can keep an honest state root and still list a withdrawal
+      // that never happened (19 Nov 2026, wicketgate-pay batch 12). Never build on one that can
+      // still be challenged; if the chain already finalised it, say so loudly and carry on.
+      if (wroot(result.withdrawalsRoot) !== wroot(b.withdrawalsRoot)) {
+        const msg = `${rollupId} batch ${i} lists withdrawals that re-execution does not produce (status ${b.status})`;
+        await alert(`wroot:${rollupId}:${i}:${b.status}`, `${msg}${b.status === "submitted" ? ": refusing to build on it; challenge it now" : ": already final"}.`, join(STATE_DIR, `alerts-${rollupId}.json`));
+        if (b.status === "submitted") throw new Error(`${msg}; refusing to build on it`);
+      }
       acc = qledgerAccumulate({ chainId: NET.chainId, rollupId, from: b.inboxStart, accFrom: acc, entries });
       if (b.status === "finalized") finalized.push({ index: i, withdrawals: result.withdrawals });
       if (prefixFinal && b.status === "finalized") {

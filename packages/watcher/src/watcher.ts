@@ -31,6 +31,8 @@ import { buildExitTree, ZERO_ROOT } from "@wicketgate/core/exit-tree";
 import { TOOLS as MCP_TOOLS, toolContext } from "@qorechain/mcp";
 import { restGet } from "@wicketgate/core/chain";
 import { politeFetch } from "@wicketgate/core/polite";
+import { robustRest } from "@wicketgate/core/robust-rest";
+import { alert } from "@wicketgate/core/alert";
 
 const PQ_STATUS = MCP_TOOLS.find((t) => t.name === "get_pq_status")!;
 const MCP_CTX = toolContext({ defaultNetwork: "testnet" });
@@ -82,8 +84,23 @@ const batchKeyOf = (rollupKey: Hex, i: number) =>
 /** The chain stores an empty withdrawals root; the contract needs 32 bytes. */
 const root32 = (r: string) => (r && r !== "0x" ? hex(r) : ZERO_ROOT);
 
+const BLIND_ALERT_S = Number(process.env.WICKETGATE_BLIND_ALERT_S ?? 180);
+
+/** Seconds since the chain's latest block, or undefined if the RPC cannot be read. */
+async function chainStalledFor(): Promise<number | undefined> {
+  try {
+    const res = await fetch(`${NET.rpc}/status`, { signal: AbortSignal.timeout(15_000) });
+    const t = (await res.json())?.result?.sync_info?.latest_block_time;
+    return t ? (Date.now() - Date.parse(t)) / 1000 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export class Watcher {
-  private rest = new RestClient(NET.rest, { fetch: politeFetch as any });
+  private rest = robustRest(new RestClient(NET.rest, { fetch: politeFetch as any }));
+  private lastOk = new Map<string, number>(); // per rollup: when it was last fully verified
+  private blind = new Set<string>(); // rollups we alerted as blind, to say when they recover
   private entryCache = new Map<string, QledgerEntry[]>();
   private sent = new Set<string>();
   private provenance = new Map<string, Provenance>(); // by tx hash
@@ -119,8 +136,25 @@ export class Watcher {
       try {
         const feed = await this.checkRollup(rollupId);
         index.push({ rollupId, updatedAt: feed.updatedAt, batches: feed.batches.length, file: `${rollupId}.json` });
+        this.lastOk.set(rollupId, Date.now());
+        if (this.blind.delete(rollupId)) await alert(`recovered:${rollupId}`, `${rollupId} is being verified again.`);
       } catch (e: any) {
-        this.log(`[${rollupId}] round failed: ${e?.shortMessage ?? e?.message ?? e}`);
+        const err = String(e?.shortMessage ?? e?.message ?? e);
+        this.log(`[${rollupId}] round failed: ${err}`);
+        // a watchtower that cannot verify is blind: say so while the challenge window is still open
+        if (!this.lastOk.has(rollupId)) this.lastOk.set(rollupId, Date.now());
+        const blindFor = (Date.now() - this.lastOk.get(rollupId)!) / 1000;
+        if (blindFor >= BLIND_ALERT_S) {
+          this.blind.add(rollupId);
+          // a stopped chain (a planned upgrade, say) blinds everyone but also stops the clock on
+          // batches: report that instead of a false fraud warning
+          const stalled = await chainStalledFor();
+          if (stalled !== undefined && stalled > 120) {
+            await alert("chain-halted", `the chain has produced no block for ${Math.round(stalled / 60)} min (an upgrade?); watching resumes when it does.`);
+          } else {
+            await alert(`blind:${rollupId}`, `BLIND on ${rollupId} for ${Math.round(blindFor / 60)} min: cannot verify its batches, so a wrong batch could finalise unchallenged. Last error: ${err.slice(0, 300)}`);
+          }
+        }
       }
     }
     writeFileSync(join(this.cfg.feedDir, "index.json"), JSON.stringify({ version: 1, watcher: this.cfg.me?.evm ?? null, rollups: index }, null, 2));
@@ -209,6 +243,10 @@ export class Watcher {
         }
         verdicts.push(v);
         this.log(`[${rollupId}] batch ${i} MISMATCH (${reason})`);
+        const where = b.status === "submitted"
+          ? (v.challengeTx ? `challenged: ${v.challengeTx}` : "still in its window and NOT challenged: send a fraud proof now")
+          : `already ${b.status}: its window has closed`;
+        await alert(`mismatch:${rollupId}:${i}:${b.status}`, `${rollupId} batch ${i} is WRONG (${reason}); ${where}.`, join(this.cfg.feedDir, "alerts-sent.json"));
       }
     }
 

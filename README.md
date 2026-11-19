@@ -10,19 +10,19 @@ A wicket gate is the small door cut into a large castle gate: people pass throug
 
 > Built for **Build Before Q-Day**, the QoreChain Developer Fest, in the **Protocol Builders** category. Everything runs on the `qorechain-diana` testnet. Every number on this page is backed by a transaction hash in [PROOF.md](PROOF.md).
 
-### Wicketgate in numbers (18 Nov 2026, recomputed from the chain by `pnpm metrics`)
+### Wicketgate in numbers (19 Nov 2026, recomputed from the chain by `pnpm metrics`)
 
 | | |
 | --- | --- |
 | **50× faster on testnet, about 8,400× at the 7-day default** | 27 instant exits, median **72 s** from the batch reaching the chain to the money arriving, against **3,600 s** for the same withdrawals through the normal path |
 | **20 exits, 100 QOR, in 57 seconds, from one batch; the 21st refused by the stake cap** | Stress run: the pool paid until the 100 QOR its two confirming watchers had locked behind the batch was used up, then refused the next exit with `CoverExceeded` ([docs/STRESS.md](docs/STRESS.md)) |
 | **164 QOR paid out instantly, 0 QOR lost** | Every advance whose batch has finalised was repaid by the chain (27 of 27, including one from another team's rollup); **0 defaults**; liquidity providers lost nothing and earned the fees |
-| **33 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
-| **45 of 45 batches re-executed, across 4 rollups** | 3 of those rollups are run by other teams; our watchers found them without being told |
-| **1 of 1 wrong batches caught, in 5 seconds** | The fraud proof landed 4 blocks after the bad batch; the submitter's 1,000 QOR bond was slashed |
+| **35 post-quantum attestations verified on chain** | Each one is an ML-DSA-87 signature checked by the `pqcVerify` precompile inside `ExitPool`; **0** classical signature checks in our contracts |
+| **61 of 62 batches match their re-execution, across 5 rollups** | 4 of those rollups are run by other teams; our watchers found them without being told. The 1 that does not match is `wicketgate-pay` batch 12, submitted by an account that is not ours: our watchers flag its withdrawals root as wrong. It finalised before they could challenge it; we have reported the cause privately to QoreChain and will publish the details after their fix |
+| **Our fraud demo: the wrong batch caught in 5 seconds** | The fraud proof landed 4 blocks after the bad batch; the submitter's 1,000 QOR bond was slashed |
 | **Q-Day, simulated: the classical pool lost 10 QOR, Wicketgate lost 0** | A watcher's secp256k1 key was broken from its on-chain public key in 49 s. With it, the attacker drained an `ecrecover` twin of our pool, while Wicketgate refused the same key on chain ([below](#q-day-simulated-on-chain)) |
 | **18 of 18 attacks refused, on the live contracts** | Forged and replayed ML-DSA-87 signatures, invented and redirected withdrawals, double exits, early slashing, stolen liquidity: each replayed against the pool's real state at the block of a real exit, each refused by the check meant for it ([docs/REDTEAM.md](docs/REDTEAM.md)) |
-| **38 hours under the Q-Day Drill, 0 transactions we did not send** | The drill account (W3) was handed to the organisers' attack drill; a monitor checks it every minute, and its 50 QOR stake is untouched |
+| **The Q-Day Drill: 0 successful attacks, 99.86% of value kept** | Our drill account W3 was handed to the organisers' attack bot for all of 18 November; it sent nothing but our one proof and never opened a window. Watched every minute for 64 hours so far ([docs/drill/DRILL.md](docs/drill/DRILL.md)) |
 
 The full breakdown, every exit and its transaction is in [docs/METRICS.md](docs/METRICS.md). Re-run both yourself, no key needed: `cd packages/scripts && npx tsx src/metrics.ts && npx tsx src/redteam.ts`.
 
@@ -37,6 +37,19 @@ The hackathon asks what happens on Q-Day, when a quantum computer can turn any s
 4. **Same key, same open window: Wicketgate holds.** The attacker sent an attestation from W4 itself; ExitPool reverted it on chain with **`BadSignature`**, because it checks ML-DSA-87 inside the contract. Pool assets did not move.
 
 **QoreChain's windows protect you while they are closed; Wicketgate protects you while they are open.** Full write-up with every hash: [docs/QDAY.md](docs/QDAY.md).
+
+### The drill key goes public. Take the stake if you can.
+
+For the Q-Day Drill (18 November) we handed the classical private key of watcher **W3** to the organisers' attack bot, which tried everything that key alone can do. The organisers publish the drill keys and the attack log after the drill; once W3's key is out, **anyone** can try. It is a standing challenge until 2 December:
+
+| | |
+| --- | --- |
+| The account | W3: `qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf` / `0xAC82Ffe5610f14d09eF451E5c71254Be9164cc88`, about 64 QOR in its wallet |
+| Its stake | **50 QOR** in the live WatcherRegistry `0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad` |
+| What it watches over | ExitPool `0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a`, about **400 QOR** of liquidity |
+| Drill result | 0 successful attacks; 99.86% of its value kept, the only loss being our own proof's fee ([docs/drill/DRILL.md](docs/drill/DRILL.md)) |
+
+**What the key cannot do, and why.** W3's ML-DSA-87 key comes from a secret the drill never saw. Without it, a native transaction from W3 is refused (QoreChain requires the hybrid signature), so no EVM window can be opened, so no EVM transaction from W3 is accepted, so `requestLeave` can never start taking the stake out; and `ecrecover` will not accept W3's signature for a contract its closed window does not admit. Inside Wicketgate, a watcher acts only through ML-DSA-87 signatures checked on chain: red-team attacks A2 to A4 ([docs/REDTEAM.md](docs/REDTEAM.md)) show that a watcher's address without its post-quantum key gets nowhere. W3 runs no service and signs nothing; a monitor logs its balance, sequence, window and stake every minute until 2 December 23:59 UTC.
 
 ---
 

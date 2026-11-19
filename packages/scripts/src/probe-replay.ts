@@ -1,3 +1,4 @@
+
 // Probe 2: rebuild a qledger-v1 rollup's state from the chain alone and compare
 // with what each batch published. Read-only: needs no key and no funds.
 import {
@@ -9,6 +10,7 @@ import {
   qledgerAccumulate,
   bytesToHex,
 } from "@qorechain/rdk";
+import { robustRest } from "@wicketgate/core/robust-rest";
 
 const REST = process.env.QORE_REST ?? "https://api-testnet.qore.host";
 const CHAIN_ID = process.env.QORE_CHAIN_ID ?? "qorechain-diana";
@@ -18,7 +20,7 @@ const hex = (v: Uint8Array | string) =>
   (typeof v === "string" ? v : bytesToHex(v)).replace(/^0x/, "").toLowerCase();
 
 async function main() {
-  const rest = new RestClient(REST);
+  const rest = robustRest(new RestClient(REST));
   const rollup = await rest.getRollup(ROLLUP);
   const inbox = await rest.getInbox(ROLLUP);
   console.log(`rollup ${ROLLUP}: status=${rollup.status} inbox head=${inbox.headSequence} consumed=${inbox.consumedSequence}`);

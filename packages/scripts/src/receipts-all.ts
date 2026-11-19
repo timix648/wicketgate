@@ -7,12 +7,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { createRdkClient, buildSettlementReceipt, verifySettlementReceipt, RestClient, isRestNotFound } from "@qorechain/rdk";
 import { NET } from "@wicketgate/core/env";
 import { politeFetch } from "@wicketgate/core/polite";
+import { robustRest } from "@wicketgate/core/robust-rest";
 
 const ROLLUP = process.argv[2] ?? "wicketgate-pay";
 
 async function main() {
   const client = createRdkClient({ network: "testnet", endpoints: { rest: NET.rest, rpc: NET.rpc } as any });
-  const rest = new RestClient(NET.rest, { fetch: politeFetch as any });
+  const rest = robustRest(new RestClient(NET.rest, { fetch: politeFetch as any }));
   // WICKETGATE_RECEIPTS_DIR lets the feed publisher write them into the public feed instead
   const base = process.env.WICKETGATE_RECEIPTS_DIR ? new URL(`file://${process.env.WICKETGATE_RECEIPTS_DIR.replace(/\/?$/, "/")}`) : new URL("../../../receipts/", import.meta.url);
   const dir = new URL(`${ROLLUP}/`, base);
