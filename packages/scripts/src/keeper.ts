@@ -1,13 +1,20 @@
 // A keeper anyone can run (pool v3). Each round it finds every advance and confirmed batch from the
 // pool's events and, for the ones that are due:
+//  - executes the rollup withdrawal behind an open advance once its batch is final, with the proof
+//    the watchers publish in their public feed, so the chain pays the exit address (no team server
+//    or rollup state needed: a stranger can do it),
 //  - settles an advance whose exit address the chain has paid,
 //  - writes off an advance that was not paid by its due time (the confirming watchers' stake repays the pool),
 //  - releases a batch's watcher stake once it can take no more advances,
 // then claims its credit (v3 pays keepers 10% of each settled or written-off advance's fee).
 // Every action is dry-run first; only the ones that would succeed are sent, through one EVM window
 // scoped to the pool. The keeper needs no role: any account with a proven ML-DSA-87 key works.
-// Usage: npx tsx src/keeper.ts --as <NAME> [--interval 60] [--once] [--claim-above 0.05]
-import { readFileSync } from "node:fs";
+// Usage: npx tsx src/keeper.ts --as <NAME> [--interval 60] [--once] [--claim-above 0.05] [--feed <url-or-dir>]
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { executeWithdrawalMsg, hexToBytes } from "@qorechain/rdk";
+import { sendNative, explorerTx } from "@wicketgate/core/chain";
+import { politeFetch } from "@wicketgate/core/polite";
 import { parseEventLogs, type Address, type Hex } from "viem";
 import { account, DEPLOYMENTS_FILE } from "@wicketgate/core/env";
 import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
@@ -18,6 +25,7 @@ const NAME = arg("as");
 const INTERVAL = Number(arg("interval", "60"));
 const ONCE = args.includes("--once");
 const CLAIM_ABOVE = BigInt(Math.round(Number(arg("claim-above", "0.05")) * 1e18));
+const FEED = arg("feed", "https://raw.githubusercontent.com/timix648/wicketgate-feed/main")!;
 const dep = JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8"));
 const POOL = dep.pool as Address;
 const P = artifact("ExitPool").abi;
@@ -42,6 +50,37 @@ async function scan() {
     }
     scanned = to;
   }
+}
+
+async function feedFile(name: string): Promise<any> {
+  if (/^https?:/.test(FEED)) return JSON.parse(await (await politeFetch(`${FEED}/${name}`)).text());
+  const p = join(FEED, name);
+  return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : undefined;
+}
+
+/** Open advances whose exit address is unpaid and whose withdrawal sits in a finalised batch. */
+async function toExecute() {
+  const open: { exitAddr: string; amountWei: bigint }[] = [];
+  for (const id of advanceIds) {
+    const a = (await publicClient.readContract({ address: POOL, abi: P, functionName: "advances", args: [id] })) as any[];
+    const [, exitAddr, amountWei, , , , , , state] = a;
+    if (state !== OPEN) continue;
+    if ((await publicClient.getBalance({ address: exitAddr })) >= amountWei) continue;
+    open.push({ exitAddr: String(exitAddr).toLowerCase(), amountWei });
+  }
+  if (!open.length) return [];
+  const index = await feedFile("index.json");
+  const out: { rollupId: string; batch: number; w: any }[] = [];
+  for (const r of index?.rollups ?? []) {
+    const feed = await feedFile(r.file);
+    for (const b of feed?.batches ?? []) {
+      if (b.status !== "finalized") continue;
+      for (const w of b.withdrawals ?? []) {
+        if (open.some((o) => o.exitAddr === String(w.recipientEvm ?? "").toLowerCase())) out.push({ rollupId: feed.rollupId, batch: b.index, w });
+      }
+    }
+  }
+  return out;
 }
 
 async function due(me: Address) {
@@ -72,6 +111,19 @@ async function due(me: Address) {
 
 async function round(me: Awaited<ReturnType<typeof account>>) {
   await scan();
+  // 1. native lane: have the chain pay the exit addresses whose withdrawals are final
+  for (const x of await toExecute()) {
+    try {
+      const r = await sendNative(me, [executeWithdrawalMsg({
+        submitter: me.cosmos, rollupId: x.rollupId, batchIndex: x.batch, withdrawalIndex: String(x.w.index),
+        recipient: x.w.recipient, denom: "uqor", amount: String(x.w.amountUqor), proof: (x.w.chainProof ?? []).map((h: string) => hexToBytes(h)),
+      })], { gas: 600_000 });
+      log(`executed withdrawal ${x.w.index} of ${x.rollupId} batch ${x.batch} to ${x.w.recipientEvm}: ${explorerTx(r.transactionHash)}`);
+    } catch (e: any) {
+      log(`withdrawal ${x.w.index} of ${x.rollupId} batch ${x.batch}: ${String(e?.message ?? e).slice(0, 160)}`);
+    }
+  }
+  // 2. EVM lane: settle, write off, release, claim
   const work = await due(me.evm as Address);
   const credit = (await publicClient.readContract({ address: POOL, abi: P, functionName: "watcherCredit", args: [me.evm] })) as bigint;
   const claim = credit >= CLAIM_ABOVE && credit > 0n;
