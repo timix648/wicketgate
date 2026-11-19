@@ -66,8 +66,11 @@ export async function ledgerKey(role: Role | string) {
   return qledgerKeypairFromSeed(seed);
 }
 
-/** Local, non-secret state (exit salts, ledger nonces) kept next to the key file. */
-export const STATE_DIR = join(homedir(), ".wicketgate");
+/**
+ * Local, non-secret state (exit salts, ledger nonces) kept next to the key file.
+ * WICKETGATE_STATE points elsewhere, e.g. to keep a test deployment's exits apart from the live ones.
+ */
+export const STATE_DIR = process.env.WICKETGATE_STATE ?? join(homedir(), ".wicketgate");
 
 /** Deployed addresses. WICKETGATE_DEPLOYMENTS points at another file (e.g. deployments/diana-v1.json). */
 export const DEPLOYMENTS_FILE = process.env.WICKETGATE_DEPLOYMENTS

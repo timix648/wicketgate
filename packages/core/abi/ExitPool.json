@@ -65,7 +65,137 @@
  },
  {
   "type": "function",
+  "name": "KEEPER_FEE_SHARE_BPS",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "OPEN",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_CONTESTED",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_COVER",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_EXIT_TOO_LARGE",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_LANE_FULL",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_LIQUIDITY",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_NOT_CONFIRMED",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_OK",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_PAUSED",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "Q_TOO_LATE",
   "inputs": [],
   "outputs": [
    {
@@ -111,6 +241,19 @@
     "name": "",
     "type": "uint256",
     "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "VERSION",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "string",
+    "internalType": "string"
    }
   ],
   "stateMutability": "view"
@@ -416,6 +559,30 @@
  },
  {
   "type": "function",
+  "name": "equivocated",
+  "inputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "",
+    "type": "address",
+    "internalType": "address"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "exitAddressFor",
   "inputs": [
    {
@@ -466,6 +633,30 @@
    }
   ],
   "stateMutability": "pure"
+ },
+ {
+  "type": "function",
+  "name": "feeBpsFor",
+  "inputs": [
+   {
+    "name": "rollupKey",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "amountWei",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
  },
  {
   "type": "function",
@@ -612,6 +803,25 @@
  },
  {
   "type": "function",
+  "name": "laneOutstanding",
+  "inputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "lanes",
   "inputs": [
    {
@@ -682,6 +892,86 @@
  },
  {
   "type": "function",
+  "name": "pause",
+  "inputs": [
+   {
+    "name": "deadline",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "byA",
+    "type": "bool",
+    "internalType": "bool"
+   },
+   {
+    "name": "sig",
+    "type": "bytes",
+    "internalType": "bytes"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "paused",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "quote",
+  "inputs": [
+   {
+    "name": "rollupKey",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "batchIndex",
+    "type": "uint64",
+    "internalType": "uint64"
+   },
+   {
+    "name": "amountUqor",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "status",
+    "type": "uint8",
+    "internalType": "uint8"
+   },
+   {
+    "name": "feeWei",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "payoutWei",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "coverRoomWei",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "registry",
   "inputs": [],
   "outputs": [
@@ -705,6 +995,123 @@
   ],
   "outputs": [],
   "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "reportEquivocation",
+  "inputs": [
+   {
+    "name": "rollupKey",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "batchIndex",
+    "type": "uint64",
+    "internalType": "uint64"
+   },
+   {
+    "name": "watcher",
+    "type": "address",
+    "internalType": "address"
+   },
+   {
+    "name": "f1",
+    "type": "tuple",
+    "internalType": "struct ExitPool.Facts",
+    "components": [
+     {
+      "name": "stateRoot",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "withdrawalsRoot",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "exitRoot",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   },
+   {
+    "name": "sig1",
+    "type": "bytes",
+    "internalType": "bytes"
+   },
+   {
+    "name": "f2",
+    "type": "tuple",
+    "internalType": "struct ExitPool.Facts",
+    "components": [
+     {
+      "name": "stateRoot",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "withdrawalsRoot",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "exitRoot",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   },
+   {
+    "name": "sig2",
+    "type": "bytes",
+    "internalType": "bytes"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "penalty",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "risk",
+  "inputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "kinkBps",
+    "type": "uint16",
+    "internalType": "uint16"
+   },
+   {
+    "name": "maxFeeBps",
+    "type": "uint16",
+    "internalType": "uint16"
+   },
+   {
+    "name": "maxExitWei",
+    "type": "uint128",
+    "internalType": "uint128"
+   },
+   {
+    "name": "maxOutstandingWei",
+    "type": "uint128",
+    "internalType": "uint128"
+   }
+  ],
+  "stateMutability": "view"
  },
  {
   "type": "function",
@@ -792,6 +1199,61 @@
  },
  {
   "type": "function",
+  "name": "setRisk",
+  "inputs": [
+   {
+    "name": "rollupKey",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "r",
+    "type": "tuple",
+    "internalType": "struct ExitPool.Risk",
+    "components": [
+     {
+      "name": "kinkBps",
+      "type": "uint16",
+      "internalType": "uint16"
+     },
+     {
+      "name": "maxFeeBps",
+      "type": "uint16",
+      "internalType": "uint16"
+     },
+     {
+      "name": "maxExitWei",
+      "type": "uint128",
+      "internalType": "uint128"
+     },
+     {
+      "name": "maxOutstandingWei",
+      "type": "uint128",
+      "internalType": "uint128"
+     }
+    ]
+   },
+   {
+    "name": "deadline",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "sigA",
+    "type": "bytes",
+    "internalType": "bytes"
+   },
+   {
+    "name": "sigB",
+    "type": "bytes",
+    "internalType": "bytes"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
   "name": "settle",
   "inputs": [
    {
@@ -848,6 +1310,45 @@
  },
  {
   "type": "function",
+  "name": "stats",
+  "inputs": [
+   {
+    "name": "",
+    "type": "address",
+    "internalType": "address"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "attestations",
+    "type": "uint64",
+    "internalType": "uint64"
+   },
+   {
+    "name": "confirmations",
+    "type": "uint64",
+    "internalType": "uint64"
+   },
+   {
+    "name": "equivocations",
+    "type": "uint32",
+    "internalType": "uint32"
+   },
+   {
+    "name": "defaults",
+    "type": "uint32",
+    "internalType": "uint32"
+   },
+   {
+    "name": "slashedWei",
+    "type": "uint128",
+    "internalType": "uint128"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "sweepToBeneficiary",
   "inputs": [
    {
@@ -889,6 +1390,29 @@
    }
   ],
   "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "unpause",
+  "inputs": [
+   {
+    "name": "deadline",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "sigA",
+    "type": "bytes",
+    "internalType": "bytes"
+   },
+   {
+    "name": "sigB",
+    "type": "bytes",
+    "internalType": "bytes"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
  },
  {
   "type": "function",
@@ -1147,6 +1671,43 @@
  },
  {
   "type": "event",
+  "name": "Equivocation",
+  "inputs": [
+   {
+    "name": "batchKey",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "watcher",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "reporter",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "penaltyWei",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "bountyWei",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
   "name": "InstantExit",
   "inputs": [
    {
@@ -1190,6 +1751,31 @@
     "type": "uint64",
     "indexed": false,
     "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "KeeperPaid",
+  "inputs": [
+   {
+    "name": "id",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "keeper",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
    }
   ],
   "anonymous": false
@@ -1247,6 +1833,19 @@
  },
  {
   "type": "event",
+  "name": "PausedSet",
+  "inputs": [
+   {
+    "name": "paused",
+    "type": "bool",
+    "indexed": false,
+    "internalType": "bool"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
   "name": "Recovered",
   "inputs": [
    {
@@ -1273,6 +1872,47 @@
     "type": "bytes32",
     "indexed": true,
     "internalType": "bytes32"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "RiskSet",
+  "inputs": [
+   {
+    "name": "rollupKey",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "risk",
+    "type": "tuple",
+    "indexed": false,
+    "internalType": "struct ExitPool.Risk",
+    "components": [
+     {
+      "name": "kinkBps",
+      "type": "uint16",
+      "internalType": "uint16"
+     },
+     {
+      "name": "maxFeeBps",
+      "type": "uint16",
+      "internalType": "uint16"
+     },
+     {
+      "name": "maxExitWei",
+      "type": "uint128",
+      "internalType": "uint128"
+     },
+     {
+      "name": "maxOutstandingWei",
+      "type": "uint128",
+      "internalType": "uint128"
+     }
+    ]
    }
   ],
   "anonymous": false
@@ -1358,6 +1998,11 @@
  },
  {
   "type": "error",
+  "name": "AlreadyReported",
+  "inputs": []
+ },
+ {
+  "type": "error",
   "name": "AlreadyVoted",
   "inputs": []
  },
@@ -1369,6 +2014,11 @@
  {
   "type": "error",
   "name": "BadProof",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "BadRisk",
   "inputs": []
  },
  {
@@ -1399,6 +2049,11 @@
  },
  {
   "type": "error",
+  "name": "ExitTooLarge",
+  "inputs": []
+ },
+ {
+  "type": "error",
   "name": "ExitUsed",
   "inputs": []
  },
@@ -1415,6 +2070,11 @@
  {
   "type": "error",
   "name": "LaneDisabled",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "LaneFull",
   "inputs": []
  },
  {
@@ -1455,12 +2115,22 @@
  },
  {
   "type": "error",
+  "name": "Paused",
+  "inputs": []
+ },
+ {
+  "type": "error",
   "name": "Reentrancy",
   "inputs": []
  },
  {
   "type": "error",
   "name": "SameAdmin",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "SameFacts",
   "inputs": []
  },
  {
