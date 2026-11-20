@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-19T12:04:46.077Z",
+  "generatedAt": "2026-11-19T22:03:33.983Z",
   "chain": "qorechain-diana",
-  "evmBlock": 10372098,
+  "evmBlock": 10396484,
   "pools": [
     {
       "version": "1",
@@ -23,44 +23,44 @@
     }
   ],
   "speed": {
-    "instantExits": 27,
-    "medianSecondsFromBatchPostedToPaid": 72,
+    "instantExits": 28,
+    "medianSecondsFromBatchPostedToPaid": 70.5,
     "maxSecondsFromBatchPostedToPaid": 624,
-    "medianSecondsFromWithdrawalRequestToPaid": 97,
+    "medianSecondsFromWithdrawalRequestToPaid": 95.5,
     "medianNormalPathSeconds": 3600,
-    "speedupTestnet": 50,
-    "speedupAtMainnetDefaultWindow": 8400
+    "speedupTestnet": 51.06,
+    "speedupAtMainnetDefaultWindow": 8579
   },
   "money": {
-    "qorPaidInstantly": 164,
+    "qorPaidInstantly": 166,
     "largestExitQor": 50,
-    "feesQor": 0.492,
+    "feesQor": 0.498,
     "feeBps": 30,
-    "advancesDue": 27,
-    "advancesRepaid": 27,
+    "advancesDue": 28,
+    "advancesRepaid": 28,
     "defaults": 0,
     "providerDepositsQor": 1040,
-    "poolAssetsNowQor": 400.2205,
+    "poolAssetsNowQor": 400.2247,
     "providerLossesQor": 0,
     "medianMinutesAdvanceToRepaid": 60.77,
     "medianExitGasCostQor": 0.050625
   },
   "postQuantum": {
-    "attestationsVerifiedOnChain": 35,
+    "attestationsVerifiedOnChain": 39,
     "distinctWatchers": 2,
-    "batchesConfirmed": 17,
-    "avgAttestGas": 558746,
-    "batchSubmissionsWithVerifiedMlDsaLayer": 62,
+    "batchesConfirmed": 19,
+    "avgAttestGas": 540733,
+    "batchSubmissionsWithVerifiedMlDsaLayer": 105,
     "classicalSignatureChecksInContracts": 0
   },
   "verification": {
-    "rollupsWatched": 5,
-    "rollupsWeDoNotRun": 4,
-    "batchesReExecuted": 62,
-    "matches": 61,
+    "rollupsWatched": 6,
+    "rollupsWeDoNotRun": 5,
+    "batchesReExecuted": 105,
+    "matches": 104,
     "mismatchesInStoredHistory": 1,
-    "replacedSubmissionsKept": 9,
-    "inboxEntriesReplayed": 126
+    "replacedSubmissionsKept": 11,
+    "inboxEntriesReplayed": 416
   },
   "fraud": {
     "badBatchesSubmitted": 1,
@@ -74,9 +74,9 @@
   },
   "drill": {
     "from": "2026-11-16T20:15:27.435Z",
-    "to": "2026-11-19T12:03:55.906Z",
-    "snapshots": 3777,
-    "hours": 63.81,
+    "to": "2026-11-19T22:03:08.841Z",
+    "snapshots": 4369,
+    "hours": 73.79,
     "transactionsNotOurs": 0,
     "stakeQorNow": 50,
     "windowEverOpenedByOthers": false
@@ -594,6 +594,25 @@
       "repaid": true,
       "repaidTx": "0x6451dc2380019a507861cea03ab6b93bd1e6d6250d7fed931b65500270398ec6",
       "repaidSecondsAfterAdvance": 3645
+    },
+    {
+      "pool": "2.1",
+      "rollupId": "vigil-pay-1",
+      "batchIndex": 10,
+      "batchStatus": "finalized",
+      "amountQor": 2,
+      "feeQor": 0.006,
+      "exitTx": "0x05ede6d34ebbe83a3cc324ca6b5161ad4f93b28729fb4bcf7d6c70e786ceabbb",
+      "exitAddr": "0x3733321CA1Ee95436Cb23216d331d1DBFc18E129",
+      "withdrawalPostTx": "803B51E1402B536F13BA9551C3BDAB39CF557DEB255ABBC9B72310172CB3DDEB",
+      "gasUsed": 423196,
+      "gasCostQor": 0.04760955,
+      "secondsFromRequest": 39,
+      "secondsAfterBatchPosted": 35,
+      "normalPathSeconds": 3601,
+      "repaid": true,
+      "repaidTx": "0x508a1c32d0938a3d5c563fce55e257f3dea48821d0a199327ddc9794702a436b",
+      "repaidSecondsAfterAdvance": 3601
     }
   ]
 }

@@ -50,6 +50,15 @@
       "quorum": 2,
       "lockPerWatcher": "20000000000000000000",
       "enabled": true
+    },
+    "vigil-pay-1": {
+      "rollupKey": "0x2625e6d758919c41ae36231f6d96be4ecb64babe96e0f3eedb8009c750b24bef",
+      "windowSecs": 3600,
+      "graceSecs": 1800,
+      "feeBps": 30,
+      "quorum": 2,
+      "lockPerWatcher": "20000000000000000000",
+      "enabled": true
     }
   }
 }

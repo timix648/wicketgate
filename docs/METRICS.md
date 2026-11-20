@@ -1,6 +1,6 @@
 # Wicketgate in numbers
 
-Generated 2026-11-19T12:04:46.077Z from public chain data at EVM block 10,372,098 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
+Generated 2026-11-19T22:03:33.983Z from public chain data at EVM block 10,396,484 by `npx tsx packages/scripts/src/metrics.ts`. Nothing here is typed in by hand: the script reads the event logs of all three ExitPool deployments, the RDK batch records, block times and the published watcher feed. The raw numbers are in [metrics.json](metrics.json).
 
 ![Time until the money arrives, instant exit against the normal path](images/time-to-funds.svg)
 
@@ -8,43 +8,43 @@ Generated 2026-11-19T12:04:46.077Z from public chain data at EVM block 10,372,09
 
 | | |
 | --- | --- |
-| Instant exits paid | **27** |
-| Median time from the batch reaching the chain to the money arriving | **72 s** (slowest 10 min) |
-| Median time from the withdrawal request to the money arriving | **97 s** |
+| Instant exits paid | **28** |
+| Median time from the batch reaching the chain to the money arriving | **71 s** (slowest 10 min) |
+| Median time from the withdrawal request to the money arriving | **96 s** |
 | Same withdrawals through the normal path (measured batch finalisation) | 60 min |
-| Faster on testnet (1-hour challenge window) | **50×** |
-| Faster at the RDK's default 7-day window | **8,400×** |
+| Faster on testnet (1-hour challenge window) | **51.06×** |
+| Faster at the RDK's default 7-day window | **8,579×** |
 
 ## Money
 
 | | |
 | --- | --- |
-| QOR paid out instantly | **164 QOR** (largest single exit 50 QOR) |
-| Advances whose batch has finalised | 27, of which repaid: **27** |
+| QOR paid out instantly | **166 QOR** (largest single exit 50 QOR) |
+| Advances whose batch has finalised | 28, of which repaid: **28** |
 | Defaults | **0** |
 | Losses for liquidity providers | **0 QOR** |
-| Fees charged (0.3%) | 0.492 QOR |
+| Fees charged (0.3%) | 0.498 QOR |
 | Median time from advance to the pool being repaid | 60.77 min |
 | Median gas cost of an instant exit | 0.050625 QOR |
-| Liquidity in the live pool | 400.2205 QOR |
+| Liquidity in the live pool | 400.2247 QOR |
 
 ## Post-quantum security
 
 | | |
 | --- | --- |
-| Watcher attestations whose ML-DSA-87 signature was verified on chain (`pqcVerify`) | **35**, from 2 watchers |
-| Batches confirmed by a quorum of PQ-signed attestations | 17 |
-| Average gas of one attestation, signature check included | 558,746 |
-| Batch submissions whose ML-DSA-87 layer the watchers checked (MCP `get_pq_status`) | 62 |
+| Watcher attestations whose ML-DSA-87 signature was verified on chain (`pqcVerify`) | **39**, from 2 watchers |
+| Batches confirmed by a quorum of PQ-signed attestations | 19 |
+| Average gas of one attestation, signature check included | 540,733 |
+| Batch submissions whose ML-DSA-87 layer the watchers checked (MCP `get_pq_status`) | 105 |
 | Classical signature checks (`ecrecover`) in our contracts | **0** ([CBOM](../cbom/wicketgate.cdx.json)) |
 
 ## Independent verification
 
 | | |
 | --- | --- |
-| Rollups our watchers follow | **5**, of which 4 we do not run |
-| Batches re-executed from chain data | **62** (61 match) |
-| Wrong batches kept on record after the chain replaced them | 9 |
+| Rollups our watchers follow | **6**, of which 5 we do not run |
+| Batches re-executed from chain data | **105** (104 match) |
+| Wrong batches kept on record after the chain replaced them | 11 |
 
 ## Fraud
 
@@ -59,7 +59,7 @@ Generated 2026-11-19T12:04:46.077Z from public chain data at EVM block 10,372,09
 
 | | |
 | --- | --- |
-| Watched | 2026-11-16T20:15:27.435Z to 2026-11-19T12:03:55.906Z (63.81 h, 3,777 snapshots) |
+| Watched | 2026-11-16T20:15:27.435Z to 2026-11-19T22:03:08.841Z (73.79 h, 4,369 snapshots) |
 | Transactions from the drill account that were not ours | **0** |
 | Drill account's stake now | 50 QOR |
 
@@ -94,3 +94,4 @@ Generated 2026-11-19T12:04:46.077Z from public chain data at EVM block 10,372,09
 | wicketgate-pay #11 | v2.1 | 5 | 87 s | 60 min | yes | `0x9e612d2002…` |
 | wicketgate-pay #11 | v2.1 | 5 | 88 s | 60 min | yes | `0x160bf40ac0…` |
 | wicketgate-pay #11 | v2.1 | 5 | 90 s | 60 min | yes | `0x46e6710ec7…` |
+| vigil-pay-1 #10 | v2.1 | 2 | 35 s | 60 min | yes | `0x05ede6d34e…` |

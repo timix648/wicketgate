@@ -10,3 +10,4 @@ contracts/broadcast/*/dry-run/
 .next/
 coverage/
 feed/
+*.tsbuildinfo

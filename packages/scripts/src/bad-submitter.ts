@@ -1,7 +1,11 @@
 // Fraud demo: ADMIN_B bonds as a submitter on a rollup, posts one ledger transfer, then submits
-// the next batch with ONE BYTE of its state root flipped. Watchers in challenge mode should
-// refuse to attest it and send the fraud proof that slashes ADMIN_B's bond.
-// Usage: pnpm bad [rollup-id]   (stop the honest operator first so it does not batch first)
+// the next batch with a lie. Watchers in challenge mode should refuse to attest it and send the
+// fraud proof that slashes ADMIN_B's bond.
+//  - default: ONE BYTE of the state root flipped;
+//  - --withdrawals: the state root is honest and the withdrawals root is fabricated, so the batch
+//    lists a withdrawal that never happened. This is the lie of wicketgate-pay batch 12 (19 Nov),
+//    which finalised only because a wrapped post had blinded every reference-RDK watcher.
+// Usage: pnpm bad [rollup-id] [--withdrawals]   (stop the honest operator first so it does not batch first)
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -10,14 +14,17 @@ import {
 } from "@qorechain/rdk";
 import { account, ledgerKey, NET, STATE_DIR } from "@wicketgate/core/env";
 import { sendNative, explorerTx } from "@wicketgate/core/chain";
+import { robustRest } from "@wicketgate/core/robust-rest";
+import { keccak256, toHex, hexToBytes } from "viem";
 
-const ROLLUP = process.argv[2] ?? "wicketgate-pay";
+const ROLLUP = process.argv.slice(2).find((a) => !a.startsWith("--")) ?? "wicketgate-pay";
+const WITHDRAWALS_LIE = process.argv.includes("--withdrawals");
 const NONCES = join(STATE_DIR, "ledger-nonces.json");
 
 async function main() {
   const A = await account("ADMIN_A");
   const B = await account("ADMIN_B");
-  const rest = new RestClient(NET.rest);
+  const rest = robustRest(new RestClient(NET.rest));
   const env = { chainId: NET.chainId, rollupId: ROLLUP };
 
   const bond = await rest.getSubmitterBond(ROLLUP, B.cosmos).catch(() => undefined as any);
@@ -48,11 +55,21 @@ async function main() {
     acc = qledgerAccumulate({ ...env, from: b.inboxStart, accFrom: acc, entries: e });
   }
   const plan = await planQledgerBatch(rest, { chainId: NET.chainId, rollupId: ROLLUP, submitter: B.cosmos, ledger });
-  const bad = Uint8Array.from(plan.input.stateRoot);
-  bad[31] ^= 0x01;
-  console.log(`batch ${plan.input.batchIndex}: honest state root ${bytesToHex(plan.input.stateRoot)}`);
-  console.log(`batch ${plan.input.batchIndex}: submitted root      ${bytesToHex(bad)}  (last byte flipped)`);
-  const r = await sendNative(B, [submitBatchMsg({ ...plan.input, stateRoot: bad, sequencer: B.cosmos } as any)], { gas: 2_000_000 });
+  let lie: Record<string, unknown>;
+  if (WITHDRAWALS_LIE) {
+    const fake = hexToBytes(keccak256(toHex(`a withdrawal that never happened, batch ${plan.input.batchIndex}`)));
+    console.log(`batch ${plan.input.batchIndex}: honest state root  ${bytesToHex(plan.input.stateRoot)} (kept)`);
+    console.log(`batch ${plan.input.batchIndex}: honest withdrawals ${plan.input.withdrawalsRoot ? bytesToHex(plan.input.withdrawalsRoot as any) : "(none)"}`);
+    console.log(`batch ${plan.input.batchIndex}: submitted          ${bytesToHex(fake)}  (fabricated)`);
+    lie = { withdrawalsRoot: fake };
+  } else {
+    const bad = Uint8Array.from(plan.input.stateRoot);
+    bad[31] ^= 0x01;
+    console.log(`batch ${plan.input.batchIndex}: honest state root ${bytesToHex(plan.input.stateRoot)}`);
+    console.log(`batch ${plan.input.batchIndex}: submitted root      ${bytesToHex(bad)}  (last byte flipped)`);
+    lie = { stateRoot: bad };
+  }
+  const r = await sendNative(B, [submitBatchMsg({ ...plan.input, ...lie, sequencer: B.cosmos } as any)], { gas: 2_000_000 });
   console.log(`ADMIN_B submitted the wrong batch: ${explorerTx(r.transactionHash)}`);
 }
 main().catch((e) => {
