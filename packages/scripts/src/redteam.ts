@@ -9,7 +9,8 @@ import { decodeFunctionData, parseEventLogs, keccak256, toHex, type Address, typ
 import { artifact, publicClient } from "@wicketgate/core/evm";
 
 const ROOT = new URL("../../../", import.meta.url);
-const dep = JSON.parse(readFileSync(new URL("deployments/diana.json", ROOT), "utf8"));
+// the attacks replay real exits on pool v2.1, so they run against that deployment
+const dep = JSON.parse(readFileSync(new URL("deployments/diana-v2.1.json", ROOT), "utf8"));
 const P = artifact("ExitPool").abi, R = artifact("WatcherRegistry").abi;
 const pool = dep.pool as Address, registry = dep.registry as Address;
 const ATTACKER = "0xbad0000000000000000000000000000000000bad" as Address;

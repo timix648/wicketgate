@@ -53,6 +53,8 @@ The worst a stolen classical key can do while a window **is** open is what that 
 | --- | --- | --- |
 | A quorum of watchers attests a wrong batch and users exit against it | The pool pays the exits; the batch is later rejected, so the exit addresses are never funded | `markDefault` after the due time repays the pool from the confirming watchers' locked stake. **Advances against a batch never exceed the stake locked behind it**, so providers are made whole even if every confirming watcher colluded |
 | One watcher attests different facts from the others | The batch is marked **contested**; no more advances against it | One honest staked watcher is enough to stop the pool paying on a disputed batch |
+| One watcher signs two different results for the same batch (equivocation), on chain or off | Pool v3.1: anyone can submit both signed messages to `reportEquivocation`; both are verified with ML-DSA-87 on chain against the watcher's current key; its free stake is taken (half to the reporter), it is removed, and the batch is contested | Signing two stories costs the stake; open advances keep their locked stake behind them |
+| A wrong batch is hidden from watchers by wrapping its rollup posts in authz `MsgExec` (seen on 19 Nov, `wicketgate-pay` batch 12) | Our watchers and operator unwrap such posts before re-executing, and compare the withdrawals root as well as the state root | A watcher built on the unpatched RDK fetcher alone stays blind to such a batch; reported to QoreChain |
 | A watcher attests facts that disagree, to grief the pool | Fast exits on that batch stop | Liveness only: no funds move. Users fall back to the normal withdrawal and `sweepToBeneficiary` |
 | A watcher replays an attestation for another batch, rollup, pool or network | Refused | The signed message binds chain id, pool address, rollup key, batch index and all three roots |
 | A watcher rotates its post-quantum key | Old signatures stop verifying | The contract reads the current key when it verifies; past confirmations are stored as results, not signatures |
@@ -71,6 +73,9 @@ If no honest watcher is running, a wrong batch can finalise and the chain will p
 | A forged or stretched exit proof | The leaf binds index, exit address and amount; the proof is checked against the exit root the watchers signed |
 | Late repayment after a default | `settle` still works on a defaulted advance and credits the slashed watchers back |
 | The pool runs dry | `instantExit` refuses; the user waits for finalisation and calls `sweepToBeneficiary` |
+| A rush drains liquidity cheaply, or one rollup ties up the whole pool | Pool v3.1: the fee rises past 50% utilisation to at most 3%; per-rollup caps on a single exit (`maxExitWei`) and on the total owed (`maxOutstandingWei`) |
+| An emergency needs new exits stopped | Pool v3.1: either admin alone pauses new exits with one ML-DSA-87 signature; settle, write-off, release, sweep and provider withdrawals keep working, so the brake cannot trap funds; resuming needs both admins |
+| Nobody repays the pool after finalisation | Pool v3.1 pays keepers: a fixed execution fee per exit plus 10% of its fee, credited to whoever settles or writes off the advance; any account with a proven ML-DSA-87 key can run `keeper.ts` |
 | Funds stuck at an exit address | `sweepToBeneficiary` deploys the exit contract and sends the whole balance to the beneficiary whenever no open advance points at it (checked on diana: see PROOF.md) |
 | Re-entrancy during payouts | Every function that moves value is guarded by a re-entrancy lock |
 
