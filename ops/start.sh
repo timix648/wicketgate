@@ -7,6 +7,8 @@ LOGS="$HOME/.wicketgate/logs"
 mkdir -p "$LOGS" "$HOME/.wicketgate/feed-w1" "$HOME/.wicketgate/feed-w2"
 ROLLUPS="${WICKETGATE_ROLLUPS:-all}"
 
+# The wicketgate-pay operator reads the app's relay URL and token (WICKETGATE_RELAY_URL,
+# WICKETGATE_RELAY_TOKEN) from ~/.wicketgate/relay.env, outside the repository, when that file exists.
 # W1 and the wicketgate-pay operator send Telegram alerts (blind watcher, wrong batch); the others
 # stay quiet so each event arrives once. See packages/core/src/alert.ts.
 start() { # name, workdir, command, log
@@ -17,7 +19,7 @@ start() { # name, workdir, command, log
 
 start wicketgate-w1     "$ROOT/packages/watcher"  "WICKETGATE_ALERTS=1 WICKETGATE_ALERT_ENV=/opt/opportunity-hunter/.env npx tsx src/cli.ts --mode challenge --as W1 --rollup $ROLLUPS --interval 10 --feed $HOME/.wicketgate/feed-w1" w1
 start wicketgate-w2     "$ROOT/packages/watcher"  "npx tsx src/cli.ts --mode challenge --as W2 --rollup $ROLLUPS --interval 10 --feed $HOME/.wicketgate/feed-w2" w2
-start wicketgate-op-pay "$ROOT/packages/operator" "WICKETGATE_ALERTS=1 WICKETGATE_ALERT_ENV=/opt/opportunity-hunter/.env npx tsx src/cli.ts --rollup wicketgate-pay --interval 20" op-pay
+start wicketgate-op-pay "$ROOT/packages/operator" "set -a; [ -f $HOME/.wicketgate/relay.env ] \&\& . $HOME/.wicketgate/relay.env; set +a; WICKETGATE_ALERTS=1 WICKETGATE_ALERT_ENV=/opt/opportunity-hunter/.env npx tsx src/cli.ts --rollup wicketgate-pay --interval 20" op-pay
 start wicketgate-op-e2e "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup rdk-v328-e2e-mwd5v89d --interval 20" op-e2e
 start wicketgate-op-vigil "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-1 --interval 30" op-vigil   # not bonded there: only pays out and settles withdrawals behind our advances
 start wicketgate-op-vigilpay "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-pay-1 --interval 30" op-vigilpay   # likewise for vigil-pay-1 (another team's rollup)
