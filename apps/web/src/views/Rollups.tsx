@@ -1,14 +1,17 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { batchState } from "../lib/feed";
-import { useAllRollups, useRollup } from "../lib/queries";
-import { LANES } from "../lib/config";
+import { useAllRollups, useLanes, useRollup } from "../lib/queries";
 import { ago, dateTime, duration, qorFromUqor } from "../lib/format";
 import { BatchPill, ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
 import { BatchStrip, StripLegend } from "../components/BatchStrip";
 
 export function RollupList() {
-  const nav = useNavigate();
+  const router = useRouter();
   const { rollups, isLoading, error } = useAllRollups();
+  const { laneOf, isLoading: lanesLoading } = useLanes();
   return (
     <>
       <div className="page-head">
@@ -40,12 +43,12 @@ export function RollupList() {
                 const bad = r.batches.filter((b) => b.verdict !== "match").length;
                 const last = r.batches.at(-1);
                 return (
-                  <tr key={r.rollupId} className="link" onClick={() => nav(`/rollups/${r.rollupId}`)}>
-                    <td className="mono"><Link to={`/rollups/${r.rollupId}`}>{r.rollupId}</Link></td>
+                  <tr key={r.rollupId} className="link" onClick={() => router.push(`/r/${r.rollupId}`)}>
+                    <td className="mono"><Link href={`/r/${r.rollupId}`}>{r.rollupId}</Link></td>
                     <td style={{ whiteSpace: "normal", minWidth: 200 }}><BatchStrip rollup={r} linked={false} /></td>
                     <td className="num">{r.batches.length}</td>
                     <td>{bad ? <Pill tone="bad">{bad} mismatch</Pill> : <Pill tone="ok">all match</Pill>}</td>
-                    <td>{LANES[r.rollupId]?.enabled ? <Pill tone="info">open</Pill> : <span className="faint">none</span>}</td>
+                    <td>{lanesLoading ? <span className="faint">…</span> : laneOf(r.rollupId)?.enabled ? <Pill tone="info">open</Pill> : <span className="faint">none</span>}</td>
                     <td>{last ? ago(last.submittedTime * 1000) : "–"}</td>
                   </tr>
                 );
@@ -59,8 +62,8 @@ export function RollupList() {
 }
 
 export function RollupDetail() {
-  const { rollupId } = useParams();
-  const nav = useNavigate();
+  const { rollupId } = useParams<{ rollupId: string }>();
+  const router = useRouter();
   const { data: r, error, isLoading } = useRollup(rollupId);
 
   if (error) return <><Crumbs id={rollupId} /><ErrorBox error={error} /></>;
@@ -93,7 +96,7 @@ export function RollupDetail() {
               {bad.map((b, i) => (
                 <span key={b.index}>
                   {i > 0 && ", "}
-                  <Link to={`/rollups/${r.rollupId}/batches/${b.index}`}>batch {b.index}</Link>
+                  <Link href={`/r/${r.rollupId}/${b.index}`}>batch {b.index}</Link>
                   {b.reason && <> ({b.reason})</>}
                 </span>
               ))}
@@ -145,11 +148,11 @@ export function RollupDetail() {
             </thead>
             <tbody>
               {[...r.batches].reverse().map((b) => {
-                const to = `/rollups/${r.rollupId}/batches/${b.index}`;
+                const to = `/r/${r.rollupId}/${b.index}`;
                 const total = (b.withdrawals ?? []).reduce((s, w) => s + Number(w.amountUqor), 0);
                 return (
-                  <tr key={b.index} className="link" onClick={() => nav(to)}>
-                    <td className="num"><Link to={to} onClick={(e) => e.stopPropagation()}>{b.index}</Link></td>
+                  <tr key={b.index} className="link" onClick={() => router.push(to)}>
+                    <td className="num"><Link href={to} onClick={(e) => e.stopPropagation()}>{b.index}</Link></td>
                     <td title={ago(b.submittedTime * 1000)}>{dateTime(b.submittedTime * 1000)}</td>
                     <td className="muted">{b.inboxStart}–{b.inboxEnd}</td>
                     <td className="num">{b.withdrawals?.length ? `${b.withdrawals.length} · ${qorFromUqor(total)} QOR` : <span className="faint">0</span>}</td>
@@ -172,7 +175,7 @@ export function RollupDetail() {
 function Crumbs({ id }: { id?: string }) {
   return (
     <div className="crumbs" style={{ paddingTop: 24 }}>
-      <Link to="/rollups">Rollups</Link> / <span className="mono">{id}</span>
+      <Link href="/r">Rollups</Link> / <span className="mono">{id}</span>
     </div>
   );
 }

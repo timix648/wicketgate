@@ -18,7 +18,7 @@ export interface Withdrawal {
 
 export interface Batch {
   index: number;
-  /** "finalized" today; anything else means still inside its challenge window. */
+  /** "submitted" (inside its challenge window), "finalized" or "rejected" (by a fraud proof). */
   status: string;
   inboxStart: number;
   inboxEnd: number;
@@ -129,7 +129,7 @@ export const fetchMetrics = () => getJson<Metrics>(METRICS_URL);
 export type BatchState = "mismatch" | "contested" | "pending" | "confirmed" | "match";
 
 export function batchState(b: Batch): BatchState {
-  if (b.verdict !== "match") return "mismatch";
+  if (b.verdict !== "match" || b.status === "rejected") return "mismatch";
   if (b.pool?.contested) return "contested";
   if (b.status !== "finalized") return b.pool?.confirmed ? "confirmed" : "pending";
   return "match";

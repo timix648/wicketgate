@@ -1,5 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { keccak256, toHex } from "viem";
 import { eventTime, type ChainEvent } from "../lib/events";
 import { useAllRollups, useBatchKeyMap, useEvents } from "../lib/queries";
@@ -18,11 +20,11 @@ export function Activity({ limit = 12 }: { limit?: number }) {
 
   const batchLink = (rollupKey: string, index: bigint | number) => {
     const id = rollupOf.get(String(rollupKey).toLowerCase());
-    return id ? <Link to={`/rollups/${id}/batches/${index}`}><span className="mono">{id}</span> batch {String(index)}</Link> : <>batch {String(index)}</>;
+    return id ? <Link href={`/r/${id}/${index}`}><span className="mono">{id}</span> batch {String(index)}</Link> : <>batch {String(index)}</>;
   };
   const byKey = (batchKey: string) => {
     const b = keys.get(String(batchKey).toLowerCase());
-    return b ? <Link to={`/rollups/${b.rollupId}/batches/${b.index}`}><span className="mono">{b.rollupId}</span> batch {b.index}</Link> : <>a batch</>;
+    return b ? <Link href={`/r/${b.rollupId}/${b.index}`}><span className="mono">{b.rollupId}</span> batch {b.index}</Link> : <>a batch</>;
   };
 
   const describe = (e: ChainEvent): ReactNode | undefined => {
@@ -34,7 +36,7 @@ export function Activity({ limit = 12 }: { limit?: number }) {
           ? <>{batchLink(a.rollupKey, a.batchIndex)} confirmed, {qorFromWei(a.coverWei)} QOR of stake behind it</>
           : <>{batchLink(a.rollupKey, a.batchIndex)} confirmed by the watchers; instant exits open (their stake locks as each exit is paid)</>;
       case "BatchContestedEvt": return <><strong style={{ color: "var(--bad)" }}>Contested:</strong> <WatcherRef address={a.watcher} /> disagreed on {batchLink(a.rollupKey, a.batchIndex)}; payouts frozen</>;
-      case "InstantExit": return <>Instant exit of <strong>{qorFromWei(a.amountWei)} QOR</strong> paid from {byKey(a.batchKey)} to <Link to={`/track/${a.beneficiary}`} className="hash">{String(a.beneficiary).slice(0, 8)}…</Link></>;
+      case "InstantExit": return <>Instant exit of <strong>{qorFromWei(a.amountWei)} QOR</strong> paid from {byKey(a.batchKey)} to <Link href={`/track/${a.beneficiary}`} className="hash">{String(a.beneficiary).slice(0, 8)}…</Link></>;
       case "Settled": return <>The chain repaid an advance of {qorFromWei(a.receivedWei)} QOR to the pool</>;
       case "Recovered": return <>A defaulted advance was recovered ({qorFromWei(a.receivedWei)} QOR); watchers refunded</>;
       case "Defaulted": return <><strong style={{ color: "var(--bad)" }}>Default:</strong> {qorFromWei(a.slashedWei)} QOR taken from the confirming watchers' stake</>;

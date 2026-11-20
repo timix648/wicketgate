@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { NET, REPO_URL, FEED_BASE } from "../lib/config";
 import { useIndex, usePool } from "../lib/queries";
 import { ago } from "../lib/format";
@@ -7,13 +10,13 @@ import { ago } from "../lib/format";
 type Theme = "system" | "light" | "dark";
 
 function useTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setTheme] = useState<Theme>("system");
+  useEffect(() => {
     try {
-      return (localStorage.getItem("wg-theme") as Theme) || "system";
-    } catch {
-      return "system";
-    }
-  });
+      const saved = localStorage.getItem("wg-theme") as Theme | null;
+      if (saved) setTheme(saved);
+    } catch {}
+  }, []);
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "system") root.removeAttribute("data-theme");
@@ -32,6 +35,23 @@ function Logo() {
       <rect x="3" y="3" width="26" height="26" rx="3" fill="none" stroke="var(--accent)" strokeWidth="3" />
       <rect x="12" y="13" width="8" height="16" fill="var(--accent)" />
     </svg>
+  );
+}
+
+const NAV: [string, string][] = [
+  ["/", "Overview"],
+  ["/r", "Rollups"],
+  ["/watchers", "Watchers"],
+  ["/exits", "Instant exits"],
+  ["/track", "Track an exit"],
+];
+
+function NavItem({ href, label, pathname }: { href: string; label: string; pathname: string }) {
+  const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+  return (
+    <Link href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>
+      {label}
+    </Link>
   );
 }
 
@@ -56,28 +76,21 @@ function HealthNotice({ latest, indexError }: { latest?: string; indexError: unk
   );
 }
 
-export function Layout() {
+export function Shell({ children }: { children: ReactNode }) {
   const [theme, nextTheme] = useTheme();
   const index = useIndex();
-  const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+  const pathname = usePathname() ?? "/";
   const latest = index.data?.rollups.map((r) => r.updatedAt).sort().at(-1);
 
   return (
     <>
       <header className="topbar">
         <div className="topbar-inner">
-          <NavLink to="/" className="brand">
+          <Link href="/" className="brand">
             <Logo /> Wicketgate <small>board</small>
-          </NavLink>
+          </Link>
           <nav className="nav">
-            <NavLink to="/" end>Overview</NavLink>
-            <NavLink to="/rollups">Rollups</NavLink>
-            <NavLink to="/watchers">Watchers</NavLink>
-            <NavLink to="/exits">Instant exits</NavLink>
-            <NavLink to="/track">Track an exit</NavLink>
+            {NAV.map(([href, label]) => <NavItem key={href} href={href} label={label} pathname={pathname} />)}
           </nav>
           <div className="topbar-right">
             {latest && (
@@ -93,11 +106,11 @@ export function Layout() {
       </header>
       <main className="shell">
         <HealthNotice latest={latest} indexError={index.error} />
-        <Outlet />
+        {children}
         <footer className="footer">
           <span>{NET.name}, EVM chain id {NET.evmChainId}</span>
           <a href={REPO_URL} target="_blank" rel="noreferrer">Source</a>
-          <a href={`${FEED_BASE.replace("raw.githubusercontent.com", "github.com").replace("/main", "/tree/main")}`} target="_blank" rel="noreferrer">Watcher feed</a>
+          <a href={FEED_BASE.replace("raw.githubusercontent.com", "github.com").replace("/main", "/tree/main")} target="_blank" rel="noreferrer">Watcher feed</a>
           <a href={`${REPO_URL}/blob/main/PROOF.md`} target="_blank" rel="noreferrer">Proof</a>
           <span className="spacer" />
           <span>Read-only: no wallet, no keys.</span>

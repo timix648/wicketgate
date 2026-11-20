@@ -1,7 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { batchState, type Batch, type RollupFeed } from "../lib/feed";
-import { useAllRollups, useMetrics, usePool } from "../lib/queries";
-import { LANES } from "../lib/config";
+import { useAllRollups, useLanes, useMetrics, usePool } from "../lib/queries";
 import { ago, dateTime, duration, num, qorFromUqor, qorFromWei } from "../lib/format";
 import { BatchPill, ErrorBox, Loading, Pill, Stat } from "../components/ui";
 import { BatchStrip, StripLegend } from "../components/BatchStrip";
@@ -112,7 +114,7 @@ export function Overview() {
       <div className="section">
         <div className="section-head">
           <h2>Pool activity</h2>
-          <Link to="/exits" className="small">All instant exits →</Link>
+          <Link href="/exits" className="small">All instant exits →</Link>
         </div>
         <Activity />
       </div>
@@ -138,9 +140,10 @@ function RollupCard({ rollup }: { rollup: RollupFeed }) {
   const last = rollup.batches.at(-1);
   const bad = rollup.batches.filter((b) => b.verdict !== "match").length;
   const pq = rollup.batches.filter((b) => b.submission?.pqVerified).length;
-  const hasLane = !!LANES[rollup.rollupId]?.enabled;
+  const { laneOf } = useLanes();
+  const hasLane = !!laneOf(rollup.rollupId)?.enabled;
   return (
-    <Link to={`/rollups/${rollup.rollupId}`} className="card">
+    <Link href={`/r/${rollup.rollupId}`} className="card">
       <div className="row" style={{ marginBottom: 10 }}>
         <h3 style={{ margin: 0 }} className="mono">{rollup.rollupId}</h3>
         <span className="spacer" />
@@ -162,7 +165,7 @@ function RollupCard({ rollup }: { rollup: RollupFeed }) {
 }
 
 function RecentBatches({ rollups }: { rollups: RollupFeed[] }) {
-  const nav = useNavigate();
+  const router = useRouter();
   const rows: { rollupId: string; b: Batch }[] = rollups
     .flatMap((r) => r.batches.map((b) => ({ rollupId: r.rollupId, b })))
     .sort((x, y) => y.b.submittedTime - x.b.submittedTime)
@@ -171,7 +174,7 @@ function RecentBatches({ rollups }: { rollups: RollupFeed[] }) {
     <div className="section">
       <div className="section-head">
         <h2>Latest batches, all rollups</h2>
-        <Link to="/rollups" className="small">All rollups →</Link>
+        <Link href="/r" className="small">All rollups →</Link>
       </div>
       <div className="table-wrap">
         <table>
@@ -188,10 +191,10 @@ function RecentBatches({ rollups }: { rollups: RollupFeed[] }) {
           <tbody>
             {rows.map(({ rollupId, b }) => {
               const total = (b.withdrawals ?? []).reduce((s, w) => s + Number(w.amountUqor), 0);
-              const to = `/rollups/${rollupId}/batches/${b.index}`;
+              const to = `/r/${rollupId}/${b.index}`;
               return (
-                <tr key={`${rollupId}-${b.index}`} className="link" onClick={() => nav(to)}>
-                  <td className="mono"><Link to={to} onClick={(e) => e.stopPropagation()}>{rollupId}</Link></td>
+                <tr key={`${rollupId}-${b.index}`} className="link" onClick={() => router.push(to)}>
+                  <td className="mono"><Link href={to} onClick={(e) => e.stopPropagation()}>{rollupId}</Link></td>
                   <td className="num">{b.index}</td>
                   <td title={dateTime(b.submittedTime * 1000)}>{ago(b.submittedTime * 1000)}</td>
                   <td className="num">{b.withdrawals?.length ? `${b.withdrawals.length} · ${qorFromUqor(total)} QOR` : <span className="faint">0</span>}</td>

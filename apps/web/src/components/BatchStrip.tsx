@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
 import { batchState, type RollupFeed } from "../lib/feed";
 import { dateTime } from "../lib/format";
 
@@ -10,7 +12,7 @@ export function BatchStrip({ rollup, linked = true }: { rollup: RollupFeed; link
         const s = batchState(b);
         const title = `Batch ${b.index}: ${s}, ${dateTime(b.submittedTime * 1000)}`;
         return linked ? (
-          <Link key={b.index} role="listitem" className={`s-${s}`} title={title} to={`/rollups/${rollup.rollupId}/batches/${b.index}`} />
+          <Link key={b.index} role="listitem" className={`s-${s}`} title={title} href={`/r/${rollup.rollupId}/${b.index}`} />
         ) : (
           <span key={b.index} role="listitem" className={`s-${s}`} title={title} />
         );

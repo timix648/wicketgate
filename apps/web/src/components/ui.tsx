@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import type { BatchState } from "../lib/feed";
 import { watcherName } from "../lib/config";
 import { explorerTx, short } from "../lib/format";
@@ -82,7 +84,7 @@ export function WatcherRef({ address }: { address: string }) {
   return (
     <span className="row" style={{ gap: 6, display: "inline-flex" }}>
       {name && <strong>{name}</strong>}
-      <Link to={`/watchers#${address.toLowerCase()}`} className="hash">
+      <Link href={`/watchers#${address.toLowerCase()}`} className="hash">
         {short(address, 6, 4)}
       </Link>
     </span>

@@ -137,6 +137,35 @@ export function deriveExits(log: EventLog): LiveExit[] {
   return [...exits.values()].reverse();
 }
 
+export interface Lane {
+  rollupKey: Hex;
+  windowSecs: number;
+  graceSecs: number;
+  feeBps: number;
+  quorum: number;
+  lockPerWatcher: bigint;
+  enabled: boolean;
+}
+
+/** The pool's lanes as its LaneSet events left them, keyed by lower-case rollupKey. */
+export function deriveLanes(log: EventLog): Map<string, Lane> {
+  const lanes = new Map<string, Lane>();
+  for (const e of log.events) {
+    if (e.name !== "LaneSet") continue;
+    const l = e.args.lane ?? {};
+    lanes.set(String(e.args.rollupKey).toLowerCase(), {
+      rollupKey: e.args.rollupKey,
+      windowSecs: Number(l.windowSecs),
+      graceSecs: Number(l.graceSecs),
+      feeBps: Number(l.feeBps),
+      quorum: Number(l.quorum),
+      lockPerWatcher: BigInt(l.lockPerWatcher ?? 0),
+      enabled: Boolean(l.enabled),
+    });
+  }
+  return lanes;
+}
+
 /** Every address that ever joined the registry. */
 export function deriveWatcherAddresses(log: EventLog): string[] {
   return [...new Set(log.events.filter((e) => e.name === "Joined").map((e) => (e.args.watcher as string).toLowerCase()))];

@@ -1,5 +1,6 @@
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchEvents, type EventLog } from "./events";
+import { keccak256, toHex } from "viem";
+import { deriveLanes, fetchEvents, type EventLog } from "./events";
 import type { Address } from "viem";
 import { fetchIndex, fetchMetrics, fetchRollup, type RollupFeed } from "./feed";
 import { fetchBatch, fetchPool, fetchWatcher } from "./chain";
@@ -48,6 +49,17 @@ export function useEvents() {
     refetchInterval: 30_000,
     staleTime: 20_000,
   });
+}
+
+/** Whether the pool has an enabled lane for a rollup, from LaneSet events (undefined while loading). */
+export function useLanes() {
+  const events = useEvents();
+  const lanes = events.data ? deriveLanes(events.data) : undefined;
+  return {
+    lanes,
+    laneOf: (rollupId: string) => lanes?.get(keccak256(toHex(rollupId)).toLowerCase()),
+    isLoading: !events.data,
+  };
 }
 
 /** Map a pool batchKey (lower-case) to its rollup and batch, from the feed. */

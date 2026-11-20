@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
 import { useBatchKeyMap, useEvents, useMetrics } from "../lib/queries";
 import { deriveExits, type LiveExit } from "../lib/events";
 import { CONTRACTS } from "../lib/config";
@@ -93,14 +95,14 @@ export function Exits() {
                           <td>
                             {b ? (
                               <>
-                                <Link to={`/rollups/${b.rollupId}/batches/${b.index}`} className="mono">{b.rollupId}</Link>
+                                <Link href={`/r/${b.rollupId}/${b.index}`} className="mono">{b.rollupId}</Link>
                                 <span className="muted"> #{b.index}</span>
                               </>
                             ) : (
                               <Hash value={x.batchKey} />
                             )}
                           </td>
-                          <td><Link to={`/track/${x.beneficiary}`} className="hash">{x.beneficiary.slice(0, 8)}…{x.beneficiary.slice(-4)}</Link></td>
+                          <td><Link href={`/track/${x.beneficiary}`} className="hash">{x.beneficiary.slice(0, 8)}…{x.beneficiary.slice(-4)}</Link></td>
                           <td className="num" title={`${qorFromWei(x.amountWei - x.feeWei, 4)} QOR paid after the ${qorFromWei(x.feeWei, 4)} QOR fee`}>{qorFromWei(x.amountWei, 3)} QOR</td>
                           <td>
                             {s !== undefined ? (

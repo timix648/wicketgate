@@ -1,33 +1,63 @@
-# Wicketgate board
+# Wicketgate web app
 
-A read-only web board for Wicketgate: every rollup the watchers re-execute, each batch's verdict and post-quantum signature, the exit pool's live state, the watchers and their stake, and every instant exit.
-
-It needs no wallet, no key and no backend. It reads three public sources straight from the browser:
-
-| Source | What it gives |
-| --- | --- |
-| The watcher feed (`timix648/wicketgate-feed`, refreshed every 5 minutes) | Rollups, batches, verdicts, withdrawals, submission provenance, the pool's view of each batch |
-| `ExitPool` and `WatcherRegistry` over the testnet EVM RPC (`https://evm-testnet.qore.host`) | Live pool assets, idle liquidity, outstanding advances, per-batch cover and locked stake, watcher stake and fees |
-| `docs/metrics.json` on `main` | Headline figures and the list of instant exits, recomputed from chain data by `pnpm metrics` |
-
-Contract addresses come from `deployments/diana.json` and ABIs from `packages/core/abi`, so a redeploy only needs those files updated.
+The board, the proof pages and the wallet for Wicketgate, plus the two queues the team's operator pulls from (the relay and the exit relay). Next.js (App Router), deployed to Vercel.
 
 ## Run it
 
 ```bash
 pnpm install
-pnpm --filter @wicketgate/web dev      # http://localhost:5173
-pnpm --filter @wicketgate/web build    # static site in apps/web/dist
+pnpm --filter @wicketgate/web dev      # http://localhost:3000
+pnpm --filter @wicketgate/web build
 ```
 
-The build uses hash routing and relative asset paths, so `dist/` can be served from any static host (GitHub Pages, Vercel, Netlify, a sub-folder) without rewrite rules.
+## Environment
+
+None of these are needed to browse the board. Put them in `apps/web/.env.local` locally (git-ignored) and in the Vercel project settings for a deployment. Never commit them.
+
+| Variable | For |
+| --- | --- |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (or Vercel KV's `KV_REST_API_URL`, `KV_REST_API_TOKEN`) | Queue storage. Without them, `next dev` keeps the queues in memory; a production build refuses queue requests with 503 instead of losing them. |
+| `OPERATOR_TOKEN` | Shared secret the operator sends as `Authorization: Bearer <token>`. Without it the operator endpoints answer 503. |
+
+## Data the pages read
+
+| Source | Used for |
+| --- | --- |
+| Watcher feed (`timix648/wicketgate-feed`, every 5 minutes) | Rollups, batches, verdicts, withdrawals, submission provenance |
+| `ExitPool` / `WatcherRegistry` over `https://evm-testnet.qore.host` | Pool assets and liquidity, per-batch cover, watcher stake and fees |
+| Pool and registry events from block 10,212,000, in 10,000-block chunks | Lanes (`LaneSet`), instant exits and repayments, watchers (`Joined`), attestations, activity |
+| `docs/metrics.json` on `main` | Headline figures and exits from pool v1 and v2 |
+
+Addresses come from `deployments/diana.json` and ABIs from `packages/core/abi`.
 
 ## Pages
 
-- **Overview**: headline numbers, time-to-funds against the normal path, the live pool, every rollup as a strip of batches, the latest batches.
-- **Rollups** and **rollup detail**: lane terms, inbox, every batch with verdict, signature tier and pool status.
-- **Batch detail**: roots, submission transaction, the pool's live record of the batch (confirming watchers, locked stake, contested or not), withdrawals.
-- **Watchers**: every watcher seen in the feed plus the team's accounts, with live stake, locked stake and fees.
-- **Instant exits**: all exits with time from batch to money against the challenge window, and repayment.
+| Route | |
+| --- | --- |
+| `/` | Headline numbers, time to funds, live pool, rollups, pool activity, latest batches |
+| `/r`, `/r/[id]`, `/r/[id]/[batch]` | Rollups, a rollup's batches and lane terms, one batch with its live pool record |
+| `/watchers` | Every registered watcher: stake, locked, fees, attestations |
+| `/exits` | Every instant exit with batch-to-money time and repayment |
+| `/track/[address]` | Every withdrawal and exit for a beneficiary or exit address (`0x…` or `qor1…`) |
+
+## Queues (frontend brief, section 9)
+
+For the app:
+
+| | |
+| --- | --- |
+| `POST /api/relay` `{ rollupId, tx }` | `tx` is the hex of `encodeQledgerTx`. Decoded and signature-checked for `qorechain-diana` / `rollupId`, at most 6 KiB, at most 10 a minute per rollup account; the same transaction twice returns the same id. → `{ queued: true, id }` |
+| `GET /api/relay/{id}` | `{ status: "queued" \| "posted" \| "failed", txHash?, error? }` |
+| `POST /api/exit` `{ rollupId, beneficiary, salt, amountUqor }` | Shapes checked, the rollup must have an enabled pool lane (read on chain), at most 10 a minute per beneficiary; one request per (beneficiary, salt). → `{ queued: true, id, exitAddr }` |
+| `GET /api/exit/{id}` | `{ status: "queued" \| "paid" \| "failed", txHash?, error?, exitAddr? }` |
+
+For the operator (`RELAY_URL` = `https://<deployment>/api/operator`, bearer token required):
+
+| | |
+| --- | --- |
+| `GET {RELAY_URL}/pending?rollupId=<id>` | `[{ id, rollupId, tx }]`, oldest first, up to 100 |
+| `POST {RELAY_URL}/done` `{ id, txHash?, error? }` | `txHash` marks it posted, `error` marks it failed |
+| `GET {RELAY_URL}/exits/pending?rollupId=<id>` | `[{ id, rollupId, beneficiary, salt, amountUqor }]` |
+| `POST {RELAY_URL}/exits/done` `{ id, status, txHash?, error? }` | `paid` needs `txHash`, `failed` needs `error` |
 
 Native transaction hashes link to explore.qore.network (press **Testnet** there once). EVM hashes cannot be looked up on that explorer, so they are shown with a copy button only.

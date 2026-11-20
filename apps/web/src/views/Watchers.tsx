@@ -1,6 +1,8 @@
-import { useEffect, useMemo } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { getAddress } from "viem";
-import { Link, useLocation } from "react-router-dom";
+import Link from "next/link";
 import { useAllRollups, useEvents, usePool, useWatchers } from "../lib/queries";
 import { deriveWatcherAddresses } from "../lib/events";
 import { KNOWN_WATCHERS, REPO_URL } from "../lib/config";
@@ -11,7 +13,13 @@ export function Watchers() {
   const { rollups } = useAllRollups();
   const pool = usePool();
   const events = useEvents();
-  const { hash } = useLocation();
+  const [hash, setHash] = useState("");
+  useEffect(() => {
+    const read = () => setHash(window.location.hash.toLowerCase());
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
 
   // Everyone who ever joined the registry (from its events), anyone who confirmed a batch in the
   // feed, and the team's known accounts. Attestations are counted from the pool's events.
@@ -112,7 +120,7 @@ export function Watchers() {
           ExitPool checks every attestation with the chain's ML-DSA-87 precompile and has no classical signature check at all. In the{" "}
           <a href={`${REPO_URL}/blob/main/docs/QDAY.md`} target="_blank" rel="noreferrer">Q-Day simulation</a>, watcher W4's classical key was
           cracked in 49 seconds: an <code>ecrecover</code> twin of the pool was drained, and Wicketgate refused the same key with{" "}
-          <code>BadSignature</code>. See the <Link to="/exits">instant exits</Link> those attestations paid for.
+          <code>BadSignature</code>. See the <Link href="/exits">instant exits</Link> those attestations paid for.
         </p>
       </div>
     </>

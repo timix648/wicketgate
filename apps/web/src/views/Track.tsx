@@ -1,5 +1,8 @@
+"use client";
+
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { parseAddress } from "../lib/address";
@@ -19,8 +22,9 @@ interface Found {
 }
 
 export function Track() {
-  const { address: param } = useParams();
-  const nav = useNavigate();
+  const params = useParams<{ address?: string }>();
+  const param = params?.address ? decodeURIComponent(params.address) : undefined;
+  const router = useRouter();
   const [input, setInput] = useState(param ?? "");
   useEffect(() => setInput(param ?? ""), [param]);
   const address = param ? parseAddress(param) : undefined;
@@ -39,7 +43,7 @@ export function Track() {
         onSubmit={(e) => {
           e.preventDefault();
           const a = parseAddress(input);
-          if (a) nav(`/track/${a}`);
+          if (a) router.push(`/track/${a}`);
         }}
       >
         <input
@@ -152,13 +156,13 @@ function Timeline({ f }: { f: Found }) {
   return (
     <div className="card">
       <div className="row" style={{ marginBottom: 12 }}>
-        <strong>{qorFromUqor(w.amountUqor)} QOR from <Link to={`/rollups/${r.rollupId}`} className="mono">{r.rollupId}</Link></strong>
+        <strong>{qorFromUqor(w.amountUqor)} QOR from <Link href={`/r/${r.rollupId}`} className="mono">{r.rollupId}</Link></strong>
         <span className="spacer" />
         {x ? <ExitStatusPill x={x} /> : bad ? <Pill tone="bad">batch rejected by watchers</Pill> : confirmed && !final ? <Pill tone="info">ready to exit</Pill> : final ? <Pill tone="muted">collect the normal way</Pill> : <Pill tone="warn">awaiting watchers</Pill>}
       </div>
       <ol className="timeline">
         <Step state="done" title={`Batched in batch ${b.index}`}>
-          <Link to={`/rollups/${r.rollupId}/batches/${b.index}`}>{dateTime(b.submittedTime * 1000)}</Link>, to exit address <Hash value={w.recipientEvm} />
+          <Link href={`/r/${r.rollupId}/${b.index}`}>{dateTime(b.submittedTime * 1000)}</Link>, to exit address <Hash value={w.recipientEvm} />
         </Step>
         <Step state={bad ? "bad" : "done"} title={bad ? "Re-execution does not match" : "Re-executed by the watchers: roots match"}>
           {bad ? b.reason ?? "The pool will not pay against this batch." : st === "match" ? "Independently verified" : undefined}
@@ -184,7 +188,7 @@ function Timeline({ f }: { f: Found }) {
             {x ? (
               <>
                 {x.time && <>{dateTime(x.time * 1000)}, {duration(x.time - b.submittedTime)} after the batch · </>}
-                to <Link to={`/track/${x.beneficiary}`} className="hash">{x.beneficiary.slice(0, 8)}…</Link> · <Hash value={x.tx} />
+                to <Link href={`/track/${x.beneficiary}`} className="hash">{x.beneficiary.slice(0, 8)}…</Link> · <Hash value={x.tx} />
               </>
             ) : confirmed && !final ? (
               "The beneficiary can call instantExit now (wallet coming soon)."

@@ -1,4 +1,7 @@
-import { Link, useParams } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { batchState } from "../lib/feed";
 import { useOnChainBatch, useRollup } from "../lib/queries";
 import { dateTime, ago, qorFromUqor, qorFromWei } from "../lib/format";
@@ -7,14 +10,14 @@ import { BatchPill, ErrorBox, Hash, Loading, Pill, WatcherRef } from "../compone
 const ZERO = /^0x0*$/;
 
 export function BatchDetail() {
-  const { rollupId, index } = useParams();
+  const { rollupId, index } = useParams<{ rollupId: string; index: string }>();
   const i = Number(index);
   const { data: r, error, isLoading } = useRollup(rollupId);
   const chain = useOnChainBatch(rollupId, Number.isInteger(i) ? i : undefined);
 
   const crumbs = (
     <div className="crumbs" style={{ paddingTop: 24 }}>
-      <Link to="/rollups">Rollups</Link> / <Link to={`/rollups/${rollupId}`} className="mono">{rollupId}</Link> / batch {index}
+      <Link href="/r">Rollups</Link> / <Link href={`/r/${rollupId}`} className="mono">{rollupId}</Link> / batch {index}
     </div>
   );
   if (error) return <>{crumbs}<ErrorBox error={error} /></>;
@@ -36,8 +39,8 @@ export function BatchDetail() {
           <h1>Batch {b.index}</h1>
           <BatchPill state={state} />
           <span className="spacer" />
-          {prev && <Link className="small" to={`/rollups/${rollupId}/batches/${prev.index}`}>← {prev.index}</Link>}
-          {next && <Link className="small" to={`/rollups/${rollupId}/batches/${next.index}`}>{next.index} →</Link>}
+          {prev && <Link className="small" href={`/r/${rollupId}/${prev.index}`}>← {prev.index}</Link>}
+          {next && <Link className="small" href={`/r/${rollupId}/${next.index}`}>{next.index} →</Link>}
         </div>
         <p>
           Submitted {dateTime(b.submittedTime * 1000)} ({ago(b.submittedTime * 1000)}), covering inbox posts {b.inboxStart} to {b.inboxEnd}.
@@ -149,7 +152,7 @@ export function BatchDetail() {
                     <td className="num">{w.index}</td>
                     <td><Hash value={w.recipient} /></td>
                     <td>
-                      <Hash value={w.recipientEvm} /> <Link to={`/track/${w.recipientEvm}`} className="small">track</Link>
+                      <Hash value={w.recipientEvm} /> <Link href={`/track/${w.recipientEvm}`} className="small">track</Link>
                     </td>
                     <td className="num">{qorFromUqor(w.amountUqor)} QOR</td>
                     <td className="num muted">{w.exitProof.length ? `${w.exitProof.length} nodes` : "single leaf"}</td>
