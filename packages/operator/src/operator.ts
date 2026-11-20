@@ -48,6 +48,7 @@ export interface OperatorConfig {
 }
 
 const ZERO = `0x${"00".repeat(32)}` as Hex;
+const QUEUE_POLL_MS = Number(process.env.WICKETGATE_QUEUE_POLL_S ?? 60) * 1000;
 /** Plain reasons for the app when the pool refuses an exit. */
 const EXIT_REFUSALS: Record<string, string> = {
   TooLate: "the batch's window closed before the exit could be taken; collect with sweepToBeneficiary after the batch finalises",
@@ -75,6 +76,7 @@ export class Operator {
   private log: (m: string) => void;
   private pool: Address;
   private settled = new Set<string>();
+  private lastQueuePoll = 0;
 
   constructor(private cfg: OperatorConfig) {
     this.log = cfg.log ?? ((m) => console.log(`${new Date().toISOString()} [${cfg.rollupId}] ${m}`));
@@ -88,8 +90,12 @@ export class Operator {
   }
 
   async round() {
-    await this.relay().catch((e) => this.log(`relay: ${e?.message ?? e}`));
-    await this.exitRelay().catch((e) => this.log(`exit relay: ${e?.shortMessage ?? e?.message ?? e}`));
+    // the app's queues live on a free-tier store: read them once a minute, not every round
+    if (Date.now() - this.lastQueuePoll >= QUEUE_POLL_MS) {
+      this.lastQueuePoll = Date.now();
+      await this.relay().catch((e) => this.log(`relay: ${e?.message ?? e}`));
+      await this.exitRelay().catch((e) => this.log(`exit relay: ${e?.shortMessage ?? e?.message ?? e}`));
+    }
     const state = await this.rebuild();
     await this.batch(state.ledger).catch((e) => this.log(`batch: ${e?.message ?? e}`));
     await this.keeper(state.finalized).catch((e) => this.log(`keeper: ${e?.shortMessage ?? e?.message ?? e}`));
