@@ -47,7 +47,7 @@ export function Overview() {
             <Stat
               label="Batches re-executed"
               value={<>{m.verification.matches}<small>/ {m.verification.batchesReExecuted} match</small></>}
-              sub={<>across {m.verification.rollupsWatched} rollups, {m.verification.rollupsWeDoNotRun} run by other teams</>}
+              sub={<>across {m.verification.rollupsWatched} rollups, {m.verification.rollupsWeDoNotRun} created by other accounts</>}
             />
             <Stat
               label="Post-quantum attestations"
