@@ -16,7 +16,7 @@ What Wicketgate protects, who might attack it, what they can do, and why the dam
 
 ## Assumptions
 
-- The QoreChain testnet's consensus, the `x/rdk` module (re-execution of fraud proofs, withdrawal payouts) and the `pqcVerify` / `pqcKeyStatus` precompiles behave as documented. Bugs in them are out of scope.
+- The QoreChain testnet's consensus, the `x/rdk` module (re-execution of fraud proofs, withdrawal payouts) and the `pqcVerify` / `pqcKeyStatus` precompiles behave as documented. Bugs in them are out of scope. We do not just assume the verify precompile is correct: `pnpm pqcfuzz` throws 18 adversarial vectors at `pqcVerify` on chain (forged, malleated, truncated and trailing-byte signatures, wrong key, wrong message, and hand-crafted malformed calldata with lying length fields and out-of-bounds offsets) and confirms it returns true only for a genuine ML-DSA-87 signature.
 - ML-DSA-87 (FIPS 204) is not broken. secp256k1 **may** be: that is the point of the Q-Day Drill.
 - At least one honest watcher is online for each rollup (the "honest minority" assumption every optimistic rollup makes). Section 4 says what happens if not.
 - Each account's post-quantum key is derived from its recovery phrase (`deriveUnifiedAccount`), not from its classical key. Knowing the classical private key gives no information about the post-quantum key.

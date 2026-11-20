@@ -36,6 +36,7 @@
     "disclose": "tsx src/disclose.ts",
     "metrics": "tsx src/metrics.ts",
     "redteam": "tsx src/redteam.ts",
+    "pqcfuzz": "tsx src/probe-pqcfuzz.ts",
     "qday:crack": "tsx src/qday-crack.ts",
     "qday:attack": "tsx src/qday-attack.ts",
     "receipts": "tsx src/receipts-all.ts",
