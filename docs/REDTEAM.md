@@ -1,6 +1,6 @@
 # Red team: 18 of 18 attacks refused
 
-Generated 2026-11-20T10:54:01.290Z at EVM block 10,428,845 by `npx tsx packages/scripts/src/redteam.ts` (no key needed, about 30 s).
+Generated 2026-11-20T12:06:16.733Z at EVM block 10,431,871 by `npx tsx packages/scripts/src/redteam.ts` (no key needed, about 30 s).
 
 Each attack is an `eth_call` against the live ExitPool v2.1 (`0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a`) and WatcherRegistry (`0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad`) on diana, from an address with no role (`0xbad0000000000000000000000000000000000bad`) or from a real watcher's address. Where timing matters, it runs against the chain's state at the exact block of a real exit, so the batch is confirmed and its challenge window is open, as it would be for a live attacker. The signatures, facts, proofs and salts are the real ones, read back from these transactions: the 3 QOR exit [`0xa4e4fd21cc…`], the vigil-1 exit [`0x4e0914e372…`], a watcher attestation [`0xbae9d8f17c…`] and a two-admin `setLane` [`0x279aed1dae…`].
 
