@@ -3,7 +3,7 @@
 //  2. turns the inbox into the next batch (when it holds a submitter bond), anchoring it
 //     with the creator's ML-DSA-87 key when it is the rollup's creator,
 //  3. pays out finalised withdrawals that back an instant exit, then settles the advance.
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import {
   RestClient,
   isRestNotFound,
@@ -26,12 +26,12 @@ import {
   type QledgerWithdrawal,
 } from "@qorechain/rdk";
 import { mldsa87 } from "@qorechain/pqc";
-import { keccak256, toHex, type Address, type Hex } from "viem";
+import { keccak256, toHex, isAddress, encodeAbiParameters, type Address, type Hex } from "viem";
 import type { UnifiedAccount } from "@qorechain/sdk";
 import { NET, DEPLOYMENTS_FILE } from "@wicketgate/core/env";
 import { sendNative, explorerTx, restGet } from "@wicketgate/core/chain";
 import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
-import { recipientAddress } from "@wicketgate/core/exit-tree";
+import { recipientAddress, exitLeaf, verifyExitProof } from "@wicketgate/core/exit-tree";
 import { politeFetch } from "@wicketgate/core/polite";
 import { robustRest } from "@wicketgate/core/robust-rest";
 import { alert } from "@wicketgate/core/alert";
@@ -48,6 +48,18 @@ export interface OperatorConfig {
 }
 
 const ZERO = `0x${"00".repeat(32)}` as Hex;
+/** Plain reasons for the app when the pool refuses an exit. */
+const EXIT_REFUSALS: Record<string, string> = {
+  TooLate: "the batch's window closed before the exit could be taken; collect with sweepToBeneficiary after the batch finalises",
+  CoverExceeded: "the watchers' stake behind this batch is used up; collect with sweepToBeneficiary after the batch finalises",
+  NoLiquidity: "the pool is short of liquidity right now; collect with sweepToBeneficiary after the batch finalises",
+  BatchContested: "watchers disagree on this batch, so payouts against it are frozen",
+  ExitUsed: "this exit was already taken",
+  AlreadyAdvanced: "this exit was already taken",
+  AlreadyPaid: "the chain already paid this withdrawal; collect it with sweepToBeneficiary",
+  BadProof: "the withdrawal does not match the batch",
+  ZeroAmount: "nothing to exit",
+};
 const POOL = artifact("ExitPool").abi;
 /** A withdrawals root as comparable hex; an empty root (no withdrawals) is "". */
 const wroot = (r: Uint8Array | string | undefined) => {
@@ -77,6 +89,7 @@ export class Operator {
 
   async round() {
     await this.relay().catch((e) => this.log(`relay: ${e?.message ?? e}`));
+    await this.exitRelay().catch((e) => this.log(`exit relay: ${e?.shortMessage ?? e?.message ?? e}`));
     const state = await this.rebuild();
     await this.batch(state.ledger).catch((e) => this.log(`batch: ${e?.message ?? e}`));
     await this.keeper(state.finalized).catch((e) => this.log(`keeper: ${e?.shortMessage ?? e?.message ?? e}`));
@@ -170,6 +183,85 @@ export class Operator {
       }
       await fetch(`${relayUrl}/done`, { method: "POST", headers, body: JSON.stringify(done) });
     }
+  }
+
+  /**
+   * Exit relay: users ask, through the app's queue, for their instant exit to be taken for them.
+   * Anyone may call instantExit (the exit proof locks the payout to the beneficiary), so once the
+   * watchers have confirmed the batch that carries the withdrawal, the operator takes it and
+   * reports back. Items stay queued until then.
+   *   GET  {url}/exits/pending?rollupId=<id> -> [{ id, rollupId, beneficiary, salt, amountUqor }]
+   *   POST {url}/exits/done   { id, status: "paid" | "failed", txHash?, error? }
+   */
+  private async exitRelay() {
+    const { relayUrl, relayToken, rollupId, me } = this.cfg;
+    if (!relayUrl) return;
+    const headers = { "content-type": "application/json", ...(relayToken ? { authorization: `Bearer ${relayToken}` } : {}) };
+    const res = await fetch(`${relayUrl}/exits/pending?rollupId=${encodeURIComponent(rollupId)}`, { headers });
+    if (!res.ok) throw new Error(`exit queue answered ${res.status}`);
+    const items = (await res.json()) as { id: string; rollupId: string; beneficiary: string; salt: string; amountUqor: string }[];
+    if (!items.length) return;
+    const done = (id: string, body: Record<string, unknown>) =>
+      fetch(`${relayUrl}/exits/done`, { method: "POST", headers, body: JSON.stringify({ id, ...body }) }).catch(() => undefined);
+    const feed = await this.rollupFeed();
+    const rollupKey = keccak256(toHex(rollupId));
+    const ready: { id: string; args: unknown[] }[] = [];
+    for (const it of items) {
+      if (!isAddress(it.beneficiary) || !/^0x[0-9a-fA-F]{64}$/.test(it.salt) || !/^[1-9][0-9]*$/.test(String(it.amountUqor))) {
+        await done(it.id, { status: "failed", error: "malformed request: beneficiary, salt or amountUqor" });
+        continue;
+      }
+      const exitAddr = ((await publicClient.readContract({ address: this.pool, abi: POOL, functionName: "exitAddressFor", args: [it.beneficiary, it.salt] })) as string).toLowerCase();
+      // the batch that carries this withdrawal, re-executed and matching
+      let found: { b: any; w: any } | undefined;
+      for (const b of feed?.batches ?? []) {
+        if (b.verdict !== "match") continue;
+        const w = (b.withdrawals ?? []).find((x: any) => String(x.recipientEvm ?? "").toLowerCase() === exitAddr && String(x.amountUqor) === String(it.amountUqor));
+        if (w) { found = { b, w }; break; }
+      }
+      if (!found) continue; // not batched (or not re-executed) yet: keep it queued
+      const facts = { stateRoot: found.b.stateRoot as Hex, withdrawalsRoot: (found.b.withdrawalsRoot === "0x" ? ZERO : found.b.withdrawalsRoot) as Hex, exitRoot: found.b.exitRoot as Hex };
+      if (!verifyExitProof(found.w.exitProof, facts.exitRoot, exitLeaf(BigInt(found.w.index), exitAddr as Address, BigInt(found.w.amountUqor)))) continue;
+      const bk = (await publicClient.readContract({ address: this.pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(found.b.index)] })) as Hex;
+      const rec = (await publicClient.readContract({ address: this.pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
+      const fh = keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }, { type: "bytes32" }], [facts.stateRoot, facts.withdrawalsRoot, facts.exitRoot]));
+      if (rec[1] === 0n || rec[0] !== fh) continue; // not confirmed by the watchers yet
+      const args = [rollupKey, BigInt(found.b.index), facts, BigInt(found.w.index), it.beneficiary, it.salt, BigInt(it.amountUqor), found.w.exitProof];
+      try {
+        await publicClient.simulateContract({ address: this.pool, abi: POOL, functionName: "instantExit", args, account: me.evm as Address } as any);
+        ready.push({ id: it.id, args });
+      } catch (e: any) {
+        let c = e; while (c && !c.data?.errorName) c = c.cause;
+        const why = c?.data?.errorName as string | undefined;
+        if (why === "NotConfirmed") continue;
+        await done(it.id, { status: "failed", error: EXIT_REFUSALS[why ?? ""] ?? `the pool refuses this exit (${why ?? e?.shortMessage ?? "unknown"})` });
+      }
+    }
+    if (!ready.length) return;
+    await openWindow(me, { blocks: 300, maxTxs: ready.length, maxValueUqor: await windowBudget(ready.length, 600_000n), allowedTargets: [this.pool] });
+    try {
+      for (const r of ready) {
+        try {
+          const hash = await walletFor(me).writeContract({ address: this.pool, abi: POOL, functionName: "instantExit", args: r.args, gas: 600_000n } as any);
+          const rc = await publicClient.waitForTransactionReceipt({ hash });
+          await done(r.id, rc.status === "success" ? { status: "paid", txHash: hash } : { status: "failed", txHash: hash, error: "the exit transaction reverted" });
+          this.log(`exit relay: ${r.id} ${rc.status} ${hash}`);
+        } catch (e: any) {
+          await done(r.id, { status: "failed", error: String(e?.shortMessage ?? e?.message ?? e).slice(0, 200) });
+        }
+      }
+    } finally {
+      await closeWindow(me);
+    }
+  }
+
+  /** This rollup's watcher feed: the local one when this machine runs a watcher, else the public one. */
+  private async rollupFeed(): Promise<any> {
+    const src = process.env.WICKETGATE_FEED ?? (existsSync(join(STATE_DIR, "feed-w1")) ? join(STATE_DIR, "feed-w1") : "https://raw.githubusercontent.com/timix648/wicketgate-feed/main");
+    const file = `${this.cfg.rollupId}.json`;
+    if (/^https?:/.test(src)) return JSON.parse(await (await politeFetch(`${src}/${file}`)).text());
+    const p = join(src, file);
+    return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : undefined;
   }
 
   /** Pay finalised withdrawals that go to an exit address with an open advance, then settle it. */
