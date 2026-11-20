@@ -17,10 +17,17 @@ import {ExitAddress} from "./ExitAddress.sol";
 ///    advanced against it.
 ///  - An advance whose exit address is not funded by its due time is repaid from the
 ///    confirming watchers' stake.
+///
+/// v3 adds: keepers paid from the fee for settling and writing off advances; a fee that rises
+/// with pool utilisation; per-exit and per-rollup exposure caps; slashing of a watcher proven,
+/// by two of its own ML-DSA-87 signatures, to have signed two different results for one batch;
+/// an emergency pause that can only stop new payouts; a quote() view; per-watcher stats.
 contract ExitPool is DualAdmin {
+    string public constant VERSION = "3.1";
     bytes32 public constant ATTEST_TYPEHASH = keccak256("Wicketgate.Attestation.v1");
     uint256 public constant UQOR = 1e12; // 1 uqor in wei on the QoreChain EVM
     uint256 public constant WATCHER_FEE_SHARE_BPS = 3000;
+    uint256 public constant KEEPER_FEE_SHARE_BPS = 1000; // v3: paid to whoever settles or writes off
     uint256 private constant BPS = 10_000;
 
     uint8 public constant OPEN = 1;
@@ -36,6 +43,35 @@ contract ExitPool is DualAdmin {
         uint128 lockPerWatcher; // stake each confirming watcher locks behind a batch
         bool enabled;
     }
+
+    /// v3: per-rollup risk settings. Zero means "no limit" (and a flat fee).
+    struct Risk {
+        uint16 kinkBps; // utilisation at which the fee starts to rise
+        uint16 maxFeeBps; // fee at 100% utilisation (capped at 10%)
+        uint128 maxExitWei; // largest single exit
+        uint128 maxOutstandingWei; // most this rollup may owe the pool at once
+        uint128 keeperTipWei; // fixed execution fee the exiting user pays, held for whoever settles (v3.1)
+    }
+
+    struct WatcherStats {
+        uint64 attestations;
+        uint64 confirmations;
+        uint32 equivocations;
+        uint32 defaults;
+        uint128 slashedWei;
+    }
+
+    // quote() status codes
+    uint8 public constant Q_OK = 0;
+    uint8 public constant Q_PAUSED = 1;
+    uint8 public constant Q_NOT_CONFIRMED = 2;
+    uint8 public constant Q_CONTESTED = 3;
+    uint8 public constant Q_TOO_LATE = 4;
+    uint8 public constant Q_EXIT_TOO_LARGE = 5;
+    uint8 public constant Q_LANE_FULL = 6;
+    uint8 public constant Q_COVER = 7;
+    uint8 public constant Q_LIQUIDITY = 8;
+    uint8 public constant Q_TOO_SMALL = 9;
 
     struct Facts {
         bytes32 stateRoot;
@@ -66,6 +102,7 @@ contract ExitPool is DualAdmin {
         bytes32 salt;
         uint64 dueBy;
         uint8 state;
+        uint256 tipWei; // v3.1: execution fee held for the keeper who settles or writes it off
     }
 
     WatcherRegistry public immutable registry;
@@ -82,8 +119,16 @@ contract ExitPool is DualAdmin {
     mapping(address => uint256) public shares;
     uint256 public outstandingWei;
     uint256 public watcherCreditsTotal;
-    mapping(address => uint256) public watcherCredit;
+    mapping(address => uint256) public watcherCredit; // also keeper tips and reporter bounties (v3)
     uint256 private _entered;
+
+    // v3
+    mapping(bytes32 => Risk) public risk;
+    mapping(bytes32 => uint256) public laneOutstanding;
+    mapping(bytes32 => mapping(address => bool)) public equivocated;
+    mapping(address => WatcherStats) public stats;
+    bool public paused;
+    uint256 public pendingTipsWei; // v3.1: execution fees owed back to future keepers, not provider assets
 
     error LaneDisabled();
     error NotWatcher();
@@ -107,6 +152,13 @@ contract ExitPool is DualAdmin {
     error ZeroAmount();
     error TransferFailed();
     error Reentrancy();
+    error Paused();
+    error ExitTooLarge();
+    error LaneFull();
+    error SameFacts();
+    error AlreadyReported();
+    error BadRisk();
+    error ExitTooSmall();
 
     event LaneSet(bytes32 indexed rollupKey, Lane lane);
     event Attested(bytes32 indexed rollupKey, uint64 indexed batchIndex, address indexed watcher, bytes32 factsHash);
@@ -120,6 +172,10 @@ contract ExitPool is DualAdmin {
     event SweptToBeneficiary(address indexed exitAddr, address indexed beneficiary, uint256 amount);
     event Deposited(address indexed provider, uint256 amount, uint256 shares);
     event Withdrawn(address indexed provider, uint256 amount, uint256 shares);
+    event RiskSet(bytes32 indexed rollupKey, Risk risk);
+    event PausedSet(bool paused);
+    event KeeperPaid(bytes32 indexed id, address indexed keeper, uint256 amount);
+    event Equivocation(bytes32 indexed batchKey, address indexed watcher, address indexed reporter, uint256 penaltyWei, uint256 bountyWei);
 
     modifier nonReentrant() {
         if (_entered == 1) revert Reentrancy();
@@ -218,6 +274,7 @@ contract ExitPool is DualAdmin {
         }
         address[] storage v = _votes[key][fh];
         v.push(msg.sender);
+        stats[msg.sender].attestations++;
         emit Attested(rollupKey, batchIndex, msg.sender, fh);
 
         if (b.confirmedAt == 0 && !b.contested && v.length >= lane.quorum) {
@@ -235,6 +292,7 @@ contract ExitPool is DualAdmin {
         for (uint256 i = 0; i < v.length; i++) {
             b.watchers.push(v[i]);
             b.lockedAmt.push(0);
+            stats[v[i]].confirmations++;
         }
     }
 
@@ -278,37 +336,67 @@ contract ExitPool is DualAdmin {
         uint256 amountUqor,
         bytes32[] calldata proof
     ) external nonReentrant returns (bytes32 id) {
+        if (paused) revert Paused();
         if (amountUqor == 0) revert ZeroAmount();
         bytes32 key = batchKey(rollupKey, batchIndex);
+        address exitAddr = _checkExit(key, rollupKey, f, wIndex, beneficiary, salt, amountUqor, proof);
+        id = keccak256(abi.encode(key, wIndex));
+        if (advances[id].state != 0) revert AlreadyAdvanced();
+        _advance(id, key, rollupKey, beneficiary, exitAddr, salt, amountUqor * UQOR);
+    }
+
+    /// @dev Everything an exit must satisfy before money moves; returns its exit address.
+    function _checkExit(
+        bytes32 key,
+        bytes32 rollupKey,
+        Facts calldata f,
+        uint64 wIndex,
+        address beneficiary,
+        bytes32 salt,
+        uint256 amountUqor,
+        bytes32[] calldata proof
+    ) private view returns (address exitAddr) {
         BatchRec storage b = _batches[key];
         if (b.confirmedAt == 0) revert NotConfirmed();
         if (b.contested) revert BatchContested();
         if (keccak256(abi.encode(f)) != b.factsHash) revert WrongFacts();
-        Lane memory lane = lanes[rollupKey];
-        if (block.timestamp > uint256(b.confirmedAt) + lane.windowSecs) revert TooLate();
-
-        address exitAddr = exitAddressFor(beneficiary, salt);
+        if (block.timestamp > uint256(b.confirmedAt) + lanes[rollupKey].windowSecs) revert TooLate();
+        exitAddr = exitAddressFor(beneficiary, salt);
         if (advanceOfExit[exitAddr] != bytes32(0)) revert ExitUsed();
         // Funds or code at the exit address mean the withdrawal was already paid (and maybe swept):
         // advancing it again would pay the same withdrawal twice.
         // (Dust sent there by a griefer does not block the exit; any surplus is forwarded on settle.)
         if (exitAddr.balance >= amountUqor * UQOR || exitAddr.code.length != 0) revert AlreadyPaid();
         if (!_verify(proof, f.exitRoot, exitLeaf(wIndex, exitAddr, amountUqor))) revert BadProof();
+    }
 
-        id = keccak256(abi.encode(key, wIndex));
-        if (advances[id].state != 0) revert AlreadyAdvanced();
-        uint256 amountWei = amountUqor * UQOR;
+    /// @dev Lock cover, record the advance and pay the beneficiary.
+    function _advance(
+        bytes32 id,
+        bytes32 key,
+        bytes32 rollupKey,
+        address beneficiary,
+        address exitAddr,
+        bytes32 salt,
+        uint256 amountWei
+    ) private {
+        BatchRec storage b = _batches[key];
+        Lane memory lane = lanes[rollupKey];
+        uint256 fee = _checkRiskAndFee(rollupKey, amountWei);
+        uint256 tip = risk[rollupKey].keeperTipWei;
+        if (fee + tip >= amountWei) revert ExitTooSmall();
         _lockCover(b, lane, amountWei);
-        uint256 fee = (amountWei * lane.feeBps) / BPS;
-        uint256 payout = amountWei - fee;
+        uint256 payout = amountWei - fee - tip;
         if (payout > idleLiquidity()) revert NoLiquidity();
 
         uint64 dueBy = b.confirmedAt + lane.windowSecs + lane.graceSecs;
-        advances[id] = Advance(beneficiary, exitAddr, amountWei, fee, 0, key, salt, dueBy, OPEN);
+        advances[id] = Advance(beneficiary, exitAddr, amountWei, fee, 0, key, salt, dueBy, OPEN, tip);
+        pendingTipsWei += tip;
         advanceOfExit[exitAddr] = id;
         b.advancedWei += amountWei;
         b.openAdvances += 1;
         outstandingWei += amountWei;
+        laneOutstanding[rollupKey] += amountWei;
 
         _send(beneficiary, payout);
         emit InstantExit(id, key, beneficiary, exitAddr, amountWei, fee, dueBy);
@@ -323,12 +411,16 @@ contract ExitPool is DualAdmin {
         uint256 surplus = got - a.amountWei;
         BatchRec storage b = _batches[a.batchKey];
 
+        uint256 tip;
         if (a.state == OPEN) {
             a.state = SETTLED;
             outstandingWei -= a.amountWei;
+            laneOutstanding[_rollupOfBatch[a.batchKey]] -= a.amountWei;
             b.advancedWei -= a.amountWei;
             b.openAdvances -= 1;
             _creditWatchers(b, (a.feeWei * WATCHER_FEE_SHARE_BPS) / BPS);
+            tip = (a.feeWei * KEEPER_FEE_SHARE_BPS) / BPS + a.tipWei;
+            pendingTipsWei -= a.tipWei;
             emit Settled(id, got);
         } else {
             // Repaid after it was written off: give the slashed stake back to the watchers.
@@ -344,6 +436,7 @@ contract ExitPool is DualAdmin {
             emit Recovered(id, got);
         }
         if (surplus > 0) _send(a.beneficiary, surplus);
+        _payKeeper(id, tip);
     }
 
     /// @notice Write off an advance whose exit address was not paid in time, from the
@@ -356,6 +449,7 @@ contract ExitPool is DualAdmin {
         BatchRec storage b = _batches[a.batchKey];
         a.state = DEFAULTED;
         outstandingWei -= a.amountWei;
+        laneOutstanding[_rollupOfBatch[a.batchKey]] -= a.amountWei;
         b.advancedWei -= a.amountWei;
         b.openAdvances -= 1;
 
@@ -369,10 +463,53 @@ contract ExitPool is DualAdmin {
                 slashedOn[a.batchKey][w] += part;
                 registry.slash(w, part, address(this));
                 total += part;
+                stats[w].defaults++;
+                stats[w].slashedWei += uint128(part);
             }
         }
         a.slashedWei = total;
         emit Defaulted(id, total);
+        pendingTipsWei -= a.tipWei;
+        _payKeeper(id, (a.feeWei * KEEPER_FEE_SHARE_BPS) / BPS + a.tipWei);
+    }
+
+    // =================================================================== v3: equivocation
+
+    /// @notice Prove that `watcher` signed two different results for the same batch, with two
+    /// of its own ML-DSA-87 signatures (both checked on chain by pqcVerify). The batch is marked
+    /// contested, so nothing more is advanced against it; the watcher loses its free stake (its
+    /// locked stake keeps backing advances already made) and leaves the active set; the reporter
+    /// gets half, the pool keeps the rest. One of the signatures can be the watcher's on-chain
+    /// attestation (it is in that transaction's calldata); both can be off-chain. Anyone may call.
+    function reportEquivocation(
+        bytes32 rollupKey,
+        uint64 batchIndex,
+        address watcher,
+        Facts calldata f1,
+        bytes calldata sig1,
+        Facts calldata f2,
+        bytes calldata sig2
+    ) external nonReentrant returns (uint256 penalty) {
+        bytes32 h1 = keccak256(abi.encode(f1));
+        bytes32 h2 = keccak256(abi.encode(f2));
+        if (h1 == h2) revert SameFacts();
+        bytes32 key = batchKey(rollupKey, batchIndex);
+        if (equivocated[key][watcher]) revert AlreadyReported();
+        PQGuard.requireSigned(watcher, attestationMessage(rollupKey, batchIndex, f1), sig1);
+        PQGuard.requireSigned(watcher, attestationMessage(rollupKey, batchIndex, f2), sig2);
+        equivocated[key][watcher] = true;
+        if (_rollupOfBatch[key] == bytes32(0)) _rollupOfBatch[key] = rollupKey;
+        BatchRec storage b = _batches[key];
+        if (!b.contested) {
+            b.contested = true;
+            emit BatchContestedEvt(rollupKey, batchIndex, watcher, h2);
+        }
+        penalty = registry.penalize(watcher, type(uint256).max, address(this));
+        stats[watcher].equivocations++;
+        stats[watcher].slashedWei += uint128(penalty);
+        uint256 bounty = penalty / 2;
+        if (bounty > 0) _credit(msg.sender, bounty);
+        emit Equivocation(key, watcher, msg.sender, penalty, bounty);
     }
 
     /// @notice Unlock the watchers' remaining stake once a batch can take no more advances.
@@ -406,7 +543,7 @@ contract ExitPool is DualAdmin {
 
     /// @notice Pool assets: cash plus advances still to be repaid, minus what watchers are owed.
     function totalAssets() public view returns (uint256) {
-        return address(this).balance + outstandingWei - watcherCreditsTotal;
+        return address(this).balance + outstandingWei - watcherCreditsTotal - pendingTipsWei;
     }
 
     function idleLiquidity() public view returns (uint256) {
@@ -443,7 +580,90 @@ contract ExitPool is DualAdmin {
         _send(msg.sender, c);
     }
 
+    // =================================================================== v3: fee and quote
+
+    /// @notice The fee, in basis points, an exit of `amountWei` would pay on this rollup now:
+    /// the lane's base fee up to the risk kink, then rising in a straight line to maxFeeBps at
+    /// 100% utilisation (outstanding advances including this one, over pool assets).
+    function feeBpsFor(bytes32 rollupKey, uint256 amountWei) public view returns (uint256) {
+        uint256 base = lanes[rollupKey].feeBps;
+        Risk memory r = risk[rollupKey];
+        if (r.maxFeeBps <= base) return base;
+        uint256 assets = totalAssets();
+        if (assets == 0) return r.maxFeeBps;
+        uint256 u = ((outstandingWei + amountWei) * BPS) / assets;
+        if (u > BPS) u = BPS;
+        if (u <= r.kinkBps) return base;
+        return base + ((uint256(r.maxFeeBps) - base) * (u - r.kinkBps)) / (BPS - r.kinkBps);
+    }
+
+    /// @notice What an instant exit of `amountUqor` against this batch would get right now, and
+    /// whether it would go through (status Q_OK) or why not. For wallets, before the user signs.
+    function quote(bytes32 rollupKey, uint64 batchIndex, uint256 amountUqor)
+        external
+        view
+        returns (uint8 status, uint256 feeWei, uint256 payoutWei, uint256 coverRoomWei)
+    {
+        uint256 amountWei = amountUqor * UQOR;
+        BatchRec storage b = _batches[batchKey(rollupKey, batchIndex)];
+        Lane memory lane = lanes[rollupKey];
+        Risk memory r = risk[rollupKey];
+        feeWei = (amountWei * feeBpsFor(rollupKey, amountWei)) / BPS + r.keeperTipWei; // includes the execution fee
+        payoutWei = feeWei < amountWei ? amountWei - feeWei : 0;
+        coverRoomWei = _coverRoom(b, lane);
+        if (paused) status = Q_PAUSED;
+        else if (feeWei >= amountWei) status = Q_TOO_SMALL;
+        else if (b.confirmedAt == 0) status = Q_NOT_CONFIRMED;
+        else if (b.contested) status = Q_CONTESTED;
+        else if (block.timestamp > uint256(b.confirmedAt) + lane.windowSecs) status = Q_TOO_LATE;
+        else if (r.maxExitWei != 0 && amountWei > r.maxExitWei) status = Q_EXIT_TOO_LARGE;
+        else if (r.maxOutstandingWei != 0 && laneOutstanding[rollupKey] + amountWei > r.maxOutstandingWei) status = Q_LANE_FULL;
+        else if (amountWei > coverRoomWei) status = Q_COVER;
+        else if (payoutWei > idleLiquidity()) status = Q_LIQUIDITY;
+    }
+
+    /// @dev v3 limits for one exit, then its fee.
+    function _checkRiskAndFee(bytes32 rollupKey, uint256 amountWei) private view returns (uint256) {
+        Risk memory r = risk[rollupKey];
+        if (r.maxExitWei != 0 && amountWei > r.maxExitWei) revert ExitTooLarge();
+        if (r.maxOutstandingWei != 0 && laneOutstanding[rollupKey] + amountWei > r.maxOutstandingWei) revert LaneFull();
+        return (amountWei * feeBpsFor(rollupKey, amountWei)) / BPS;
+    }
+
+    function _coverRoom(BatchRec storage b, Lane memory lane) private view returns (uint256 room) {
+        room = b.coverWei - b.advancedWei;
+        for (uint256 i = 0; i < b.watchers.length; i++) {
+            uint256 left = lane.lockPerWatcher - b.lockedAmt[i];
+            uint256 free = registry.freeStake(b.watchers[i]);
+            room += left < free ? left : free;
+        }
+    }
+
     // =================================================================== admin
+
+    /// @notice Either admin alone can stop new instant exits in an emergency. Nothing else stops:
+    /// settling, writing off, releasing, sweeping and liquidity withdrawals all keep working.
+    function pause(uint256 deadline, bool byA, bytes calldata sig) external {
+        _requireEitherAdmin("pause", "", deadline, byA, sig);
+        paused = true;
+        emit PausedSet(true);
+    }
+
+    /// @notice Resuming needs both admins.
+    function unpause(uint256 deadline, bytes calldata sigA, bytes calldata sigB) external {
+        _requireAdmins("unpause", "", deadline, sigA, sigB);
+        paused = false;
+        emit PausedSet(false);
+    }
+
+    function setRisk(bytes32 rollupKey, Risk calldata r, uint256 deadline, bytes calldata sigA, bytes calldata sigB)
+        external
+    {
+        if (r.maxFeeBps > 1000 || r.kinkBps >= BPS || r.keeperTipWei > 1 ether) revert BadRisk();
+        _requireAdmins("setRisk", abi.encode(rollupKey, r), deadline, sigA, sigB);
+        risk[rollupKey] = r;
+        emit RiskSet(rollupKey, r);
+    }
 
     function setLane(bytes32 rollupKey, Lane calldata lane, uint256 deadline, bytes calldata sigA, bytes calldata sigB)
         external
@@ -473,6 +693,19 @@ contract ExitPool is DualAdmin {
             if (deployed != exitAddr) revert BadState();
         }
         return ExitAddress(payable(exitAddr)).sweep(to);
+    }
+
+    /// @dev Keeper tips and reporter bounties are credited, not sent, so that a caller that cannot
+    /// receive QOR (a contract, a multicall) can still settle; they are claimed with claimCredit().
+    function _payKeeper(bytes32 id, uint256 tip) private {
+        if (tip == 0) return;
+        _credit(msg.sender, tip);
+        emit KeeperPaid(id, msg.sender, tip);
+    }
+
+    function _credit(address to, uint256 amount) private {
+        watcherCredit[to] += amount;
+        watcherCreditsTotal += amount;
     }
 
     function _creditWatchers(BatchRec storage b, uint256 amount) private {

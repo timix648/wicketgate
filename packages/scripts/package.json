@@ -41,7 +41,10 @@
     "receipts": "tsx src/receipts-all.ts",
     "receipt:verify": "tsx src/verify-receipt.ts",
     "stress": "tsx src/stress.ts",
-    "watcher:onboard": "tsx src/onboard-watcher.ts"
+    "watcher:onboard": "tsx src/onboard-watcher.ts",
+    "deploy:v3": "tsx src/deploy-v3.ts",
+    "keeper": "tsx src/keeper.ts",
+    "report:equivocation": "tsx src/report-equivocation.ts"
   },
   "dependencies": {
     "@cosmjs/stargate": "0.39.0",

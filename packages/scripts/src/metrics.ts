@@ -19,7 +19,7 @@ const qor = (wei: bigint) => Number(wei) / 1e18;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); const m = s.length >> 1; return s.length ? (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2) : NaN; };
 
-const deployments = ["diana-v1.json", "diana-v2.0.json", "diana.json"].map((f) => ({ file: f, ...JSON.parse(readFileSync(new URL(`deployments/${f}`, ROOT), "utf8")) }));
+const deployments = ["diana-v1.json", "diana-v2.0.json", "diana-v2.1.json", "diana.json"].map((f) => ({ file: f, ...JSON.parse(readFileSync(new URL(`deployments/${f}`, ROOT), "utf8")) }));
 
 const blockTime = new Map<bigint, number>();
 async function timeOf(height: bigint) {

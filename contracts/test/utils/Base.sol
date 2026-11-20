@@ -87,9 +87,31 @@ abstract contract Base is Test {
         } else if (action == "setParams") {
             (uint256 ms, uint64 ld) = abi.decode(payload, (uint256, uint64));
             WatcherRegistry(target).setParams(ms, ld, deadline, sa, sb);
+        } else if (action == "setRisk") {
+            (bytes32 k, ExitPool.Risk memory r) = abi.decode(payload, (bytes32, ExitPool.Risk));
+            ExitPool(payable(target)).setRisk(k, r, deadline, sa, sb);
+        } else if (action == "unpause") {
+            ExitPool(payable(target)).unpause(deadline, sa, sb);
         } else {
             revert("unknown action");
         }
+    }
+
+    /// v3: one admin's signature pauses new exits.
+    function pauseBy(bool byA) internal {
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes memory m = pool.adminMessage("pause", "", pool.adminNonce(), deadline);
+        pool.pause(deadline, byA, sign(byA ? adminA : adminB, m));
+    }
+
+    function setRisk(uint16 kinkBps, uint16 maxFeeBps, uint128 maxExitWei, uint128 maxOutstandingWei) internal {
+        setRisk(kinkBps, maxFeeBps, maxExitWei, maxOutstandingWei, 0);
+    }
+
+    function setRisk(uint16 kinkBps, uint16 maxFeeBps, uint128 maxExitWei, uint128 maxOutstandingWei, uint128 keeperTipWei)
+        internal
+    {
+        adminDo(address(pool), "setRisk", abi.encode(rollupKey, ExitPool.Risk(kinkBps, maxFeeBps, maxExitWei, maxOutstandingWei, keeperTipWei)), "");
     }
 
     function setLane(uint8 quorum, uint16 feeBps) internal {

@@ -1,26 +1,21 @@
 {
   "network": "qorechain-diana",
   "evmChainId": 9800,
-  "deployedAt": "2026-11-16T20:00:40.262Z",
-  "version": "2.1",
-  "previous": [
-    {
-      "version": "2.0",
-      "file": "deployments/diana-v2.0.json",
-      "note": "replaced the same day: could advance a withdrawal the chain had already paid"
-    },
-    {
-      "version": "1",
-      "file": "deployments/diana-v1.json",
-      "note": "locked stake at confirmation"
-    }
-  ],
+  "deployedAt": "2026-11-20T11:31:28.614Z",
+  "version": "3.1",
+  "deployBlock": 10430394,
+  "previous": {
+    "registry": "0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad",
+    "pool": "0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a",
+    "file": "deployments/diana-v2.1.json",
+    "note": "pool v2.1: the Q-Day Drill account W3 stays staked here (the take-the-stake challenge)"
+  },
   "admins": [
     "0xD3CFE687053d1CCb6Aff87D46385f627362896a0",
     "0x06e57D2A755234fEb975f0064f76f44Bc7Ba679F"
   ],
-  "registry": "0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad",
-  "pool": "0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a",
+  "registry": "0x902ba28daae5d80f049f71d78637bcb52bf4e06e",
+  "pool": "0x8ea2ae9d7182261398f62d9ee8be9648025805b4",
   "directory": "0x253d03e0884116326db93bd122d4414ef2a0071b",
   "memoBoard": "0x175fd018656a831b297e35edfde098d695372543",
   "lanes": {
@@ -31,7 +26,14 @@
       "feeBps": 30,
       "quorum": 2,
       "lockPerWatcher": "50000000000000000000",
-      "enabled": true
+      "enabled": true,
+      "risk": {
+        "kinkBps": 5000,
+        "maxFeeBps": 300,
+        "maxExitWei": "50000000000000000000",
+        "maxOutstandingWei": "160000000000000000000",
+        "keeperTipWei": "80000000000000000"
+      }
     },
     "rdk-v328-e2e-mwd5v89d": {
       "rollupKey": "0xe5e777197062b210a3582b5d5d294cc945899e9b1fd862236ee088c5cbdeccce",
@@ -40,7 +42,14 @@
       "feeBps": 30,
       "quorum": 2,
       "lockPerWatcher": "8000000000000000000",
-      "enabled": true
+      "enabled": true,
+      "risk": {
+        "kinkBps": 5000,
+        "maxFeeBps": 300,
+        "maxExitWei": "8000000000000000000",
+        "maxOutstandingWei": "160000000000000000000",
+        "keeperTipWei": "80000000000000000"
+      }
     },
     "vigil-1": {
       "rollupKey": "0x67db76d1ce29a3c3edd7892d6203d4a9f3646f77af591addc81443833b9e5f5b",
@@ -49,7 +58,14 @@
       "feeBps": 30,
       "quorum": 2,
       "lockPerWatcher": "20000000000000000000",
-      "enabled": true
+      "enabled": true,
+      "risk": {
+        "kinkBps": 5000,
+        "maxFeeBps": 300,
+        "maxExitWei": "20000000000000000000",
+        "maxOutstandingWei": "160000000000000000000",
+        "keeperTipWei": "80000000000000000"
+      }
     },
     "vigil-pay-1": {
       "rollupKey": "0x2625e6d758919c41ae36231f6d96be4ecb64babe96e0f3eedb8009c750b24bef",
@@ -58,7 +74,14 @@
       "feeBps": 30,
       "quorum": 2,
       "lockPerWatcher": "20000000000000000000",
-      "enabled": true
+      "enabled": true,
+      "risk": {
+        "kinkBps": 5000,
+        "maxFeeBps": 300,
+        "maxExitWei": "20000000000000000000",
+        "maxOutstandingWei": "160000000000000000000",
+        "keeperTipWei": "80000000000000000"
+      }
     }
   }
 }

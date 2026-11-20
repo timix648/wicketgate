@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import type { Address } from "viem";
 import { fetchEvmWindow } from "@qorechain/sdk";
-import { account, DEPLOYMENTS_FILE, NET, STATE_DIR } from "@wicketgate/core/env";
+import { account, NET, STATE_DIR } from "@wicketgate/core/env";
 import { accountSeq, balanceUqor } from "@wicketgate/core/chain";
 import { artifact, publicClient } from "@wicketgate/core/evm";
 
@@ -28,7 +28,8 @@ function alert(text: string) {
 
 async function snapshot() {
   const w = await account("W3");
-  const dep = JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8"));
+  // W3 (the drill account) is staked in the pool v2.1 registry, which stays deployed for the challenge
+  const dep = JSON.parse(readFileSync(new URL("../../../deployments/diana-v2.1.json", import.meta.url), "utf8"));
   const R = artifact("WatcherRegistry").abi, P = artifact("ExitPool").abi;
   const [bal, seq, win, st, poolAssets, regBal] = await Promise.all([
     balanceUqor(w.cosmos),

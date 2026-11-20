@@ -47,8 +47,8 @@ For the Q-Day Drill (18 November) we handed the classical private key of watcher
 | | |
 | --- | --- |
 | The account | W3: `qor14jp0letppu2dp8h528juwyj5h6gkfnygclxrhf` / `0xAC82Ffe5610f14d09eF451E5c71254Be9164cc88`, about 64 QOR in its wallet |
-| Its stake | **50 QOR** in the live WatcherRegistry `0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad` |
-| What it watches over | ExitPool `0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a`, about **400 QOR** of liquidity |
+| Its stake | **50 QOR** in the pool v2.1 WatcherRegistry `0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad`, which stays deployed for the challenge |
+| What it watched over | ExitPool v2.1 `0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a`, which held about **400 QOR** on drill day; on 20 November that liquidity moved to pool v3.1, and W3's stake stayed where it was |
 | Drill result | 0 successful attacks; 99.86% of its value kept, the only loss being our own proof's fee ([docs/drill/DRILL.md](docs/drill/DRILL.md)) |
 
 **What the key cannot do, and why.** W3's ML-DSA-87 key comes from a secret the drill never saw. Without it, a native transaction from W3 is refused (QoreChain requires the hybrid signature), so no EVM window can be opened, so no EVM transaction from W3 is accepted, so `requestLeave` can never start taking the stake out; and `ecrecover` will not accept W3's signature for a contract its closed window does not admit. Inside Wicketgate, a watcher acts only through ML-DSA-87 signatures checked on chain: red-team attacks A2 to A4 ([docs/REDTEAM.md](docs/REDTEAM.md)) show that a watcher's address without its post-quantum key gets nowhere. W3 runs no service and signs nothing; a monitor logs its balance, sequence, window and stake every minute until 2 December 23:59 UTC.
@@ -124,7 +124,9 @@ Example: Ada withdraws 50 QOR from a rollup. Today she waits a week, or trusts a
 | --- | --- | --- |
 | **Watcher** (`packages/watcher`) | Rebuilds any `qledger-v1` rollup from inbox data on the main chain, re-executes every batch, finds every rollup on chain by itself (`--rollup all`) | A verdict per batch (`match`, `mismatch`, `rejected-on-chain`); a **fraud proof** sent within seconds for any wrong batch; exit proofs; the post-quantum provenance of every batch submission |
 | **Attestations** | A watcher whose roots match signs an attestation with its **ML-DSA-87** key; `ExitPool` checks it on chain through the `pqcVerify` precompile against the key the chain holds | Two watchers are needed to confirm a batch; **one watcher that signs different facts freezes payouts on that batch** |
-| **ExitPool** (`contracts/src/ExitPool.sol`) | Pays a withdrawal at once against a confirmed batch, minus 0.3%, and locks the confirming watchers' stake at that moment | Never advances more than the stake behind a batch; refuses a withdrawal the chain already paid; repays itself from the chain after finalisation, or slashes the watchers if it is never repaid |
+| **ExitPool v3.1** (`contracts/src/ExitPool.sol`) | Pays a withdrawal at once against a confirmed batch, minus a fee that starts at 0.3% and rises with pool utilisation, and locks the confirming watchers' stake at that moment | Never advances more than the stake behind a batch, a largest single exit or a most-owed-at-once per rollup; refuses a withdrawal the chain already paid; repays itself from the chain after finalisation, or slashes the watchers if it is never repaid; `quote()` explains an exit before it is signed ([docs/V3.md](docs/V3.md)) |
+| **Keepers** (`packages/scripts/src/keeper.ts`) | Anyone, with no role, executes final withdrawals from the public feed, settles repaid advances, writes off unpaid ones and releases stake | Paid on chain: a fixed execution fee plus 10% of each advance's fee |
+| **Equivocation slashing and pause** | Two ML-DSA-87 signatures by one watcher over different results for one batch take its stake; either admin can stop new exits, both are needed to resume | Signing two stories costs the stake; the brake cannot trap anyone's money |
 | **WatcherRegistry** | Watchers stake QOR; joining needs a registered, possession-proven ML-DSA-87 key | Stake that backs every attestation; leaving waits out a delay |
 | **Our own rollup `wicketgate-pay`** | A based, optimistic `qledger-v1` payment rollup created and operated by the team | Every batch anchored with the creator's ML-DSA-87 signature; settlement receipts anyone can verify |
 | **Operator** (`packages/operator`) | Bonds as a submitter, batches the inbox, relays users' signed ledger transactions, pays withdrawals that back an instant exit and settles the advance | Batches on our rollup and on the organiser's own rollup |
@@ -240,7 +242,7 @@ Compiler settings, for anyone rebuilding the contracts: solc 0.8.24, optimizer o
 
 - [PROOF.md](PROOF.md): every claim with its transaction hash and date.
 - **Explorer links:** explore.qore.network opens on mainnet. Press **Testnet** at the top right once (it is remembered), then the links open. EVM transactions (`0x…`) cannot be looked up there; read them with `eth_getTransactionReceipt` on `https://evm-testnet.qore.host`.
-- [deployments/diana.json](deployments/diana.json): the live addresses; earlier versions are in `deployments/diana-v1.json` and `deployments/diana-v2.0.json`.
+- [deployments/diana.json](deployments/diana.json): the live addresses; earlier versions are in `deployments/diana-v1.json`, `deployments/diana-v2.0.json` and `deployments/diana-v2.1.json`.
 - [receipts/](receipts/): a verified settlement receipt.
 - [cbom/wicketgate.cdx.json](cbom/wicketgate.cdx.json): the QoreScan cryptographic inventory.
 - The public watcher feed: `https://raw.githubusercontent.com/timix648/wicketgate-feed/main/index.json`.
@@ -250,13 +252,15 @@ Compiler settings, for anyone rebuilding the contracts: solc 0.8.24, optimizer o
 
 | Contract | Address |
 | --- | --- |
-| WatcherRegistry (v2.1) | `0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad` |
-| ExitPool (v2.1) | `0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a` |
+| WatcherRegistry (v3.1, live since 20 Nov) | `0x902ba28daae5d80f049f71d78637bcb52bf4e06e` |
+| ExitPool (v3.1, live since 20 Nov, deploy block 10,430,394) | `0x8ea2ae9d7182261398f62d9ee8be9648025805b4` |
+| WatcherRegistry (v2.1, kept for the drill challenge) | `0x0d3e791d4b71f57ab95f501e60a8572b9cab20ad` |
+| ExitPool (v2.1, retired 20 Nov) | `0xc5350ba167a5ac3c3302859ab8b0c8f792ff8b9a` |
 | Directory | `0x253d03e0884116326db93bd122d4414ef2a0071b` |
 | MemoBoard | `0x175fd018656a831b297e35edfde098d695372543` |
 | Our rollup | `wicketgate-pay` (based, optimistic, `qledger-v1`) |
 
-**Q-Day Drill:** our drill account is watcher W3 (`0xAC82Ffe5610f14d09eF451E5c71254Be9164cc88`), registered with the two contracts above. It holds 50 QOR of stake, and the pool holds 400 QOR. Its classical key alone can sign nothing our contracts accept, and it cannot open an EVM window. A monitor logs its balance, sequence, window and stake every minute (see [THREAT_MODEL.md](THREAT_MODEL.md)).
+**Q-Day Drill:** our drill account is watcher W3 (`0xAC82Ffe5610f14d09eF451E5c71254Be9164cc88`), registered with the two v2.1 contracts above. It holds 50 QOR of stake there; the v2.1 pool held 400 QOR on drill day. Its classical key alone can sign nothing our contracts accept, and it cannot open an EVM window. A monitor logs its balance, sequence, window and stake every minute (see [THREAT_MODEL.md](THREAT_MODEL.md)).
 
 **Commits that show the work:** the first on-chain attestation and confirmation (`f839e72`), our own rollup and the fraud demo (`56c171f`), the verified receipt (`773232c`), the exit to Osmosis (`b554c81`), and pool v2.1 with the double-payment fix (`e86476b`).
 
@@ -414,7 +418,7 @@ Real problems we met while building, and their fixes:
 
 - **Testnet only.** The `pqcVerify` and `pqcKeyStatus` precompiles are inactive on QoreChain mainnet, so the contracts fail closed there.
 - **Not audited.** Tests, invariants, live probes and the QoreScan inventory, but no external audit.
-- **Toy economics.** Stake per watcher, the 0.3% fee and the quorum of 2 are chosen to show the flows, not tuned for real value.
+- **Toy economics.** Stake per watcher, the fee curve (0.3% rising to at most 3%), the caps, the keeper fee and the quorum of 2 are chosen to show the flows, not tuned for real value.
 - **The pool cannot read rollup state.** The EVM cannot see `x/rdk`, so the pool learns a batch was wrong only when an advanced exit address is not funded in time. The submitter is still slashed by the chain's fraud proof.
 - **Withdrawals to 32-byte addresses** cannot be exited instantly; they take the normal path.
 - **The team runs the operator and relay.** Neither can alter a user's transaction (it is signed by the user's ledger key), and anyone may post to a based rollup directly, but the convenience path depends on our server.

@@ -33,6 +33,20 @@ abstract contract DualAdmin {
         return abi.encode(ADMIN_TYPEHASH, block.chainid, address(this), action, keccak256(payload), nonce, deadline);
     }
 
+    /// @dev One admin's ML-DSA-87 signature, from either admin. Used only for actions that can
+    /// stop something (an emergency pause), never for actions that move funds or change terms.
+    function _requireEitherAdmin(bytes32 action, bytes memory payload, uint256 deadline, bool byA, bytes calldata sig)
+        internal
+    {
+        if (block.timestamp > deadline) revert Expired();
+        bytes memory m = adminMessage(action, payload, adminNonce, deadline);
+        PQGuard.requireSigned(byA ? adminA : adminB, m, sig);
+        emit AdminAction(action, adminNonce);
+        unchecked {
+            adminNonce++;
+        }
+    }
+
     function _requireAdmins(
         bytes32 action,
         bytes memory payload,
