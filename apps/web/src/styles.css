@@ -239,6 +239,18 @@ details summary { cursor: pointer; }
 .tab.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
 select.input { font-family: var(--sans); }
 
+/* proof pages */
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.vs-col { border-top: 4px solid var(--border); }
+.vs-col.fell { border-top-color: var(--bad); }
+.vs-col.held { border-top-color: var(--ok); }
+.vs-col h4 { margin: 16px 0 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.attempts { list-style: none; margin: 0; padding: 0; }
+.attempt { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.attempt:last-child { border-bottom: 0; }
+.mono-wrap { font-family: var(--mono); font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 720px) { .vs { grid-template-columns: 1fr; } }
+
 .footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
 
 @media (max-width: 720px) {
