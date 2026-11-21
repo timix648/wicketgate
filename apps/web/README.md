@@ -18,6 +18,7 @@ None of these are needed to browse the board. Put them in `apps/web/.env.local` 
 | --- | --- |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (or Vercel KV's `KV_REST_API_URL`, `KV_REST_API_TOKEN`) | Queue storage. Without them, `next dev` keeps the queues in memory; a production build refuses queue requests with 503 instead of losing them. |
 | `OPERATOR_TOKEN` | Shared secret the operator sends as `Authorization: Bearer <token>`. Without it the operator endpoints answer 503. |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Optional. RainbowKit asks for one, but QoreX is an injected wallet and WalletConnect is never used. |
 
 ## Data the pages read
 
@@ -39,6 +40,30 @@ Addresses come from `deployments/diana.json` and ABIs from `packages/core/abi`.
 | `/watchers` | Every registered watcher: stake, locked, fees, attestations |
 | `/exits` | Every instant exit with batch-to-money time and repayment |
 | `/track/[address]` | Every withdrawal and exit for a beneficiary or exit address (`0x…` or `qor1…`) |
+| `/wallet` | Connect QoreX, create or restore the rollup account, deposit, send, withdraw instantly, follow each exit |
+| `/proof`, `/qday`, `/redteam`, `/stress`, `/fraud` | The proof pages, built from the committed evidence files (`docs/*.json`, `deployments/demo-timeline.json`) |
+| `/pool` | Live pool, your liquidity in the live and previous pool, share value over time from `Deposited` / `Withdrawn` events; deposit and withdraw (EVM calls, which QoreX cannot send yet: the page says so) |
+| `/receipt` | Verify a published or pasted settlement receipt against the chain (`POST /api/receipt/verify`, server-side because QoreChain's REST and RPC send no CORS headers), and watch a forged copy fail |
+
+## End-to-end tests
+
+`pnpm --filter @wicketgate/web build`, then `pnpm --filter @wicketgate/web e2e` (Playwright, Chromium). The wallet test injects `@qorechain/qorex-wallet-mock` and answers the relay and exit endpoints itself; all tests read the public testnet. CI runs them in the `web-e2e` job.
+
+## Wallet (frontend brief, section 8.6)
+
+Who signs what:
+
+| Step | Signed by |
+| --- | --- |
+| Deposit into a rollup | the user's QoreX wallet: `MsgDepositToRollup` through `window.qorex.native.signAndBroadcast` (hybrid secp256k1 + ML-DSA-87) |
+| Transfer, withdrawal | the app's own rollup key, posted through `/api/relay` |
+| Instant exit | the backend's exit relay (`/api/exit`); the payout is locked to the user's EVM address, so the user signs nothing on EVM |
+
+The rollup key is a fresh 32-byte seed from `crypto.getRandomValues`, turned into an ML-DSA-44 account with `qledgerKeypairFromSeed`. It is never derived from the wallet and never sent anywhere. Only the seed is stored, in IndexedDB, encrypted with AES-GCM under a key from the user's passphrase (PBKDF2-SHA-256, 600,000 iterations); the account id is bound in as associated data. Each withdrawal's salt and exit address are saved before anything leaves the browser and are part of the backup file (`{ version: 1, rollupId, accountId, encryptedSeed, kdf, salt, iv, exits }`), which also restores the account.
+
+Before a withdrawal the wallet shows the fee and payout from `feeBpsFor` and the lane's keeper tip, and refuses when the pool is paused, the exit is over the pool's limit or liquidity is short. Once the withdrawal is batched it shows the exact `quote(rollupKey, batchIndex, amount)` until the exit relay reports `paid` or `failed`.
+
+Balances: the wallet reads an optional `accounts` list (`{ id, balance, nonce }` per rollup account after the last re-executed batch) from the watcher feed. Until the feed publishes it, the wallet shows an estimate from this browser's own activity and signs with its locally tracked nonce.
 
 ## Queues (frontend brief, section 9)
 

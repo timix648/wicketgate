@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useBatchKeyMap, useEvents, useMetrics } from "../lib/queries";
 import { deriveExits, type LiveExit } from "../lib/events";
-import { CONTRACTS } from "../lib/config";
+import { POOLS } from "../lib/config";
+
+const EVENTS_SOURCE = { label: "InstantExit and Settled events: every exit below", href: "#every-exit" };
 import { ago, dateTime, duration, num, qorFromWei } from "../lib/format";
 import { ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
 
@@ -39,7 +41,8 @@ export function Exits() {
   const defaulted = exits.filter((x) => x.status === "defaulted").length;
   const med = median(speeds);
   const window = 3600;
-  const earlier = (metrics.data?.exits ?? []).filter((e) => e.pool !== CONTRACTS.version);
+  const scanned = new Set(POOLS.map((p) => p.version));
+  const earlier = (metrics.data?.exits ?? []).filter((e) => !scanned.has(e.pool));
 
   return (
     <>
@@ -58,15 +61,15 @@ export function Exits() {
       ) : (
         <>
           <div className="grid stats">
-            <Stat label={`Instant exits (pool v${CONTRACTS.version})`} value={exits.length} sub={`${qorFromWei(paid, 2)} QOR of withdrawals advanced`} />
-            <Stat label="Median, batch to money" value={med !== undefined ? num(med, 0) : "–"} unit="s" sub={`against a ${duration(window)} challenge window`} />
-            <Stat label="Repaid by the chain" value={`${repaid}/${exits.length}`} sub={`${open} awaiting repayment, ${defaulted} defaulted`} />
-            <Stat label="Fees earned" value={qorFromWei(fees, 3)} unit="QOR" sub="70% liquidity providers, 30% watchers" />
+            <Stat label="Instant exits"  value={exits.length} sub={`${qorFromWei(paid, 2)} QOR advanced, pools ${POOLS.map((p) => `v${p.version}`).join(" and ")}`} source={EVENTS_SOURCE} />
+            <Stat label="Median, batch to money" value={med !== undefined ? num(med, 0) : "–"} unit="s" sub={`against a ${duration(window)} challenge window`} source={{ label: "exit block time minus the feed's batch time", href: "#every-exit" }} />
+            <Stat label="Repaid by the chain" value={`${repaid}/${exits.length}`} sub={`${open} awaiting repayment, ${defaulted} defaulted`} source={EVENTS_SOURCE} />
+            <Stat label="Fees earned" value={qorFromWei(fees, 3)} unit="QOR" sub="70% liquidity providers, 30% watchers" source={EVENTS_SOURCE} />
           </div>
 
           <div className="section">
             <div className="section-head">
-              <h2>Every exit</h2>
+              <h2 id="every-exit">Every exit</h2>
               <p>Scanned to block {events.data.toBlock.toLocaleString()}</p>
             </div>
             {exits.length === 0 ? (
@@ -83,6 +86,7 @@ export function Exits() {
                       <th>Batch to money</th>
                       <th>Repayment</th>
                       <th>Exit transaction</th>
+                      <th>Pool</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -90,7 +94,7 @@ export function Exits() {
                       const b = keys.get(x.batchKey.toLowerCase());
                       const s = toMoney(x);
                       return (
-                        <tr key={x.id}>
+                        <tr key={`${x.pool}-${x.id}`}>
                           <td title={x.time ? dateTime(x.time * 1000) : undefined}>{x.time ? ago(x.time * 1000) : "–"}</td>
                           <td>
                             {b ? (
@@ -114,6 +118,7 @@ export function Exits() {
                           </td>
                           <td><ExitStatusPill x={x} /></td>
                           <td><Hash value={x.tx} /></td>
+                          <td className="muted">v{x.pool}</td>
                         </tr>
                       );
                     })}

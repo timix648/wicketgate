@@ -2,7 +2,7 @@
 import { createPublicClient, defineChain, http, keccak256, toHex, type Abi, type Address, type Hex } from "viem";
 import poolAbiJson from "@wicketgate/core/abi/ExitPool.json";
 import registryAbiJson from "@wicketgate/core/abi/WatcherRegistry.json";
-import { CONTRACTS, NET } from "./config";
+import { CONTRACTS, NET, POOLS } from "./config";
 
 const poolAbi = poolAbiJson as Abi;
 const registryAbi = registryAbiJson as Abi;
@@ -53,14 +53,28 @@ export interface WatcherState {
   leaveAfter: bigint;
   active: boolean;
   credit: bigint;
+  /** Stake still held by the registry of the pool this one replaced, if any. */
+  previous?: { version: string; stake: bigint; active: boolean };
 }
 
 export async function fetchWatcher(address: Address): Promise<WatcherState> {
-  const [w, credit] = await Promise.all([
+  const prev = POOLS.find((p) => !p.live);
+  const [w, credit, old] = await Promise.all([
     readRegistry<readonly [bigint, bigint, bigint, boolean]>("watchers", [address]),
     readPool<bigint>("watcherCredit", [address]),
+    prev
+      ? (client.readContract({ address: prev.registry, abi: registryAbi, functionName: "watchers", args: [address] }) as Promise<readonly [bigint, bigint, bigint, boolean]>)
+      : Promise.resolve(undefined),
   ]);
-  return { address, stake: w[0], locked: w[1], leaveAfter: w[2], active: w[3], credit };
+  return {
+    address,
+    stake: w[0],
+    locked: w[1],
+    leaveAfter: w[2],
+    active: w[3],
+    credit,
+    ...(prev && old && old[0] > 0n ? { previous: { version: prev.version, stake: old[0], active: old[3] } } : {}),
+  };
 }
 
 export interface OnChainBatch {

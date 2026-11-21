@@ -57,6 +57,18 @@ export interface RollupFeed {
   mode: string;
   inbox: { head: number; consumed: number; oldestPendingHeight: number | null };
   batches: Batch[];
+  /**
+   * Optional: every rollup account's balance (uqor) and nonce after the last re-executed batch.
+   * The wallet reads it when the watcher publishes it; ids are 32-byte hex, with or without 0x.
+   */
+  accounts?: { id: string; balance: string | number; nonce: string | number }[];
+}
+
+/** An account's state in the feed, if the watcher publishes accounts. */
+export function feedAccount(feed: RollupFeed | undefined, accountId: string): { balance: bigint; nonce: bigint } | null | undefined {
+  if (!feed?.accounts) return undefined; // not published
+  const a = feed.accounts.find((x) => x.id.replace(/^0x/, "").toLowerCase() === accountId.toLowerCase());
+  return a ? { balance: BigInt(a.balance), nonce: BigInt(a.nonce) } : null; // null: no such account yet
 }
 
 export interface ExitRecord {

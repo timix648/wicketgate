@@ -44,6 +44,10 @@ const NAV: [string, string][] = [
   ["/watchers", "Watchers"],
   ["/exits", "Instant exits"],
   ["/track", "Track an exit"],
+  ["/pool", "Pool"],
+  ["/receipt", "Receipts"],
+  ["/proof", "Proof"],
+  ["/wallet", "Wallet"],
 ];
 
 function NavItem({ href, label, pathname }: { href: string; label: string; pathname: string }) {
@@ -113,7 +117,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <a href={FEED_BASE.replace("raw.githubusercontent.com", "github.com").replace("/main", "/tree/main")} target="_blank" rel="noreferrer">Watcher feed</a>
           <a href={`${REPO_URL}/blob/main/PROOF.md`} target="_blank" rel="noreferrer">Proof</a>
           <span className="spacer" />
-          <span>Read-only: no wallet, no keys.</span>
+          <span>Your rollup key never leaves this browser.</span>
         </footer>
       </main>
     </>

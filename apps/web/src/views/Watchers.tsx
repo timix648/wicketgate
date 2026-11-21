@@ -10,7 +10,8 @@ import { duration, qorFromWei } from "../lib/format";
 import { ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
 
 export function Watchers() {
-  const { rollups } = useAllRollups();
+  const { rollups, index } = useAllRollups();
+  const publisher = index.data?.watcher?.toLowerCase();
   const pool = usePool();
   const events = useEvents();
   const [hash, setHash] = useState("");
@@ -54,18 +55,19 @@ export function Watchers() {
       </div>
 
       <div className="grid stats">
-        <Stat label="Registered watchers" value={active} sub={`of ${addresses.length} addresses seen`} />
-        <Stat label="Total stake" value={qorFromWei(totalStake, 2)} unit="QOR" />
-        <Stat label="Locked behind open exits" value={qorFromWei(totalLocked, 2)} unit="QOR" />
+        <Stat label="Registered watchers" value={active} sub={`of ${addresses.length} addresses seen`} source={{ label: "Joined events + WatcherRegistry.watchers()", href: "#watcher-table" }} />
+        <Stat label="Total stake" value={qorFromWei(totalStake, 2)} unit="QOR" source={{ label: "WatcherRegistry.watchers(): per watcher below", href: "#watcher-table" }} />
+        <Stat label="Locked behind open exits" value={qorFromWei(totalLocked, 2)} unit="QOR" source={{ label: "WatcherRegistry.watchers().locked", href: "#watcher-table" }} />
         <Stat
           label="To join"
           value={pool.data ? qorFromWei(pool.data.minStake, 2) : "…"}
           unit="QOR min."
           sub={pool.data ? `leaving waits ${duration(Number(pool.data.leaveDelay))}` : undefined}
+          source={{ label: "WatcherRegistry.minStake(), leaveDelay()" }}
         />
       </div>
 
-      <div className="section table-wrap">
+      <div className="section table-wrap" id="watcher-table">
         <table>
           <thead>
             <tr>
@@ -89,12 +91,16 @@ export function Watchers() {
                   <td>
                     <strong>{known?.name ?? "Independent"}</strong>
                     {known && <div className="small muted">{known.note}</div>}
+                    {a === publisher && <div className="small"><Pill tone="info">publishes the public feed</Pill></div>}
                   </td>
                   <td><Hash value={getAddress(a)} /></td>
                   <td>
-                    {q?.error ? <Pill tone="bad">read failed</Pill> : !w ? <span className="skeleton" style={{ display: "inline-block", width: 60 }} /> : w.active ? <Pill tone="ok">active</Pill> : w.leaveAfter > 0n ? <Pill tone="warn">leaving</Pill> : <Pill tone="muted">not registered</Pill>}
+                    {q?.error ? <Pill tone="bad">read failed</Pill> : !w ? <span className="skeleton" style={{ display: "inline-block", width: 60 }} /> : w.active ? <Pill tone="ok">active</Pill> : w.leaveAfter > 0n ? <Pill tone="warn">leaving</Pill> : w.previous?.active ? <Pill tone="info" title={`Not in the live registry; still staked in the pool v${w.previous.version} registry`}>{`staked in v${w.previous.version}`}</Pill> : <Pill tone="muted">not registered</Pill>}
                   </td>
-                  <td className="num">{w ? `${qorFromWei(w.stake, 2)} QOR` : ""}</td>
+                  <td className="num">
+                    {w ? `${qorFromWei(w.stake, 2)} QOR` : ""}
+                    {w?.previous && <div className="small muted">+ {qorFromWei(w.previous.stake, 2)} in v{w.previous.version}</div>}
+                  </td>
                   <td>
                     {w && (
                       <div className="row" style={{ gap: 8 }}>

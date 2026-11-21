@@ -6,7 +6,33 @@ import type { BatchState } from "../lib/feed";
 import { watcherName } from "../lib/config";
 import { explorerTx, short } from "../lib/format";
 
-export function Stat({ label, value, unit, sub }: { label: string; value: ReactNode; unit?: string; sub?: ReactNode }) {
+/**
+ * Where a figure comes from. `href` opens the data file, page or transaction behind it; a figure
+ * read live from a contract has no file, so its `label` names the exact call instead.
+ */
+export interface Source {
+  label: string;
+  href?: string;
+}
+
+export function SourceLine({ source }: { source: Source }) {
+  const internal = source.href?.startsWith("/");
+  return (
+    <div className="source">
+      {source.href ? (
+        internal ? (
+          <Link href={source.href}>{source.label}</Link>
+        ) : (
+          <a href={source.href} target="_blank" rel="noreferrer">{source.label} ↗</a>
+        )
+      ) : (
+        <span title="Read from the contract when the page loaded">{source.label}</span>
+      )}
+    </div>
+  );
+}
+
+export function Stat({ label, value, unit, sub, source }: { label: string; value: ReactNode; unit?: string; sub?: ReactNode; source?: Source }) {
   return (
     <div className="card stat">
       <div className="label">{label}</div>
@@ -15,6 +41,7 @@ export function Stat({ label, value, unit, sub }: { label: string; value: ReactN
         {unit && <small>{unit}</small>}
       </div>
       {sub && <div className="sub">{sub}</div>}
+      {source && <SourceLine source={source} />}
     </div>
   );
 }
