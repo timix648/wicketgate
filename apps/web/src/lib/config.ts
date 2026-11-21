@@ -68,7 +68,7 @@ export const LOG_RANGE = 10_000n;
 
 /** The team's own accounts, labelled as the frontend brief asks. Anyone else shows as an address. */
 export const KNOWN_WATCHERS: Record<string, { name: string; note: string }> = {
-  "0xe754dfbe7c4c4061d089b8e262f6f4c36e563bc0": { name: "W1", note: "Active watcher; publishes the public feed" },
+  "0xe754dfbe7c4c4061d089b8e262f6f4c36e563bc0": { name: "W1", note: "Active watcher" },
   "0x65261e42c226e4a34256f5f144ae2ea63db5bae4": { name: "W2", note: "Active watcher; earned the 500 QOR fraud bounty" },
   "0xac82ffe5610f14d09ef451e5c71254be9164cc88": { name: "W3", note: "Drill account, key handed to the attack bot" },
   "0x718ed43cba438b9d7095e56787b315ab433903cc": { name: "W4", note: "Q-Day demo (deliberately weak classical key)" },

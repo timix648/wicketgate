@@ -10,7 +10,8 @@ import { duration, qorFromWei } from "../lib/format";
 import { ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
 
 export function Watchers() {
-  const { rollups } = useAllRollups();
+  const { rollups, index } = useAllRollups();
+  const publisher = index.data?.watcher?.toLowerCase();
   const pool = usePool();
   const events = useEvents();
   const [hash, setHash] = useState("");
@@ -89,6 +90,7 @@ export function Watchers() {
                   <td>
                     <strong>{known?.name ?? "Independent"}</strong>
                     {known && <div className="small muted">{known.note}</div>}
+                    {a === publisher && <div className="small"><Pill tone="info">publishes the public feed</Pill></div>}
                   </td>
                   <td><Hash value={getAddress(a)} /></td>
                   <td>
