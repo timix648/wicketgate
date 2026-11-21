@@ -92,9 +92,12 @@ export function Watchers() {
                   </td>
                   <td><Hash value={getAddress(a)} /></td>
                   <td>
-                    {q?.error ? <Pill tone="bad">read failed</Pill> : !w ? <span className="skeleton" style={{ display: "inline-block", width: 60 }} /> : w.active ? <Pill tone="ok">active</Pill> : w.leaveAfter > 0n ? <Pill tone="warn">leaving</Pill> : <Pill tone="muted">not registered</Pill>}
+                    {q?.error ? <Pill tone="bad">read failed</Pill> : !w ? <span className="skeleton" style={{ display: "inline-block", width: 60 }} /> : w.active ? <Pill tone="ok">active</Pill> : w.leaveAfter > 0n ? <Pill tone="warn">leaving</Pill> : w.previous?.active ? <Pill tone="info" title={`Not in the live registry; still staked in the pool v${w.previous.version} registry`}>{`staked in v${w.previous.version}`}</Pill> : <Pill tone="muted">not registered</Pill>}
                   </td>
-                  <td className="num">{w ? `${qorFromWei(w.stake, 2)} QOR` : ""}</td>
+                  <td className="num">
+                    {w ? `${qorFromWei(w.stake, 2)} QOR` : ""}
+                    {w?.previous && <div className="small muted">+ {qorFromWei(w.previous.stake, 2)} in v{w.previous.version}</div>}
+                  </td>
                   <td>
                     {w && (
                       <div className="row" style={{ gap: 8 }}>

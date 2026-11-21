@@ -4,7 +4,7 @@ import { parseEventLogs, type Abi, type Address, type Hex, type Log } from "viem
 import poolAbiJson from "@wicketgate/core/abi/ExitPool.json";
 import registryAbiJson from "@wicketgate/core/abi/WatcherRegistry.json";
 import { client } from "./chain";
-import { CONTRACTS, LOG_RANGE, NET } from "./config";
+import { CONTRACTS, LOG_RANGE, NET, POOLS, poolOf } from "./config";
 
 const abi = [...(poolAbiJson as Abi), ...(registryAbiJson as Abi)] as Abi;
 
@@ -25,17 +25,21 @@ export interface EventLog {
   blockTimes: Record<string, number>;
 }
 
+/** One 10,000-block (or smaller) query per chunk, for every pool deployment whose range covers it. */
 async function getLogsRange(from: bigint, to: bigint): Promise<ChainEvent[]> {
-  const chunks: [bigint, bigint][] = [];
-  for (let f = from; f <= to; f += LOG_RANGE) chunks.push([f, f + LOG_RANGE - 1n < to ? f + LOG_RANGE - 1n : to]);
+  const chunks: [bigint, bigint, Address[]][] = [];
+  for (const p of POOLS) {
+    const start = p.fromBlock > from ? p.fromBlock : from;
+    for (let f = start; f <= to; f += LOG_RANGE) chunks.push([f, f + LOG_RANGE - 1n < to ? f + LOG_RANGE - 1n : to, [p.pool, p.registry]]);
+  }
   const out: ChainEvent[] = [];
   let next = 0;
   async function worker() {
     while (next < chunks.length) {
-      const [f, t] = chunks[next++];
+      const [f, t, address] = chunks[next++];
       const logs = (await client.request({
         method: "eth_getLogs",
-        params: [{ address: [CONTRACTS.pool, CONTRACTS.registry], fromBlock: `0x${f.toString(16)}`, toBlock: `0x${t.toString(16)}` }],
+        params: [{ address, fromBlock: `0x${f.toString(16)}`, toBlock: `0x${t.toString(16)}` }],
       })) as Log[];
       for (const l of parseEventLogs({ abi, logs, strict: false })) {
         out.push({
@@ -77,7 +81,7 @@ async function blockTimes(blocks: bigint[], known: Record<string, number>) {
 /** Full scan the first time, then only the blocks after `prev.toBlock`. */
 export async function fetchEvents(prev?: EventLog): Promise<EventLog> {
   const head = await client.getBlockNumber();
-  const from = prev ? prev.toBlock + 1n : CONTRACTS.deployBlock;
+  const from = prev ? prev.toBlock + 1n : POOLS.reduce((m, p) => (p.fromBlock < m ? p.fromBlock : m), POOLS[0].fromBlock);
   if (prev && from > head) return prev;
   const fresh = await getLogsRange(from, head);
   const events = [...(prev?.events ?? []), ...fresh].sort((a, b) => (a.block === b.block ? a.logIndex - b.logIndex : a.block < b.block ? -1 : 1));
@@ -102,6 +106,8 @@ export interface LiveExit {
   tx: Hex;
   block: bigint;
   time?: number;
+  /** The pool deployment that paid it, e.g. "3.1". */
+  pool: string;
   status: ExitStatus;
   closedTx?: Hex;
   closedTime?: number;
@@ -111,8 +117,10 @@ export interface LiveExit {
 export function deriveExits(log: EventLog): LiveExit[] {
   const exits = new Map<string, LiveExit>();
   for (const e of log.events) {
+    // Advance ids are only unique within one pool, so key by pool too.
+    const key = `${e.address.toLowerCase()}:${e.args.id}`;
     if (e.name === "InstantExit") {
-      exits.set(e.args.id, {
+      exits.set(key, {
         id: e.args.id,
         batchKey: e.args.batchKey,
         beneficiary: e.args.beneficiary,
@@ -123,10 +131,11 @@ export function deriveExits(log: EventLog): LiveExit[] {
         tx: e.tx,
         block: e.block,
         time: eventTime(log, e),
+        pool: poolOf(e.address)?.version ?? "?",
         status: "open",
       });
     } else if (e.name === "Settled" || e.name === "Recovered" || e.name === "Defaulted") {
-      const x = exits.get(e.args.id);
+      const x = exits.get(key);
       if (!x) continue;
       x.status = e.name === "Settled" ? "settled" : e.name === "Recovered" ? "recovered" : "defaulted";
       x.closedTx = e.tx;
@@ -147,11 +156,11 @@ export interface Lane {
   enabled: boolean;
 }
 
-/** The pool's lanes as its LaneSet events left them, keyed by lower-case rollupKey. */
+/** The live pool's lanes as its LaneSet events left them, keyed by lower-case rollupKey. */
 export function deriveLanes(log: EventLog): Map<string, Lane> {
   const lanes = new Map<string, Lane>();
   for (const e of log.events) {
-    if (e.name !== "LaneSet") continue;
+    if (e.name !== "LaneSet" || e.address.toLowerCase() !== CONTRACTS.pool.toLowerCase()) continue;
     const l = e.args.lane ?? {};
     lanes.set(String(e.args.rollupKey).toLowerCase(), {
       rollupKey: e.args.rollupKey,

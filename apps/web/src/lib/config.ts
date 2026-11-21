@@ -17,13 +17,51 @@ export const FEED_BASE = "https://raw.githubusercontent.com/timix648/wicketgate-
 export const METRICS_URL = "https://raw.githubusercontent.com/timix648/wicketgate/main/docs/metrics.json";
 export const REPO_URL = "https://github.com/timix648/wicketgate";
 
+/** First block to scan for a pool whose deployment file does not record one (pool v2.1, brief section 6). */
+const FALLBACK_DEPLOY_BLOCK = 10_212_000;
+
+type Deployment = { pool: string; registry: string; version?: string; deployBlock?: number; file?: string };
+const dep = deployments as Deployment & { previous?: Deployment };
+
 export const CONTRACTS = {
-  pool: deployments.pool as Address,
-  registry: deployments.registry as Address,
-  version: deployments.version,
-  /** Event scans for pool v2.1 start here (frontend brief, section 6). Update on a redeploy. */
-  deployBlock: 10_212_000n,
+  pool: dep.pool as Address,
+  registry: dep.registry as Address,
+  version: dep.version ?? "current",
+  deployBlock: BigInt(dep.deployBlock ?? FALLBACK_DEPLOY_BLOCK),
 };
+
+/**
+ * Every pool whose events the board reads: the live one, then the one it replaced, so history
+ * (exits, attestations, watchers) stays visible across an upgrade. Each is scanned from its own deploy block.
+ */
+export interface PoolDeployment {
+  version: string;
+  pool: Address;
+  registry: Address;
+  fromBlock: bigint;
+  live: boolean;
+}
+
+export const POOLS: PoolDeployment[] = [
+  { version: CONTRACTS.version, pool: CONTRACTS.pool, registry: CONTRACTS.registry, fromBlock: CONTRACTS.deployBlock, live: true },
+  ...(dep.previous?.pool && dep.previous.registry
+    ? [
+        {
+          version: dep.previous.version ?? dep.previous.file?.match(/v([\d.]+)\.json$/)?.[1] ?? "previous",
+          pool: dep.previous.pool as Address,
+          registry: dep.previous.registry as Address,
+          fromBlock: BigInt(dep.previous.deployBlock ?? FALLBACK_DEPLOY_BLOCK),
+          live: false,
+        },
+      ]
+    : []),
+];
+
+/** Which deployment a pool or registry address belongs to. */
+export function poolOf(address: string): PoolDeployment | undefined {
+  const a = address.toLowerCase();
+  return POOLS.find((p) => p.pool.toLowerCase() === a || p.registry.toLowerCase() === a);
+}
 
 /** The public RPC refuses eth_getLogs over more than 10,000 blocks. */
 export const LOG_RANGE = 10_000n;
