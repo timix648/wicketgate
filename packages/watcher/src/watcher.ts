@@ -274,6 +274,9 @@ export class Watcher {
       watcher: this.cfg.me?.evm ?? null,
       mode: this.cfg.mode,
       inbox: { head: inbox.headSequence, consumed: inbox.consumedSequence, oldestPendingHeight: oldestPending },
+      // Every non-zero ledger account after the longest valid prefix of batches, so a wallet can show
+      // real balances and nonces (the chain exposes neither for a rollup account). balance is in uqor.
+      accounts: ledger.accounts().map((a) => ({ id: hex(a.id), balance: a.balance.toString(), nonce: Number(a.nonce) })),
       batches: verdicts,
     };
     writeFileSync(join(this.cfg.feedDir, `${rollupId}.json`), JSON.stringify(feed, null, 2));
