@@ -41,6 +41,13 @@ Addresses come from `deployments/diana.json` and ABIs from `packages/core/abi`.
 | `/exits` | Every instant exit with batch-to-money time and repayment |
 | `/track/[address]` | Every withdrawal and exit for a beneficiary or exit address (`0x…` or `qor1…`) |
 | `/wallet` | Connect QoreX, create or restore the rollup account, deposit, send, withdraw instantly, follow each exit |
+| `/proof`, `/qday`, `/redteam`, `/stress`, `/fraud` | The proof pages, built from the committed evidence files (`docs/*.json`, `deployments/demo-timeline.json`) |
+| `/pool` | Live pool, your liquidity in the live and previous pool, share value over time from `Deposited` / `Withdrawn` events; deposit and withdraw (EVM calls, which QoreX cannot send yet: the page says so) |
+| `/receipt` | Verify a published or pasted settlement receipt against the chain (`POST /api/receipt/verify`, server-side because QoreChain's REST and RPC send no CORS headers), and watch a forged copy fail |
+
+## End-to-end tests
+
+`pnpm --filter @wicketgate/web build`, then `pnpm --filter @wicketgate/web e2e` (Playwright, Chromium). The wallet test injects `@qorechain/qorex-wallet-mock` and answers the relay and exit endpoints itself; all tests read the public testnet. CI runs them in the `web-e2e` job.
 
 ## Wallet (frontend brief, section 8.6)
 

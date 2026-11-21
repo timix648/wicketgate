@@ -44,6 +44,8 @@ const NAV: [string, string][] = [
   ["/watchers", "Watchers"],
   ["/exits", "Instant exits"],
   ["/track", "Track an exit"],
+  ["/pool", "Pool"],
+  ["/receipt", "Receipts"],
   ["/proof", "Proof"],
   ["/wallet", "Wallet"],
 ];

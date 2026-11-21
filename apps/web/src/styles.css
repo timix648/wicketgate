@@ -239,6 +239,16 @@ details summary { cursor: pointer; }
 .tab.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
 select.input { font-family: var(--sans); }
 
+/* line chart */
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: none; }
+.chart-axis { fill: var(--muted); font: 11px var(--sans); }
+.chart-tip {
+  position: absolute; transform: translate(-50%, calc(-100% - 12px)); pointer-events: none; white-space: nowrap;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px;
+  font-size: 12.5px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
 /* proof pages */
 .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .vs-col { border-top: 4px solid var(--border); }
