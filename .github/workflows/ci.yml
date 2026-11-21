@@ -35,6 +35,36 @@ jobs:
       - name: Core tests (one reads the live ExitPool on diana)
         run: pnpm --filter @wicketgate/core test
 
+  web-e2e:
+    # The wallet end to end with the QoreX wallet mock (apps/web/e2e). Reads the public testnet;
+    # the relay and exit-relay queues are answered by the test itself.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium for Playwright
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build the web app
+        run: pnpm --filter @wicketgate/web build
+      - name: Run the end-to-end test
+        working-directory: apps/web
+        run: pnpm e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/web/test-results
+          retention-days: 7
+
   cbom:
     runs-on: ubuntu-latest
     steps:

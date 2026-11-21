@@ -8,7 +8,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@qorechain/qorex-rainbowkit": "0.1.0",
@@ -26,6 +27,7 @@
     "wagmi": "2.19.5"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.0",
     "@qorechain/qorex-wallet-mock": "0.1.0",
     "@types/node": "22.10.2",
     "@types/react": "19.3.0",
