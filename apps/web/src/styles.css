@@ -231,6 +231,14 @@ details summary { cursor: pointer; }
 
 .notice { margin-top: 16px; }
 
+.tab {
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  border-radius: 8px; padding: 7px 12px; font: 500 14px var(--sans); cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+select.input { font-family: var(--sans); }
+
 .footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
 
 @media (max-width: 720px) {
