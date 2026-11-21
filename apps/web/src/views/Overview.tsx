@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { batchState, type Batch, type RollupFeed } from "../lib/feed";
 import { useAllRollups, useLanes, useMetrics, usePool } from "../lib/queries";
+import { METRICS_SOURCE } from "../lib/config";
 import { ago, dateTime, duration, num, qorFromUqor, qorFromWei } from "../lib/format";
 import { BatchPill, ErrorBox, Loading, Pill, Stat } from "../components/ui";
 import { BatchStrip, StripLegend } from "../components/BatchStrip";
@@ -37,22 +38,26 @@ export function Overview() {
               value={num(m.speed.medianSecondsFromBatchPostedToPaid, 0)}
               unit="s"
               sub={<>from batch on chain to money paid, vs {duration(m.speed.medianNormalPathSeconds)} the normal way</>}
+              source={METRICS_SOURCE}
             />
             <Stat
               label="Paid out instantly"
               value={num(m.money.qorPaidInstantly, 0)}
               unit="QOR"
               sub={<>{m.speed.instantExits} exits, {m.money.advancesRepaid} of {m.money.advancesDue} repaid, {m.money.defaults} defaults</>}
+              source={METRICS_SOURCE}
             />
             <Stat
               label="Batches re-executed"
               value={<>{m.verification.matches}<small>/ {m.verification.batchesReExecuted} match</small></>}
               sub={<>across {m.verification.rollupsWatched} rollups, {m.verification.rollupsWeDoNotRun} created by other accounts</>}
+              source={METRICS_SOURCE}
             />
             <Stat
               label="Post-quantum attestations"
               value={m.postQuantum.attestationsVerifiedOnChain}
               sub={<>ML-DSA-87 checked on chain; {m.postQuantum.classicalSignatureChecksInContracts} classical signature checks</>}
+              source={METRICS_SOURCE}
             />
           </div>
 
@@ -67,7 +72,7 @@ export function Overview() {
             </div>
             <p className="small muted" style={{ marginBottom: 0 }}>
               The testnet challenge window is one hour. At the chain's seven-day default the same exits would be about{" "}
-              <strong>{num(m.speed.speedupAtMainnetDefaultWindow, 0)}×</strong> faster. Figures recomputed from chain data{" "}
+              <a href={METRICS_SOURCE.href} target="_blank" rel="noreferrer"><strong>{num(m.speed.speedupAtMainnetDefaultWindow, 0)}×</strong></a> faster. Figures recomputed from chain data{" "}
               {ago(m.generatedAt)}.
             </p>
           </div>
@@ -85,10 +90,10 @@ export function Overview() {
           <Loading lines={2} />
         ) : (
           <div className="grid stats">
-            <Stat label="Pool assets" value={qorFromWei(pool.data.totalAssets, 2)} unit="QOR" sub="Liquidity providers' deposits plus fees" />
-            <Stat label="Available to advance" value={qorFromWei(pool.data.idleLiquidity, 2)} unit="QOR" sub="Idle liquidity right now" />
-            <Stat label="Advanced, awaiting repayment" value={qorFromWei(pool.data.outstanding, 2)} unit="QOR" sub="Repaid by the chain at finalisation" />
-            <Stat label="Owed to watchers" value={qorFromWei(pool.data.watcherCredits, 4)} unit="QOR" sub="Their 30% share of exit fees" />
+            <Stat label="Pool assets" value={qorFromWei(pool.data.totalAssets, 2)} unit="QOR" sub="Liquidity providers' deposits plus fees" source={{ label: "ExitPool.totalAssets(): pool history", href: "/pool" }} />
+            <Stat label="Available to advance" value={qorFromWei(pool.data.idleLiquidity, 2)} unit="QOR" sub="Idle liquidity right now" source={{ label: `ExitPool.idleLiquidity() at block ${pool.data.block}` }} />
+            <Stat label="Advanced, awaiting repayment" value={qorFromWei(pool.data.outstanding, 2)} unit="QOR" sub="Repaid by the chain at finalisation" source={{ label: "ExitPool.outstandingWei(): every exit", href: "/exits" }} />
+            <Stat label="Owed to watchers" value={qorFromWei(pool.data.watcherCredits, 4)} unit="QOR" sub="Their 30% share of exit fees" source={{ label: "ExitPool.watcherCreditsTotal(): per watcher", href: "/watchers" }} />
           </div>
         )}
       </div>

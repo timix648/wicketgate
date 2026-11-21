@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { batchState } from "../lib/feed";
 import { useAllRollups, useLanes, useRollup } from "../lib/queries";
+import { feedFile } from "../lib/config";
 import { ago, dateTime, duration, qorFromUqor } from "../lib/format";
 import { BatchPill, ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
 import { BatchStrip, StripLegend } from "../components/BatchStrip";
@@ -74,6 +75,7 @@ export function RollupDetail() {
   const confirmed = r.batches.filter((b) => b.pool?.confirmed).length;
   const bad = r.batches.filter((b) => b.verdict !== "match");
   const pending = r.inbox.head - r.inbox.consumed;
+  const feedSource = { label: `watcher feed: ${r.rollupId}.json`, href: feedFile(`${r.rollupId}.json`) };
 
   return (
     <>
@@ -107,10 +109,10 @@ export function RollupDetail() {
       )}
 
       <div className="grid stats">
-        <Stat label="Batches" value={r.batches.length} sub={<>{r.batches.length - bad.length} match their re-execution</>} />
-        <Stat label="Confirmed for the pool" value={confirmed} sub={r.lane ? `quorum of ${r.lane.quorum} watchers` : "no exit lane"} />
-        <Stat label="Withdrawals" value={withdrawals.length} sub={`${qorFromUqor(totalOut)} QOR in total`} />
-        <Stat label="Inbox" value={r.inbox.consumed} unit={`/ ${r.inbox.head}`} sub={pending ? `${pending} posts waiting to be batched` : "nothing waiting"} />
+        <Stat label="Batches" value={r.batches.length} sub={<>{r.batches.length - bad.length} match their re-execution</>} source={feedSource} />
+        <Stat label="Confirmed for the pool" value={confirmed} sub={r.lane ? `quorum of ${r.lane.quorum} watchers` : "no exit lane"} source={feedSource} />
+        <Stat label="Withdrawals" value={withdrawals.length} sub={`${qorFromUqor(totalOut)} QOR in total`} source={feedSource} />
+        <Stat label="Inbox" value={r.inbox.consumed} unit={`/ ${r.inbox.head}`} sub={pending ? `${pending} posts waiting to be batched` : "nothing waiting"} source={feedSource} />
       </div>
 
       {r.lane && (

@@ -6,7 +6,7 @@ import { keccak256, toHex } from "viem";
 import { eventTime, type ChainEvent } from "../lib/events";
 import { useAllRollups, useBatchKeyMap, useEvents } from "../lib/queries";
 import { ago, dateTime, qorFromWei } from "../lib/format";
-import { ErrorBox, Loading, WatcherRef } from "./ui";
+import { ErrorBox, Hash, Loading, WatcherRef } from "./ui";
 
 /** The latest pool and registry events, in plain words. */
 export function Activity({ limit = 12 }: { limit?: number }) {
@@ -61,7 +61,7 @@ export function Activity({ limit = 12 }: { limit?: number }) {
           return (
             <li key={`${e.tx}-${e.logIndex}`}>
               <span className="when" title={t ? dateTime(t * 1000) : undefined}>{t ? ago(t * 1000) : `#${e.block}`}</span>
-              <span>{text}</span>
+              <span>{text} <span className="faint small">· <Hash value={e.tx} /></span></span>
             </li>
           );
         })}

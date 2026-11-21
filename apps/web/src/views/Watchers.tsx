@@ -55,18 +55,19 @@ export function Watchers() {
       </div>
 
       <div className="grid stats">
-        <Stat label="Registered watchers" value={active} sub={`of ${addresses.length} addresses seen`} />
-        <Stat label="Total stake" value={qorFromWei(totalStake, 2)} unit="QOR" />
-        <Stat label="Locked behind open exits" value={qorFromWei(totalLocked, 2)} unit="QOR" />
+        <Stat label="Registered watchers" value={active} sub={`of ${addresses.length} addresses seen`} source={{ label: "Joined events + WatcherRegistry.watchers()", href: "#watcher-table" }} />
+        <Stat label="Total stake" value={qorFromWei(totalStake, 2)} unit="QOR" source={{ label: "WatcherRegistry.watchers(): per watcher below", href: "#watcher-table" }} />
+        <Stat label="Locked behind open exits" value={qorFromWei(totalLocked, 2)} unit="QOR" source={{ label: "WatcherRegistry.watchers().locked", href: "#watcher-table" }} />
         <Stat
           label="To join"
           value={pool.data ? qorFromWei(pool.data.minStake, 2) : "…"}
           unit="QOR min."
           sub={pool.data ? `leaving waits ${duration(Number(pool.data.leaveDelay))}` : undefined}
+          source={{ label: "WatcherRegistry.minStake(), leaveDelay()" }}
         />
       </div>
 
-      <div className="section table-wrap">
+      <div className="section table-wrap" id="watcher-table">
         <table>
           <thead>
             <tr>

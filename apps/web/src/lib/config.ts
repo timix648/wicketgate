@@ -17,6 +17,13 @@ export const FEED_BASE = "https://raw.githubusercontent.com/timix648/wicketgate-
 export const METRICS_URL = "https://raw.githubusercontent.com/timix648/wicketgate/main/docs/metrics.json";
 export const REPO_URL = "https://github.com/timix648/wicketgate";
 
+/** A file in the repository on main, for "source" links under figures. */
+export const repoFile = (path: string) => `${REPO_URL}/blob/main/${path}`;
+/** A file in the public watcher feed repository. */
+export const feedFile = (path: string) => `${FEED_BASE.replace("raw.githubusercontent.com", "github.com").replace("/main", "/blob/main")}/${path}`;
+/** The source line for headline figures recomputed from chain data by `pnpm metrics`. */
+export const METRICS_SOURCE = { label: "docs/metrics.json", href: repoFile("docs/metrics.json") };
+
 /** First block to scan for a pool whose deployment file does not record one (pool v2.1, brief section 6). */
 const FALLBACK_DEPLOY_BLOCK = 10_212_000;
 

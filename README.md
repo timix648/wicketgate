@@ -452,4 +452,20 @@ Notes for the QoreChain team, from two weeks of building on v3.2.8:
 - Built on the QoreChain kits listed above, [viem](https://viem.sh), [Foundry](https://getfoundry.sh) with [forge-std](https://github.com/foundry-rs/forge-std), and cosmjs.
 - IBC transfers relayed by the QoreChain testnet's relayer.
 
+### Built with (web app, `apps/web`)
+
+| Library | Used for |
+| --- | --- |
+| [Next.js](https://nextjs.org) 15 and [React](https://react.dev) 19 | The app, its pages and the relay and exit-relay API routes |
+| [`@qorechain/qorex-rainbowkit`](https://www.npmjs.com/package/@qorechain/qorex-rainbowkit), [RainbowKit](https://rainbowkit.com) and [wagmi](https://wagmi.sh) | Connecting the QoreX wallet |
+| [`@qorechain/qorex-types`](https://www.npmjs.com/package/@qorechain/qorex-types) | `window.qorex.native.signAndBroadcast` for the deposit |
+| [`@qorechain/rdk`](https://www.npmjs.com/package/@qorechain/rdk) | The browser rollup key, signing transfers and withdrawals, checking relayed transactions, verifying settlement receipts |
+| [viem](https://viem.sh) | Contract reads and event scans on the EVM lane |
+| [TanStack Query](https://tanstack.com/query) | Fetching and refreshing the feed and chain data |
+| [Upstash Redis](https://upstash.com) | Storage for the relay and exit-relay queues |
+| [Playwright](https://playwright.dev) and [`@qorechain/qorex-wallet-mock`](https://www.npmjs.com/package/@qorechain/qorex-wallet-mock) | The end-to-end tests in CI |
+| [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | Fonts |
+
+No UI template or component kit was used; the board's styles are written for this project.
+
 Licensed under Apache-2.0. See [LICENSE](LICENSE).

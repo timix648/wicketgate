@@ -122,10 +122,10 @@ export function Pool() {
         <Loading lines={2} />
       ) : (
         <div className="grid stats">
-          <Stat label={`Pool assets (v${LIVE.version})`} value={qorFromWei(p.totalAssets, 2)} unit="QOR" sub={<Hash value={LIVE.pool} />} />
-          <Stat label="Idle, can be withdrawn" value={qorFromWei(p.idleLiquidity, 2)} unit="QOR" />
-          <Stat label="Out on instant exits" value={qorFromWei(p.outstanding, 2)} unit="QOR" sub="repaid by the chain at finalisation" />
-          <Stat label="Share value since the first deposit" value={growth === undefined ? "…" : `${growth >= 0 ? "+" : ""}${num(growth, 3)}%`} sub={`pool v${LIVE.version}`} />
+          <Stat label={`Pool assets (v${LIVE.version})`} value={qorFromWei(p.totalAssets, 2)} unit="QOR" sub={<Hash value={LIVE.pool} />} source={{ label: `ExitPool.totalAssets() at block ${p.block}` }} />
+          <Stat label="Idle, can be withdrawn" value={qorFromWei(p.idleLiquidity, 2)} unit="QOR" source={{ label: `ExitPool.idleLiquidity() at block ${p.block}` }} />
+          <Stat label="Out on instant exits" value={qorFromWei(p.outstanding, 2)} unit="QOR" sub="repaid by the chain at finalisation" source={{ label: "ExitPool.outstandingWei(): every exit", href: "/exits" }} />
+          <Stat label="Share value since the first deposit" value={growth === undefined ? "…" : `${growth >= 0 ? "+" : ""}${num(growth, 3)}%`} sub={`pool v${LIVE.version}`} source={{ label: "Deposited / Withdrawn events: table below", href: "#share-history" }} />
         </div>
       )}
 
@@ -169,7 +169,7 @@ export function Pool() {
 
       <div className="section">
         <div className="section-head">
-          <h2>Share value over time</h2>
+          <h2 id="share-history">Share value over time</h2>
           <div className="row" role="tablist">
             {POOLS.map((x) => (
               <button key={x.version} className={`tab ${view === x.version ? "on" : ""}`} role="tab" aria-selected={view === x.version} onClick={() => setView(x.version)}>
