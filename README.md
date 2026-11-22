@@ -168,7 +168,9 @@ Every row is a measured result on the testnet. Hashes and how to check each one 
 
 ### A real finding: the bad batch, caught and slashed
 
-On 16 November a second submitter (our ADMIN_B account, playing the attacker) bonded 1,000 QOR and submitted batch 2 of `wicketgate-pay` with one byte of its state root flipped. No watcher attested it, so the pool would not pay against it. Watcher W2 rebuilt the batch, built the fraud proof with the RDK, checked it locally and sent it. The chain re-executed the batch, rejected it, rolled the inbox back and slashed the whole bond. This is the explorer's own view of that transaction:
+**Live, on someone else's rollup, with nobody at the keyboard (22 November).** `ledgerpump` is a rollup we do not run: a third party created it on 21 November. A different third party bonded as its submitter and posted batch 2 with a state root that does not match re-execution. W1, which watches every `qledger-v1` rollup on the chain, re-executed it, built the fraud proof and challenged it automatically. The chain upheld the proof: batch 2 rejected, the submitter's **1,000 QOR bond slashed**, 500 QOR burned and **500 QOR paid to W1** as the challenger reward, for a 0.18 QOR fee. The first anyone on the team heard of it was W1's Telegram alert. Challenge: [C93AB320…A660](https://explore.qore.network/tx/C93AB320110D41FFB5FC448195B05A5CD4803223FD0CB3C8224E4B7B3BFFA660).
+
+Before that we staged the same catch ourselves. On 16 November a second submitter (our ADMIN_B account, playing the attacker) bonded 1,000 QOR and submitted batch 2 of `wicketgate-pay` with one byte of its state root flipped. No watcher attested it, so the pool would not pay against it. Watcher W2 rebuilt the batch, built the fraud proof with the RDK, checked it locally and sent it. The chain re-executed the batch, rejected it, rolled the inbox back and slashed the whole bond. This is the explorer's own view of that transaction:
 
 ![QoreChain testnet explorer: MsgChallengeBatch on wicketgate-pay batch 2, success; 500 QOR paid from the RDK module to watcher W2 and 500 QOR burned](docs/images/fraud-proof-explorer.png)
 
