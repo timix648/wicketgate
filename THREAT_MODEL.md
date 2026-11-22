@@ -102,6 +102,16 @@ If no honest watcher is running, a wrong batch can finalise and the chain will p
 
 Payment notes are sealed to the recipient with ML-KEM-1024 (QoreSeal). That hides their content only. Who paid whom, how much, when, and the size of each envelope remain public.
 
+**Exit requests are sealed before they leave the browser.** An instant exit needs the beneficiary and the salt that fixes its exit address. The wallet seals `{ rollupId, beneficiary, salt, amountUqor }` with QoreSeal hybrid (ML-KEM-1024 + X25519, AES-256-GCM) to the exit operator's key, so the app server, the Upstash queue and Vercel only ever see the rollup id and ciphertext. That shuts the "harvest now, decrypt later" path: TLS to the app still uses classical key exchange, but the request inside it is already post-quantum sealed.
+
+| Threat | Why it is bounded |
+| --- | --- |
+| The app or its relay of the chain swaps in its own ML-KEM key | The wallet requires three things to agree: the chain's key must hash to the fingerprint pinned in the app (`EXIT_OPERATOR.mlkemKeySha3`), the operator's recipient card must carry the same fingerprint, and the card's QoreSign signature must verify against the operator's ML-DSA-87 account key on chain. `pnpm sealexit` shows a swapped key refused |
+| A sealed request is replayed against another rollup or pool | The envelope's associated data binds it to the chain id, the rollup and the pool address; it does not open anywhere else, and the operator also checks the rollup inside matches the queue's |
+| The queue alters or resends a request | AES-GCM rejects any altered byte; a resend of the same envelope is deduplicated, and the pool refuses a second payout of one exit (`ExitUsed`) |
+| A spoofed request redirects the payout | It cannot: the exit proof locks the payout to the beneficiary that the exit address was derived from, sealed or not |
+
+
 ## Out of scope
 
 Bugs in the chain, the precompiles or the kits; mainnet (the precompiles are inactive there); economic tuning of stake, fees and quorum for real value; denial of service against the public endpoints. Stakes on testnet are toy values.

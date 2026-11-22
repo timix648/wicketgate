@@ -131,6 +131,7 @@ Example: Ada withdraws 50 QOR from a rollup. Today she waits a week, or trusts a
 | **Our own rollup `wicketgate-pay`** | A based, optimistic `qledger-v1` payment rollup created and operated by the team | Every batch anchored with the creator's ML-DSA-87 signature; settlement receipts anyone can verify |
 | **Operator** (`packages/operator`) | Bonds as a submitter, batches the inbox, relays users' signed ledger transactions, pays withdrawals that back an instant exit and settles the advance | Batches on our rollup and on the organiser's own rollup |
 | **Exit to another chain** | Forwards the pool's payout over IBC to the user's own address on Osmosis, Injective or the Cosmos Hub testnet | Rollup to Osmosis in 88 s |
+| **Sealed exit relay** (`packages/core/src/sealed-exit.ts`) | The wallet seals every instant-exit request in the browser with **ML-KEM-1024** (QoreSeal, hybrid with X25519, AES-256-GCM) to the exit operator's key **read from the chain's KEM registry**, checked against a pinned fingerprint and the operator's QoreSign-signed card; the envelope is bound to the chain, rollup and pool | The app, its queue (Upstash) and its hosts (Vercel) only ever hold the rollup id and ciphertext: no beneficiary, salt or amount. A relay that swaps in its own key is refused (`pnpm sealexit`). Plaintext requests are rejected |
 | **Private notes** | Payment notes sealed with **ML-KEM-1024** (QoreSeal, hybrid with X25519) to the recipient's on-chain key, posted through `MemoBoard` | Only the recipient can open them |
 | **Feed** | Public JSON per rollup: verdicts, exit proofs, the pool's state per batch, submission provenance | What the board and wallet read |
 
@@ -142,7 +143,7 @@ All six Protocol Builders requirements are shown live on the testnet:
 | Withdrawal | Instant exits (1, 1, 2, 3, 5 and 50 QOR) and a normal withdrawal through `MsgExecuteWithdrawal`, all in [PROOF.md](PROOF.md) |
 | Verified settlement receipt | **One for every batch**: [receipts/wicketgate-pay/](receipts/wicketgate-pay/index.json), 11 of 11 valid with all 6 checks each, refreshed every 30 minutes in the [public feed](https://github.com/timix648/wicketgate-feed/tree/main/receipts/wicketgate-pay). Rebuild them all with `npx tsx src/receipts-all.ts`, or check any receipt file against the chain with `npx tsx src/verify-receipt.ts <file>` |
 | Watchtower | The watcher: it caught a wrong batch and its fraud proof landed **5 seconds** later; the submitter lost its **1,000 QOR** bond |
-| ML-KEM data protection | A sealed payment note on chain that only its recipient can open ([PROOF.md](PROOF.md)) |
+| ML-KEM data protection | **In the core user flow:** every instant-exit request is sealed in the browser to the operator's on-chain ML-KEM-1024 key, so the relay stores only ciphertext. Also sealed payment notes and sealed security reports ([PROOF.md](PROOF.md)) |
 | Threat model | [THREAT_MODEL.md](THREAT_MODEL.md) |
 
 ---
@@ -332,6 +333,7 @@ All from `packages/scripts` unless noted. Each one prints the transaction hashes
 | `npx tsx src/verify-bytecode.ts` | Proves the deployed contracts are this source (needs `forge build`) |
 | `pnpm probe:ibc [channel] [prefix] [uqor]` | Checks that a relayer is carrying IBC packets |
 | `pnpm drill:proof` / `pnpm drill:monitor` | The Q-Day Drill proof transaction, and the minute-by-minute monitor |
+| `pnpm sealexit` | Seals an exit request to the operator through the chain's KEM registry and its card, opens it with the operator's key, and shows a swapped key is refused |
 | `npx tsx src/disclose.ts "report"` | Seals a security report to our ML-KEM-1024 key (see [SECURITY.md](SECURITY.md)) |
 
 Services:
@@ -363,7 +365,7 @@ Kits used and what for:
 | `@qorechain/rdk` 0.9.0 | Ledger execution, batch planning, fraud proofs, withdrawal proofs, receipts, all rollup messages |
 | `@qorechain/sdk` 0.14.0 | Eth-native accounts, hybrid signing, EVM windows, key registration with proof of possession |
 | `@qorechain/pqc` 0.2.3 | ML-DSA-87 signatures for attestations and admin actions |
-| `@qorechain/qoreseal` 0.1.0 | ML-KEM-1024 sealed notes, recipient cards |
+| `@qorechain/qoreseal` 0.1.0 | ML-KEM-1024 sealed exit requests (browser and operator), sealed notes, recipient cards |
 | `@qorechain/qoresign` 0.2.0 | Signing recipient cards |
 | `@qorechain/mcp` 0.1.0 | Post-quantum provenance of batch submissions |
 | `@qorechain/qorescan` 0.1.0 | The cryptographic inventory in CI |

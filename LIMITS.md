@@ -13,6 +13,8 @@ What Wicketgate does not do, or does not do yet. Kept current; dates are UTC. La
 - **The relay is run by the team.** It cannot forge or alter users' transactions, and users can always post to a based rollup's inbox themselves, but the convenience path depends on the team's server being up.
 - **Notes hide content only** (see THREAT_MODEL.md, section 7).
 
+- **Sealed exit relay: what it does not hide.** The relay still sees which rollup an exit is for, when it was sent, its size and the sender's IP. The operator opens every request (it has to, to pay it), and once paid the `instantExit` transaction makes beneficiary and amount public on chain, as any payout is. The pinned fingerprint is shipped by the app itself, so a fully compromised app bundle is out of scope, as for any web wallet; anyone can check the fingerprint against `GET /qorechain/pqc/v1/kem/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k`. The exit operator's key is ADMIN_A's registered key, also used (under a different QoreSeal purpose) for sealed security reports, because the KEM registry holds one key per account.
+
 ## Resolved
 
 | Date | Was | Now |
