@@ -37,6 +37,7 @@
     "metrics": "tsx src/metrics.ts",
     "redteam": "tsx src/redteam.ts",
     "pqcfuzz": "tsx src/probe-pqcfuzz.ts",
+    "sealexit": "tsx src/probe-sealexit.ts",
     "blind": "tsx src/probe-blind.ts",
     "qday:crack": "tsx src/qday-crack.ts",
     "qday:attack": "tsx src/qday-attack.ts",

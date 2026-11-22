@@ -3,11 +3,12 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { decodeQledgerTx, qledgerAccountId, verifyQledgerTx } from "@qorechain/rdk";
-import { getAddress, isAddress, keccak256, toHex, type Address } from "viem";
+import { keccak256, toHex, type Address } from "viem";
 import { client } from "../chain";
 import { CONTRACTS, NET } from "../config";
 import poolAbi from "@wicketgate/core/abi/ExitPool.json";
 import { getStore, type QueueItem } from "./store";
+import { isSealedExitText } from "@wicketgate/core/sealed-exit";
 
 /** Brief, section 9.1: reject a posted transaction over 6 KiB. */
 export const MAX_TX_BYTES = 6 * 1024;
@@ -74,18 +75,19 @@ export const publicRelay = (i: RelayItem) => ({
 });
 
 // ---------------------------------------------------------------- exit relay
+// The wallet seals every exit request to the exit operator's ML-KEM-1024 key (QoreSeal, hybrid),
+// so this queue and its hosts only ever see the rollup id and ciphertext: no beneficiary, salt or
+// amount. The operator opens and validates the request; this side can only check its shape.
 
 export interface ExitItem extends QueueItem {
-  beneficiary: Address;
-  salt: string;
-  amountUqor: string;
+  sealed: string;
   exitAddr?: Address;
   txHash?: string;
   error?: string;
 }
 
-const SALT = /^0x[0-9a-fA-F]{64}$/;
-const UQOR = /^[1-9][0-9]{0,20}$/;
+/** Sealed requests carry no beneficiary to rate-limit on, so limit per sender address and per rollup. */
+const EXITS_PER_MINUTE_PER_ROLLUP = 60;
 
 async function laneEnabled(rollupId: string): Promise<boolean> {
   const lane = (await client.readContract({
@@ -97,12 +99,11 @@ async function laneEnabled(rollupId: string): Promise<boolean> {
   return Boolean(lane[5]);
 }
 
-export async function enqueueExit(input: Record<string, unknown>): Promise<Result<{ id: string; exitAddr?: Address; duplicate: boolean }>> {
-  const { rollupId, beneficiary, salt, amountUqor } = input;
+export async function enqueueExit(input: Record<string, unknown>, sender = "unknown"): Promise<Result<{ id: string; duplicate: boolean }>> {
+  const { rollupId, sealed } = input;
   if (typeof rollupId !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(rollupId)) return bad(400, "rollupId is missing or malformed");
-  if (typeof beneficiary !== "string" || !isAddress(beneficiary, { strict: false })) return bad(400, "beneficiary must be a 0x address");
-  if (typeof salt !== "string" || !SALT.test(salt)) return bad(400, "salt must be 0x followed by 64 hex characters");
-  if (typeof amountUqor !== "string" || !UQOR.test(amountUqor)) return bad(400, "amountUqor must be a positive decimal string");
+  if ("beneficiary" in input || "salt" in input) return bad(400, "Exit requests must be sealed to the operator's ML-KEM-1024 key; send { rollupId, sealed }");
+  if (!isSealedExitText(sealed)) return bad(400, "sealed must be one QoreSeal hybrid envelope (qoreseal:...) sealed to the exit operator");
 
   let enabled = false;
   try {
@@ -112,25 +113,20 @@ export async function enqueueExit(input: Record<string, unknown>): Promise<Resul
   }
   if (!enabled) return bad(400, `The pool has no open lane for ${rollupId}`);
 
-  const ben = getAddress(beneficiary);
   const store = getStore();
-  if ((await store.hit(`exit:${ben.toLowerCase()}`, 60)) > EXITS_PER_MINUTE) return bad(429, `At most ${EXITS_PER_MINUTE} exit requests a minute per beneficiary`);
+  if ((await store.hit(`exit-ip:${sender}`, 60)) > EXITS_PER_MINUTE) return bad(429, `At most ${EXITS_PER_MINUTE} exit requests a minute`);
+  if ((await store.hit(`exit-rollup:${rollupId}`, 60)) > EXITS_PER_MINUTE_PER_ROLLUP) return bad(429, "The exit relay is busy; try again in a minute");
 
   const id = randomUUID();
-  // One request per (beneficiary, salt): the salt fixes the exit address, so a repeat is the same exit.
-  const existing = await store.claim(`exit:${ben.toLowerCase()}:${salt.toLowerCase()}`, id, 30 * DAY);
+  // A resend of the same envelope is the same request.
+  const digest = createHash("sha256").update(rollupId).update(sealed).digest("hex");
+  const existing = await store.claim(`exit:${digest}`, id, 30 * DAY);
   if (existing) return { ok: true, value: { id: existing, duplicate: true } };
 
-  let exitAddr: Address | undefined;
-  try {
-    exitAddr = (await client.readContract({ address: CONTRACTS.pool, abi: poolAbi, functionName: "exitAddressFor", args: [ben, salt] })) as Address;
-  } catch {
-    // Only for display; the operator recomputes it.
-  }
   const now = Date.now();
-  const item: ExitItem = { id, rollupId, status: "queued", createdAt: now, updatedAt: now, beneficiary: ben, salt: salt.toLowerCase(), amountUqor, ...(exitAddr ? { exitAddr } : {}) };
+  const item: ExitItem = { id, rollupId, status: "queued", createdAt: now, updatedAt: now, sealed };
   await store.put(item, "exit");
-  return { ok: true, value: { id, exitAddr, duplicate: false } };
+  return { ok: true, value: { id, duplicate: false } };
 }
 
 export const publicExit = (i: ExitItem) => ({
@@ -145,7 +141,7 @@ export const publicExit = (i: ExitItem) => ({
 export async function completeItem(
   kind: "relay" | "exit",
   id: string,
-  outcome: { status: string; txHash?: string; error?: string },
+  outcome: { status: string; txHash?: string; error?: string; exitAddr?: string },
 ): Promise<Result<QueueItem>> {
   const store = getStore();
   const item = await store.get(kind, id);
@@ -156,6 +152,7 @@ export async function completeItem(
     status: outcome.status,
     updatedAt: Date.now(),
     ...(outcome.txHash ? { txHash: outcome.txHash } : {}),
+    ...(outcome.exitAddr ? { exitAddr: outcome.exitAddr } : {}),
     ...(outcome.error ? { error: outcome.error.slice(0, 500) } : {}),
   };
   await store.put(done, kind);

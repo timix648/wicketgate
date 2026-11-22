@@ -26,6 +26,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@qorechain/qoreseal':
+        specifier: 0.1.0
+        version: 0.1.0
       '@qorechain/qorex-rainbowkit':
         specifier: 0.1.0
         version: 0.1.0(@rainbow-me/rainbowkit@2.2.11(@tanstack/react-query@5.62.0(react@19.1.10))(@types/react@19.3.0)(react-dom@19.1.10(react@19.1.10))(react@19.1.10)(typescript@5.6.3)(viem@2.57.5(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))(wagmi@2.19.5(@tanstack/query-core@5.62.0)(@tanstack/react-query@5.62.0(react@19.1.10))(@types/react@19.3.0)(@upstash/redis@1.41.0)(bufferutil@4.2.0)(react@19.1.10)(typescript@5.6.3)(utf-8-validate@5.0.10)(viem@2.57.5(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76)))(viem@2.57.5(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))(wagmi@2.19.5(@tanstack/query-core@5.62.0)(@tanstack/react-query@5.62.0(react@19.1.10))(@types/react@19.3.0)(@upstash/redis@1.41.0)(bufferutil@4.2.0)(react@19.1.10)(typescript@5.6.3)(utf-8-validate@5.0.10)(viem@2.57.5(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76))
@@ -90,9 +93,15 @@ importers:
       '@cosmjs/stargate':
         specifier: 0.39.0
         version: 0.39.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)
+      '@noble/hashes':
+        specifier: 2.4.0
+        version: 2.4.0
       '@qorechain/pqc':
         specifier: 0.2.3
         version: 0.2.3
+      '@qorechain/qoreseal':
+        specifier: 0.1.0
+        version: 0.1.0
       '@qorechain/rdk':
         specifier: 0.9.0
         version: 0.9.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))
@@ -108,6 +117,9 @@ importers:
       '@qorechain/pqc':
         specifier: 0.2.3
         version: 0.2.3
+      '@qorechain/qoreseal':
+        specifier: 0.1.0
+        version: 0.1.0
       '@qorechain/rdk':
         specifier: 0.9.0
         version: 0.9.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))

@@ -12,6 +12,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@qorechain/qoreseal": "0.1.0",
     "@qorechain/qorex-rainbowkit": "0.1.0",
     "@qorechain/qorex-types": "0.1.0",
     "@qorechain/rdk": "0.9.0",

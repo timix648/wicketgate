@@ -1,7 +1,8 @@
 // What the wallet does (frontend brief, section 8.6):
 // - the deposit is the only transaction the user's QoreX wallet signs (window.qorex.native.signAndBroadcast);
 // - transfers and withdrawals are signed with the app's own rollup key and posted through /api/relay;
-// - the instant exit is taken by the backend's exit relay (/api/exit), so the user signs nothing on EVM.
+// - the instant exit is taken by the backend's exit relay (/api/exit), so the user signs nothing on EVM;
+//   the request is sealed to the operator's ML-KEM-1024 key first, so the relay only stores ciphertext.
 import { createRdkRegistry, depositToRollupMsg, encodeQledgerTx, hexToBech32, signQledgerTx } from "@qorechain/rdk";
 import { getQorexNative, hasCapability, QOREX_DOWNLOAD_URLS, type QorexSignAndBroadcastResult } from "@qorechain/qorex-types";
 import { hexToBytes, keccak256, toHex, type Abi, type Address, type Hex } from "viem";
@@ -9,6 +10,9 @@ import poolAbiJson from "@wicketgate/core/abi/ExitPool.json";
 import { client } from "../chain";
 import { CONTRACTS, NET } from "../config";
 import { toHexStr, type Unlocked } from "./vault";
+import { sealExitRequest } from "@wicketgate/core/sealed-exit";
+import type { RecipientCard } from "@qorechain/qoreseal";
+import operatorCard from "../../../../../cards/security.json";
 
 const poolAbi = poolAbiJson as Abi;
 const readPool = <T>(functionName: string, args: unknown[] = []) =>
@@ -75,12 +79,31 @@ export function relay(rollupId: string, txHex: string) {
 }
 export const relayStatus = (id: string) => api<{ status: "queued" | "posted" | "failed"; txHash?: string; error?: string }>(`/api/relay/${id}`);
 
-export function requestExit(input: { rollupId: string; beneficiary: Address; salt: Hex; amountUqor: bigint }) {
-  return api<{ queued: true; id: string; exitAddr?: Address }>("/api/exit", {
-    method: "POST",
-    body: JSON.stringify({ ...input, amountUqor: input.amountUqor.toString() }),
+/**
+ * Queue an instant exit. The request is sealed here, in the browser, with QoreSeal
+ * (ML-KEM-1024 + X25519, AES-256-GCM) to the exit operator's key from the chain's KEM registry,
+ * checked against the fingerprint pinned in the app and the operator's signed card. The app's
+ * server and queue only ever see the rollup id and ciphertext.
+ */
+export async function requestExit(input: { rollupId: string; beneficiary: Address; salt: Hex; amountUqor: bigint }) {
+  const sealed = await sealExitRequest({
+    rest: `${window.location.origin}/api/kem-rest`,
+    fetch: kemFetch,
+    chainId: NET.chainId,
+    pool: CONTRACTS.pool,
+    card: operatorCard as RecipientCard,
+    request: { rollupId: input.rollupId, beneficiary: input.beneficiary, salt: input.salt, amountUqor: input.amountUqor.toString() },
   });
+  return api<{ queued: true; id: string; sealed: true }>("/api/exit", { method: "POST", body: JSON.stringify({ rollupId: input.rollupId, sealed }) });
 }
+
+/** Maps the chain REST paths QoreSeal reads (/qorechain/pqc/v1/{kem|account}/{addr}) to the app's relay of them. */
+const kemFetch = ((url: string | URL, init?: RequestInit) => {
+  const m = String(url).match(/\/qorechain\/pqc\/v1\/(kem|account)\/([a-z0-9]+)$/);
+  if (!m) return Promise.reject(new WalletError(`unexpected chain lookup: ${String(url)}`));
+  return fetch(`/api/kem/${m[1]}/${m[2]}`, init);
+}) as typeof fetch;
+
 export const exitStatus = (id: string) => api<{ status: "queued" | "paid" | "failed"; txHash?: string; error?: string; exitAddr?: Address }>(`/api/exit/${id}`);
 
 /** A transfer to another rollup account (64 hex characters). */

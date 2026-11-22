@@ -35,6 +35,8 @@ import { recipientAddress, exitLeaf, verifyExitProof } from "@wicketgate/core/ex
 import { politeFetch } from "@wicketgate/core/polite";
 import { robustRest } from "@wicketgate/core/robust-rest";
 import { alert } from "@wicketgate/core/alert";
+import { deriveSealKeys, type SealKeyPair } from "@qorechain/qoreseal";
+import { EXIT_OPERATOR, mlkemFingerprint, openExitRequest } from "@wicketgate/core/sealed-exit";
 import { join } from "node:path";
 import { STATE_DIR } from "@wicketgate/core/env";
 
@@ -77,10 +79,17 @@ export class Operator {
   private pool: Address;
   private settled = new Set<string>();
   private lastQueuePoll = 0;
+  /** The exit operator's QoreSeal keys (ADMIN_A, index 1: the key in the chain's KEM registry). */
+  private sealKeys?: SealKeyPair;
 
   constructor(private cfg: OperatorConfig) {
     this.log = cfg.log ?? ((m) => console.log(`${new Date().toISOString()} [${cfg.rollupId}] ${m}`));
     this.pool = JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")).pool;
+    if (cfg.relayUrl && cfg.me.cosmos === EXIT_OPERATOR.address && cfg.me.mnemonic) {
+      const keys = deriveSealKeys({ mnemonic: cfg.me.mnemonic, index: 1 });
+      if (mlkemFingerprint(keys.mlkemPublicKey) === EXIT_OPERATOR.mlkemKeySha3) this.sealKeys = keys;
+      else this.log("exit relay: this key is not the pinned exit-operator key; sealed exit requests will stay queued");
+    }
   }
 
   /** Bond as a submitter (amount in uqor). */
@@ -196,8 +205,8 @@ export class Operator {
    * Anyone may call instantExit (the exit proof locks the payout to the beneficiary), so once the
    * watchers have confirmed the batch that carries the withdrawal, the operator takes it and
    * reports back. Items stay queued until then.
-   *   GET  {url}/exits/pending?rollupId=<id> -> [{ id, rollupId, beneficiary, salt, amountUqor }]
-   *   POST {url}/exits/done   { id, status: "paid" | "failed", txHash?, error? }
+   *   GET  {url}/exits/pending?rollupId=<id> -> [{ id, rollupId, sealed }]   (sealed: QoreSeal text)
+   *   POST {url}/exits/done   { id, status: "paid" | "failed", txHash?, error?, exitAddr? }
    */
   private async exitRelay() {
     const { relayUrl, relayToken, rollupId, me } = this.cfg;
@@ -205,13 +214,27 @@ export class Operator {
     const headers = { "content-type": "application/json", ...(relayToken ? { authorization: `Bearer ${relayToken}` } : {}) };
     const res = await fetch(`${relayUrl}/exits/pending?rollupId=${encodeURIComponent(rollupId)}`, { headers });
     if (!res.ok) throw new Error(`exit queue answered ${res.status}`);
-    const items = (await res.json()) as { id: string; rollupId: string; beneficiary: string; salt: string; amountUqor: string }[];
-    if (!items.length) return;
+    const raw = (await res.json()) as { id: string; rollupId: string; sealed?: string; beneficiary?: string; salt?: string; amountUqor?: string }[];
+    if (!raw.length) return;
     const done = (id: string, body: Record<string, unknown>) =>
       fetch(`${relayUrl}/exits/done`, { method: "POST", headers, body: JSON.stringify({ id, ...body }) }).catch(() => undefined);
+    // Sealed requests (QoreSeal, to our ML-KEM-1024 key) are opened here and only here: the app's
+    // queue never sees the beneficiary, salt or amount. Plain items are from before the cutover.
+    const items: { id: string; beneficiary: string; salt: string; amountUqor: string; sealed: boolean }[] = [];
+    for (const it of raw) {
+      if (typeof it.sealed !== "string") { items.push({ id: it.id, beneficiary: String(it.beneficiary), salt: String(it.salt), amountUqor: String(it.amountUqor), sealed: false }); continue; }
+      if (!this.sealKeys) continue; // not the exit operator: leave it for the one that is
+      try {
+        const r = openExitRequest({ text: it.sealed, keys: this.sealKeys, chainId: NET.chainId, rollupId, pool: this.pool });
+        items.push({ id: it.id, beneficiary: r.beneficiary, salt: r.salt, amountUqor: r.amountUqor, sealed: true });
+      } catch (e: any) {
+        await done(it.id, { status: "failed", error: "the sealed request does not open for this operator, rollup and pool" });
+        this.log(`exit relay: ${it.id} sealed request refused (${e?.message ?? e})`);
+      }
+    }
     const feed = await this.rollupFeed();
     const rollupKey = keccak256(toHex(rollupId));
-    const ready: { id: string; args: unknown[] }[] = [];
+    const ready: { id: string; args: unknown[]; exitAddr: string }[] = [];
     for (const it of items) {
       if (!isAddress(it.beneficiary) || !/^0x[0-9a-fA-F]{64}$/.test(it.salt) || !/^[1-9][0-9]*$/.test(String(it.amountUqor))) {
         await done(it.id, { status: "failed", error: "malformed request: beneficiary, salt or amountUqor" });
@@ -235,7 +258,7 @@ export class Operator {
       const args = [rollupKey, BigInt(found.b.index), facts, BigInt(found.w.index), it.beneficiary, it.salt, BigInt(it.amountUqor), found.w.exitProof];
       try {
         await publicClient.simulateContract({ address: this.pool, abi: POOL, functionName: "instantExit", args, account: me.evm as Address } as any);
-        ready.push({ id: it.id, args });
+        ready.push({ id: it.id, args, exitAddr });
       } catch (e: any) {
         let c = e; while (c && !c.data?.errorName) c = c.cause;
         const why = c?.data?.errorName as string | undefined;
@@ -250,7 +273,7 @@ export class Operator {
         try {
           const hash = await walletFor(me).writeContract({ address: this.pool, abi: POOL, functionName: "instantExit", args: r.args, gas: 600_000n } as any);
           const rc = await publicClient.waitForTransactionReceipt({ hash });
-          await done(r.id, rc.status === "success" ? { status: "paid", txHash: hash } : { status: "failed", txHash: hash, error: "the exit transaction reverted" });
+          await done(r.id, rc.status === "success" ? { status: "paid", txHash: hash, exitAddr: r.exitAddr } : { status: "failed", txHash: hash, error: "the exit transaction reverted" });
           this.log(`exit relay: ${r.id} ${rc.status} ${hash}`);
         } catch (e: any) {
           await done(r.id, { status: "failed", error: String(e?.shortMessage ?? e?.message ?? e).slice(0, 200) });

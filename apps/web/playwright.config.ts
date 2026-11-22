@@ -13,6 +13,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
+    ...(process.env.PW_CHROMIUM ? { launchOptions: { executablePath: process.env.PW_CHROMIUM } } : {}),
   },
   webServer: {
     command: `pnpm exec next start -p ${PORT}`,

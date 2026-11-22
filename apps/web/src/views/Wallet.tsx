@@ -484,7 +484,7 @@ function Actions(props: {
       r.activity = [...(r.activity ?? []), { kind: "withdraw", rollupId, amountUqor: uqor.toString(), at: Date.now(), relayId: posted.id, exitId: queued.id, nonce: nonce.toString(), exitAddr }];
       return r;
     });
-    setMsg({ ok: true, text: <>Withdrawal signed and queued for an instant exit to <Hash value={evm} />. Follow it below, and download a fresh backup.</> });
+    setMsg({ ok: true, text: <>Withdrawal signed. The exit request was sealed in this browser to the operator's ML-KEM-1024 key (from the chain's KEM registry) and queued for an instant exit to <Hash value={evm} />; the relay only holds ciphertext. Follow it below, and download a fresh backup.</> });
   };
 
   const run = async () => {

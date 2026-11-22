@@ -38,7 +38,7 @@ test("connect QoreX, create a rollup account, deposit (rejected), withdraw insta
 
   // ---- the queues, answered here
   const relayBodies: { rollupId: string; tx: string }[] = [];
-  const exitBodies: { rollupId: string; beneficiary: string; salt: string; amountUqor: string }[] = [];
+  const exitBodies: { rollupId: string; sealed: string }[] = [];
   let saltsStoredBeforeRelay: string[] | undefined;
 
   await page.route("**/api/relay", async (route) => {
@@ -128,7 +128,12 @@ test("connect QoreX, create a rollup account, deposit (rejected), withdraw insta
   expect(saltsStoredBeforeRelay).toContain(exit.salt);
 
   // the exit request: paid to the user's own EVM address, with the stored salt
-  expect(exitBodies).toEqual([{ rollupId: ROLLUP, beneficiary: addresses.evm, salt: exit.salt, amountUqor: "2000000" }]);
+  // The exit request left the browser sealed to the operator's ML-KEM-1024 key: only the rollup id is in the clear.
+  expect(exitBodies).toHaveLength(1);
+  expect(Object.keys(exitBodies[0]).sort()).toEqual(["rollupId", "sealed"]);
+  expect(exitBodies[0].rollupId).toBe(ROLLUP);
+  expect(exitBodies[0].sealed).toMatch(/^qoreseal:/);
+  for (const secret of [addresses.evm.slice(2), exit.salt.slice(2)]) expect(exitBodies[0].sealed.toLowerCase()).not.toContain(secret.toLowerCase());
   expect(after.nextNonce[ROLLUP]).toBe("1");
 
   // ---- 5. progress follows the queues
