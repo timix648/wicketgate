@@ -42,19 +42,52 @@ export function hoistWrappedPosts(tx: any): void {
   for (const p of found) if (!top.has(p)) messages.push(p);
 }
 
+interface QueryCache { txs: any[]; seen: Set<string>; next: number; at: number }
+const FRESH_MS = 2_000;
+
 /**
- * Return `rest` with `searchTxs` patched to hoist wrapped posts. The same instance is returned
- * (its method is replaced once); pass a RestClient built however you like (e.g. with politeFetch).
+ * Event searches are append-only: a transaction, once indexed, never changes. The RDK re-runs the
+ * same search (every post of a rollup, from genesis) for every batch it reads, and stops at 5,000
+ * results. On a busy rollup that is tens of megabytes per batch (sealed-scouts-1: 34 MB, 1,756
+ * transactions on 22 Nov 2026), so a watcher's cold start downloaded gigabytes and the node cut the
+ * connection. Here each query is fetched in full once, then only from the last height seen
+ * (inclusive, deduplicated by hash), and pages past the 5,000 cap are followed.
+ */
+async function incrementalSearch(cache: Map<string, QueryCache>, search: (q: string, o?: any) => Promise<any[]>, query: string, opts?: any): Promise<any[]> {
+  let c = cache.get(query);
+  if (!c) { c = { txs: [], seen: new Set(), next: 0, at: 0 }; cache.set(query, c); }
+  if (Date.now() - c.at < FRESH_MS) return c.txs.slice();
+  const cap = (opts?.pageLimit ?? 100) * (opts?.maxPages ?? 50);
+  for (;;) {
+    const fresh = await search(c.next > 0 ? `${query} AND tx.height>=${c.next}` : query, opts);
+    let added = 0;
+    for (const tx of Array.isArray(fresh) ? fresh : []) {
+      const k = String(tx?.txhash ?? "");
+      if (!k || c.seen.has(k)) continue;
+      hoistWrappedPosts(tx);
+      c.seen.add(k);
+      c.txs.push(tx);
+      added++;
+      const h = Number(tx?.height ?? 0);
+      if (h > c.next) c.next = h;
+    }
+    if (!Array.isArray(fresh) || fresh.length < cap || added === 0) break;
+  }
+  c.at = Date.now();
+  return c.txs.slice();
+}
+
+/**
+ * Return `rest` with `searchTxs` patched to hoist wrapped posts and to fetch each search
+ * incrementally. The same instance is returned (its method is replaced once); pass a RestClient
+ * built however you like (e.g. with politeFetch).
  */
 export function robustRest<T extends RestClient>(rest: T): T {
   const anyRest = rest as any;
   if (anyRest.__robust) return rest;
   const orig = anyRest.searchTxs.bind(rest);
-  anyRest.searchTxs = async (query: string, opts?: unknown) => {
-    const txs = await orig(query, opts);
-    if (Array.isArray(txs)) for (const tx of txs) hoistWrappedPosts(tx);
-    return txs;
-  };
+  const cache = new Map<string, QueryCache>();
+  anyRest.searchTxs = (query: string, opts?: unknown) => incrementalSearch(cache, orig, query, opts);
   anyRest.__robust = true;
   return rest;
 }

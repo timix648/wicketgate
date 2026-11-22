@@ -106,6 +106,8 @@ async function chainStalledFor(): Promise<number | undefined> {
 
 export class Watcher {
   private rest = robustRest(new RestClient(NET.rest, { fetch: politeFetch as any }));
+  /** The independent reader gets its own client, so it shares no code with robustRest above HTTP. */
+  private plainRest = new RestClient(NET.rest, { fetch: politeFetch as any });
   private lastOk = new Map<string, number>(); // per rollup: when it was last fully verified
   private blind = new Set<string>(); // rollups we alerted as blind, to say when they recover
   private entryCache = new Map<string, QledgerEntry[]>();
@@ -172,7 +174,7 @@ export class Watcher {
     const hit = this.entryCache.get(key);
     if (hit) return hit;
     const input = { chainId: NET.chainId, rollupId, from, to, accFrom };
-    const got = this.cfg.reader === "independent" ? await fetchEntriesIndependent(this.rest, input) : await fetchQledgerEntries(this.rest, input);
+    const got = this.cfg.reader === "independent" ? await fetchEntriesIndependent(this.plainRest, input) : await fetchQledgerEntries(this.rest, input);
     this.entryCache.set(key, got);
     return got;
   }

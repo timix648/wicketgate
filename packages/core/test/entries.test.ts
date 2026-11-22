@@ -103,3 +103,41 @@ describe("reading inbox posts through wrappers", () => {
     await expect(fetchQledgerEntries(robustRest(restFor(SHAPES["top level"], { badAcc: true })), input as any)).rejects.toThrow(/accumulator/);
   });
 });
+
+describe("incremental transaction search", () => {
+  // a node that honours `AND tx.height>=N`, ascending, capped like the RDK's searchTxs (limit x pages)
+  function node(cap: number) {
+    const all: any[] = [];
+    const calls: { q: string; n: number }[] = [];
+    const rest = {
+      searchTxs: async (q: string) => {
+        const m = / AND tx\.height>=(\d+)$/.exec(q);
+        const minH = m ? Number(m[1]) : 0;
+        const res = all.filter((t) => Number(t.height) >= minH).slice(0, cap);
+        calls.push({ q, n: res.length });
+        return structuredClone(res);
+      },
+    } as unknown as RestClient;
+    const add = (h: number) => all.push({ txhash: `H${all.length}`, height: String(h), tx: { body: { messages: [] } }, events: [] });
+    return { rest, add, calls };
+  }
+
+  it("downloads each search once, then only what is new", async () => {
+    const { rest, add, calls } = node(5_000);
+    for (let h = 1; h <= 50; h++) add(h);
+    const r = robustRest(rest);
+    expect((await r.searchTxs("x")).length).toBe(50);
+    for (let h = 51; h <= 53; h++) add(h);
+    await new Promise((res) => setTimeout(res, 2_100)); // past the freshness window
+    expect((await r.searchTxs("x")).length).toBe(53);
+    expect(calls[1].q).toBe("x AND tx.height>=50");
+    expect(calls[1].n).toBe(4); // height 50 again (deduplicated) plus 51..53
+  }, 10_000);
+
+  it("follows a search past the node's result cap instead of silently truncating", async () => {
+    const { rest, add, calls } = node(10); // the node returns at most 10 = pageLimit 5 x maxPages 2
+    for (let h = 1; h <= 35; h++) add(h);
+    expect((await robustRest(rest).searchTxs("y", { pageLimit: 5, maxPages: 2 } as any)).length).toBe(35);
+    expect(calls.length).toBe(4); // 1..10, then from 10, 19 and 28
+  });
+});

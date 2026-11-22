@@ -101,6 +101,35 @@ export function payloadCandidates(node: unknown, out = new Map<string, Uint8Arra
   return out;
 }
 
+/**
+ * This reader's own incremental search, deliberately separate from robust-rest.ts so the two
+ * readers share no code above the HTTP client: each query is fetched in full once, then only from
+ * the last height seen (inclusive, deduplicated by hash), following pages past the RDK's 5,000 cap.
+ */
+const searches = new WeakMap<object, Map<string, { txs: any[]; seen: Set<string>; next: number; at: number }>>();
+async function search(rest: RestClient, query: string): Promise<any[]> {
+  let m = searches.get(rest);
+  if (!m) { m = new Map(); searches.set(rest, m); }
+  let c = m.get(query);
+  if (!c) { c = { txs: [], seen: new Set(), next: 0, at: 0 }; m.set(query, c); }
+  if (Date.now() - c.at < 2_000) return c.txs;
+  for (;;) {
+    const fresh = (await rest.searchTxs(c.next > 0 ? `${query} AND tx.height>=${c.next}` : query)) as any[];
+    let added = 0;
+    for (const tx of fresh ?? []) {
+      const k = String(tx?.txhash ?? "");
+      if (!k || c.seen.has(k)) continue;
+      c.seen.add(k);
+      c.txs.push(tx);
+      added++;
+      c.next = Math.max(c.next, Number(tx?.height ?? 0));
+    }
+    if (!fresh || fresh.length < 5_000 || added === 0) break;
+  }
+  c.at = Date.now();
+  return c.txs;
+}
+
 export interface EntriesInput {
   chainId: string;
   rollupId: string;
@@ -130,7 +159,7 @@ export async function fetchEntriesIndependent(rest: RestClient, input: EntriesIn
     bySeq.set(seq, e);
   };
 
-  for (const tx of (await rest.searchTxs(q(POSTED))) as any[]) {
+  for (const tx of await search(rest, q(POSTED))) {
     const height = BigInt(String(tx?.height ?? "0"));
     let candidates: Map<string, Uint8Array> | undefined;
     for (const ev of tx?.events ?? []) {
@@ -148,7 +177,7 @@ export async function fetchEntriesIndependent(rest: RestClient, input: EntriesIn
     }
   }
 
-  for (const tx of (await rest.searchTxs(q(DEPOSIT))) as any[]) {
+  for (const tx of await search(rest, q(DEPOSIT))) {
     const height = BigInt(String(tx?.height ?? "0"));
     for (const ev of tx?.events ?? []) {
       if (ev?.type !== DEPOSIT) continue;
