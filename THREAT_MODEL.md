@@ -64,6 +64,8 @@ The worst a stolen classical key can do while a window **is** open is what that 
 
 If no honest watcher is running, a wrong batch can finalise and the chain will pay its false withdrawals. This is the base risk of every optimistic rollup; Wicketgate exists to reduce it, not to remove it. What it adds is visibility: the board shows how many independent watchers verified each batch, and anyone can run a watcher in observe mode with one command and no key.
 
+**Watchers that are all blind at once.** Running many watchers does not help if they share one blind spot. On 19 November the RDK's entry fetcher could not see a post wrapped in an authz `MsgExec`, so every watcher built on it was blind to `wicketgate-pay` batch 12 and it finalised unchallenged. Wicketgate now runs two independent readers: W1 and W2 use the RDK fetcher with wrapped posts hoisted from any field and depth, and W5 uses `independent-entries.ts`, which never looks for a message type: it keeps whichever byte string in the transaction (any string, any protobuf field inside it) has the sha256 the chain committed to in its `rdk_data_posted` event. Both check the full range against the chain's inbox accumulator, so neither can accept a wrong entry. A wrapper the node cannot decode to JSON still defeats the first reader but not the second (tests in `packages/core/test/entries.test.ts`; live: `pnpm blind`).
+
 ## 5. The instant exit itself
 
 | Threat | Why it fails |

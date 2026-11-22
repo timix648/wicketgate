@@ -41,6 +41,8 @@ It finds every `qledger-v1` rollup on the chain, rebuilds each one from main-cha
 
    In `attest` mode it signs every batch whose re-execution matches, with your ML-DSA-87 key, and the pool checks that signature on chain. Use `--mode challenge` to also send a fraud proof the moment a batch does not match (half of the cheating submitter's bond goes to you).
 
+5. Pick a reader (optional). `--reader rdk` (the default) reads inbox posts with the RDK's fetcher, with posts hidden inside wrapper messages hoisted out. `--reader independent` uses Wicketgate's second implementation, which recovers every post by the sha256 the chain committed to, wherever it sits in the transaction. The team runs both kinds: W1 and W2 use the RDK reader and W5 the independent one, so a bug in one reader cannot blind every watcher. Running the reader the network has fewer of makes it stronger.
+
 ## What you risk and what you earn
 
 - Your stake is locked only when the pool advances an exit against a batch you confirmed, and only up to the lane's limit per watcher. It unlocks after the batch's window and grace period.
