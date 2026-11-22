@@ -4,7 +4,7 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOGS="$HOME/.wicketgate/logs"
-mkdir -p "$LOGS" "$HOME/.wicketgate/feed-w1" "$HOME/.wicketgate/feed-w2"
+mkdir -p "$LOGS" "$HOME/.wicketgate/feed-w1" "$HOME/.wicketgate/feed-w2" "$HOME/.wicketgate/feed-w5"
 ROLLUPS="${WICKETGATE_ROLLUPS:-all}"
 
 # The wicketgate-pay operator reads the app's relay URL and token (WICKETGATE_RELAY_URL,
@@ -19,6 +19,9 @@ start() { # name, workdir, command, log
 
 start wicketgate-w1     "$ROOT/packages/watcher"  "WICKETGATE_ALERTS=1 WICKETGATE_ALERT_ENV=/opt/opportunity-hunter/.env npx tsx src/cli.ts --mode challenge --as W1 --rollup $ROLLUPS --interval 10 --feed $HOME/.wicketgate/feed-w1" w1
 start wicketgate-w2     "$ROOT/packages/watcher"  "npx tsx src/cli.ts --mode challenge --as W2 --rollup $ROLLUPS --interval 10 --feed $HOME/.wicketgate/feed-w2" w2
+# W5 runs the independent reader (payloads recovered by their committed hash), so a bug in the RDK
+# reader that W1 and W2 use cannot blind every watcher. With three watchers, quorum 2 survives one being down.
+start wicketgate-w5     "$ROOT/packages/watcher"  "npx tsx src/cli.ts --mode challenge --reader independent --as W5 --rollup $ROLLUPS --interval 10 --feed $HOME/.wicketgate/feed-w5" w5
 start wicketgate-op-pay "$ROOT/packages/operator" "set -a; [ -f $HOME/.wicketgate/relay.env ] && . $HOME/.wicketgate/relay.env; set +a; WICKETGATE_ALERTS=1 WICKETGATE_ALERT_ENV=/opt/opportunity-hunter/.env npx tsx src/cli.ts --rollup wicketgate-pay --interval 20" op-pay
 start wicketgate-op-e2e "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup rdk-v328-e2e-mwd5v89d --interval 20" op-e2e
 start wicketgate-op-vigil "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-1 --interval 30" op-vigil   # not bonded there: only pays out and settles withdrawals behind our advances

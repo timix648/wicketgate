@@ -1,4 +1,4 @@
-// wicketgate-watcher [--rollup id[,id]|all] [--mode observe|attest|challenge] [--as W1] [--feed dir] [--interval s] [--once]
+// wicketgate-watcher [--rollup id[,id]|all] [--mode observe|attest|challenge] [--as W1] [--feed dir] [--interval s] [--reader rdk|independent] [--once]
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Address } from "viem";
@@ -21,8 +21,10 @@ async function main() {
     pool ??= JSON.parse(readFileSync(DEPLOYMENTS_FILE, "utf8")).pool;
   } catch {}
   if (mode !== "observe") me = await account(arg("as", "W1") as string);
-  const w = new Watcher({ rollups, mode, me, pool, feedDir });
-  console.log(`wicketgate watcher: mode=${mode} rollups=${rollups.join(",")} feed=${feedDir}${me ? ` as ${me.evm}` : ""}`);
+  const reader = (arg("reader", "rdk") as "rdk" | "independent");
+  if (reader !== "rdk" && reader !== "independent") throw new Error("--reader must be rdk or independent");
+  const w = new Watcher({ rollups, mode, me, pool, feedDir, reader });
+  console.log(`wicketgate watcher: mode=${mode} reader=${reader} rollups=${rollups.join(",")} feed=${feedDir}${me ? ` as ${me.evm}` : ""}`);
   for (;;) {
     // a watcher must outlive any network error: log it and try again next round
     await w.round().catch((e) => console.error(`${new Date().toISOString()} round failed: ${e?.shortMessage ?? e?.message ?? e}`));

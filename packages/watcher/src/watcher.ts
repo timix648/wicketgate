@@ -32,6 +32,7 @@ import { TOOLS as MCP_TOOLS, toolContext } from "@qorechain/mcp";
 import { restGet } from "@wicketgate/core/chain";
 import { politeFetch } from "@wicketgate/core/polite";
 import { robustRest } from "@wicketgate/core/robust-rest";
+import { fetchEntriesIndependent } from "@wicketgate/core/independent-entries";
 import { alert } from "@wicketgate/core/alert";
 
 const PQ_STATUS = MCP_TOOLS.find((t) => t.name === "get_pq_status")!;
@@ -49,6 +50,12 @@ export interface WatcherConfig {
   pool?: Address;
   feedDir: string;
   log?: (msg: string) => void;
+  /**
+   * How inbox entries are read: "rdk" = the RDK fetcher with wrapped posts hoisted (robust-rest.ts);
+   * "independent" = our own reader that recovers each payload by its committed hash
+   * (independent-entries.ts). Running both kinds of watcher means one reader's bug cannot blind all.
+   */
+  reader?: "rdk" | "independent";
 }
 
 export interface BatchVerdict {
@@ -157,14 +164,15 @@ export class Watcher {
         }
       }
     }
-    writeFileSync(join(this.cfg.feedDir, "index.json"), JSON.stringify({ version: 1, watcher: this.cfg.me?.evm ?? null, rollups: index }, null, 2));
+    writeFileSync(join(this.cfg.feedDir, "index.json"), JSON.stringify({ version: 1, watcher: this.cfg.me?.evm ?? null, reader: this.cfg.reader ?? "rdk", rollups: index }, null, 2));
   }
 
   private async entries(rollupId: string, from: number, to: number, accFrom: Uint8Array | string): Promise<QledgerEntry[]> {
     const key = `${rollupId}:${from}:${to}:${hex(accFrom)}`;
     const hit = this.entryCache.get(key);
     if (hit) return hit;
-    const got = await fetchQledgerEntries(this.rest, { chainId: NET.chainId, rollupId, from, to, accFrom });
+    const input = { chainId: NET.chainId, rollupId, from, to, accFrom };
+    const got = this.cfg.reader === "independent" ? await fetchEntriesIndependent(this.rest, input) : await fetchQledgerEntries(this.rest, input);
     this.entryCache.set(key, got);
     return got;
   }
@@ -273,6 +281,7 @@ export class Watcher {
       updatedAt: new Date().toISOString(),
       watcher: this.cfg.me?.evm ?? null,
       mode: this.cfg.mode,
+      reader: this.cfg.reader ?? "rdk",
       inbox: { head: inbox.headSequence, consumed: inbox.consumedSequence, oldestPendingHeight: oldestPending },
       // Every non-zero ledger account after the longest valid prefix of batches, so a wallet can show
       // real balances and nonces (the chain exposes neither for a rollup account). balance is in uqor.

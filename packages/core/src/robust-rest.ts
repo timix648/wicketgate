@@ -9,24 +9,26 @@
 // wrapped in an authz MsgExec (a griefing vector, whether or not it was meant as one).
 //
 // robustRest patches a RestClient's `searchTxs` so that, for every transaction it returns, any
-// MsgPostRollupData hidden inside a wrapper message is hoisted into the top-level message list.
+// MsgPostRollupData hidden inside a wrapper message (under any field, at any depth) is hoisted into
+// the top-level message list. A wrapper the node cannot decode to JSON still defeats this path;
+// independent-entries.ts covers that case by matching the committed data hash instead.
 // It only adds messages the chain already executed; it removes and changes nothing, so a normal
 // direct post behaves exactly as before. Every RDK function that reads posts (fetchQledgerEntries,
 // planQledgerBatch, ...) then works through the wrapper with no other change.
 import type { RestClient } from "@qorechain/rdk";
 
 const POST_TYPE = "/qorechain.rdk.v1.MsgPostRollupData";
-// message fields that can carry nested messages the chain unwraps and runs
-const NESTED_FIELDS = ["msgs", "messages"] as const;
 
-/** Collect every MsgPostRollupData anywhere inside a message tree (wrappers included). */
-function collectPosts(msg: any, out: any[], depth = 0) {
-  if (!msg || typeof msg !== "object" || depth > 6) return;
-  if (msg["@type"] === POST_TYPE) out.push(msg);
-  for (const f of NESTED_FIELDS) {
-    const nested = msg[f];
-    if (Array.isArray(nested)) for (const m of nested) collectPosts(m, out, depth + 1);
-  }
+/**
+ * Collect every MsgPostRollupData anywhere inside a message tree, under any field name and at any
+ * depth (authz MsgExec `msgs`, group proposals' `messages`, smart-account wrappers, nested
+ * wrappers...). Walking every field means a new wrapper type needs no code change here.
+ */
+function collectPosts(node: any, out: any[], depth = 0) {
+  if (!node || typeof node !== "object" || depth > 32) return;
+  if (Array.isArray(node)) { for (const x of node) collectPosts(x, out, depth + 1); return; }
+  if (node["@type"] === POST_TYPE) out.push(node);
+  for (const v of Object.values(node)) if (v && typeof v === "object") collectPosts(v, out, depth + 1);
 }
 
 /** Mutate one transaction record in place so wrapped posts sit at the top level too. */
