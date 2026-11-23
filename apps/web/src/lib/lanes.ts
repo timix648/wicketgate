@@ -37,6 +37,8 @@ export interface LaneRow {
   aprPct: number;
   /** Days since the lane opened; yields are only shown from 3 days, earlier ones are noise. */
   ageDays: number;
+  /** QOR advanced and not yet repaid by the chain: each one is backed 1:1 by locked watcher stake (ExitPool refuses any advance beyond the stake it can lock). */
+  outstandingWei: bigint;
   isWicketgateAdmin: boolean;
 }
 
@@ -69,13 +71,14 @@ export async function fetchLanes(): Promise<LaneRow[]> {
         read<bigint>("totalAssets", [], l.pool, poolAbi),
         read<bigint>("totalShares", [], l.pool, poolAbi),
       ]);
+      const outstandingWei = await read<bigint>("outstandingWei", [], l.pool, poolAbi);
       const feesWei = (exits as any[]).reduce((t, e) => t + BigInt(e.args.feeWei ?? 0n), 0n);
       const y = yieldOf(feesWei, liquidityWei, assets, shares, Number(l.openedAt));
       rows.push({
         rollupId, pool: l.pool, registry: l.registry, adminA: l.adminA, adminB: l.adminB, opener: l.opener, openedAt: Number(l.openedAt),
         openTx: txOf.get(String(l.pool).toLowerCase()), liquidityWei,
         windowSecs: Number(lane[0]), feeBps: Number(lane[2]), quorum: Number(lane[3]), lockPerWatcherWei: BigInt(lane[4]), enabled: Boolean(lane[5]),
-        confirmations: confirmed.length, exits: exits.length, ...y,
+        confirmations: confirmed.length, exits: exits.length, ...y, outstandingWei,
         isWicketgateAdmin: ours.includes(String(l.adminA).toLowerCase()) || ours.includes(String(l.adminB).toLowerCase()),
       });
     }

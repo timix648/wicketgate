@@ -53,6 +53,10 @@ export function Lanes() {
           in the pool, so each liquidity provider&apos;s shares grow in value; <strong>30%</strong> goes to the watchers whose stake backed the batch; <strong>10%</strong>{" "}
           goes to whoever settles the exit once the batch finalises. A watcher who catches fraud also takes half the cheater&apos;s bond. Yields below are the
           liquidity providers&apos; 60%, annualised at the pace so far and shown once a lane is 3 days old: real figures, but from few exits, so indicative only.
+          <br />
+          <strong>What protects liquidity providers.</strong> A pool never advances more against a batch than the watcher stake it can lock behind it (it refuses with{" "}
+          <code>CoverExceeded</code>), so every QOR in &quot;Advanced, not yet repaid&quot; is backed 1:1 by locked, slashable stake. If the chain never repays an advance,
+          that stake is slashed into the pool. Users are never exposed: a payout is locked to its beneficiary, and at worst the chain pays it later.
         </p>
         <p className="small muted">
           LaneHub <Hash value={LANE_HUB.address} /> (deployed in <Hash value={LANE_HUB.deployTx} tx />). It refuses any pool whose creation code does
@@ -77,6 +81,7 @@ export function Lanes() {
                   <th>LP earnings</th>
                   <th>Share value</th>
                   <th>Yield, annualised</th>
+                  <th>Advanced, not yet repaid (1:1 stake-backed)</th>
                   <th>Opened</th>
                 </tr>
               </thead>
@@ -94,6 +99,7 @@ export function Lanes() {
                     <td>{qor(main.lpFeesWei)} QOR</td>
                     <td>{main.sharePrice.toFixed(6)}</td>
                     <td>{!main.exits ? "no exits yet" : main.ageDays < 3 ? `too early (${main.ageDays.toFixed(1)} days)` : `${main.aprPct.toFixed(1)}%`}</td>
+                    <td>{pool.data ? `${qor(pool.data.outstanding)} QOR` : "-"}</td>
                     <td>-</td>
                   </tr>
                 )}
@@ -113,6 +119,7 @@ export function Lanes() {
                     <td>{qor(r.lpFeesWei)} QOR</td>
                     <td>{r.sharePrice.toFixed(6)}</td>
                     <td>{!r.exits ? "no exits yet" : r.ageDays < 3 ? `too early (${r.ageDays.toFixed(1)} days)` : `${r.aprPct.toFixed(1)}%`}</td>
+                    <td>{qor(r.outstandingWei)} QOR</td>
                     <td>{r.openTx ? <Hash value={r.openTx} tx /> : new Date(r.openedAt * 1000).toISOString().slice(0, 10)}</td>
                   </tr>
                 ))}
