@@ -27,3 +27,6 @@ start wicketgate-op-e2e "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup r
 start wicketgate-op-vigil "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-1 --interval 30" op-vigil   # not bonded there: only pays out and settles withdrawals behind our advances
 start wicketgate-op-vigilpay "$ROOT/packages/operator" "npx tsx src/cli.ts --rollup vigil-pay-1 --interval 30" op-vigilpay   # likewise for vigil-pay-1 (another team's rollup)
 start wicketgate-feed   "$ROOT/packages/watcher"  "./publish-feed.sh" feed
+# Keep-alive: the chain deletes batch records ~7 days after they finalise, so post a tiny transfer
+# whenever the newest wicketgate-pay batch is over 48 h old; fresh receipts always exist.
+start wicketgate-pulse  "$ROOT/packages/scripts"  "npx tsx src/pulse.ts" pulse
