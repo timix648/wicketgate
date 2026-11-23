@@ -141,6 +141,9 @@ importers:
       '@cosmjs/stargate':
         specifier: 0.39.0
         version: 0.39.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)
+      '@modelcontextprotocol/sdk':
+        specifier: 1.32.1
+        version: 1.32.1(zod@4.6.7)
       '@noble/curves':
         specifier: 1.9.7
         version: 1.9.7
@@ -149,7 +152,10 @@ importers:
         version: 1.8.0
       '@qorechain/evm':
         specifier: 0.14.0
-        version: 0.14.0(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+        version: 0.14.0(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
+      '@qorechain/mcp':
+        specifier: 0.1.0
+        version: 0.1.0
       '@qorechain/pqc':
         specifier: 0.2.3
         version: 0.2.3
@@ -159,24 +165,6 @@ importers:
       '@qorechain/qoresign':
         specifier: 0.2.0
         version: 0.2.0
-      '@qorechain/rdk':
-        specifier: 0.9.0
-        version: 0.9.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))
-      '@qorechain/sdk':
-        specifier: 0.14.0
-        version: 0.14.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))
-      '@wicketgate/core':
-        specifier: workspace:*
-        version: link:../core
-      viem:
-        specifier: 2.21.54
-        version: 2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-
-  packages/watcher:
-    dependencies:
-      '@qorechain/mcp':
-        specifier: 0.1.0
-        version: 0.1.0
       '@qorechain/rdk':
         specifier: 0.9.0
         version: 0.9.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
@@ -189,6 +177,27 @@ importers:
       viem:
         specifier: 2.21.54
         version: 2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7)
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+
+  packages/watcher:
+    dependencies:
+      '@qorechain/mcp':
+        specifier: 0.1.0
+        version: 0.1.0
+      '@qorechain/rdk':
+        specifier: 0.9.0
+        version: 0.9.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@qorechain/sdk':
+        specifier: 0.14.0
+        version: 0.14.0(bufferutil@4.2.0)(utf-8-validate@5.0.10)(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@wicketgate/core':
+        specifier: workspace:*
+        version: link:../core
+      viem:
+        specifier: 2.21.54
+        version: 2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.25.76)
 
 packages:
 

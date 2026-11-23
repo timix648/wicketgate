@@ -1,0 +1,12 @@
+{
+  "network": "qorechain-diana",
+  "vault": "0x3d66b87ad3615121ceaa90db809d8c946236a8f1",
+  "deployTx": "0xa1cbf0dc57d76b87ba03a5bfee079733aad7266bb4bde885af9c678f00b92a03",
+  "deployBlock": 10631294,
+  "owner": "0x35C0eEdC2Ac068db3e54f2294226691a5e3407ED",
+  "agent": "0xDdEdc512051eaF79E26bCb76592627611d52b1A5",
+  "mainPool": "0x8ea2ae9d7182261398f62d9ee8be9648025805b4",
+  "hub": "0xca544af3304a19874299a02703c5c67b4b5fff9a",
+  "maxPerPoolBps": 5000,
+  "deployedAt": "2026-11-23T22:07:12.909Z"
+}

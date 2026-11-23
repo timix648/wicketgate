@@ -40,3 +40,6 @@ done
 start wicketgate-keeper "$ROOT/packages/scripts" "npx tsx src/keeper.ts --as KEEPER --interval 60" keeper
 # Settle every lane's early payouts once their batches finalise (one keeper pass per lane, every 10 min).
 start wicketgate-keeper-lanes "$ROOT" "./ops/keeper-lanes.sh" keeper-lanes
+# The liquidity agent: rebalances the AgentVault across the main pool and the lanes every 30 min,
+# each move signed with its ML-DSA-87 key and checked on chain; reasoning in ~/.wicketgate/agent/.
+start wicketgate-agent "$ROOT/packages/scripts" "npx tsx src/agent.ts --interval-min 30" agent

@@ -51,15 +51,18 @@
   },
   "dependencies": {
     "@cosmjs/stargate": "0.39.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@noble/curves": "1.9.7",
     "@noble/hashes": "1.8.0",
     "@qorechain/evm": "0.14.0",
+    "@qorechain/mcp": "0.1.0",
     "@qorechain/pqc": "0.2.3",
     "@qorechain/qoreseal": "0.1.0",
     "@qorechain/qoresign": "0.2.0",
     "@qorechain/rdk": "0.9.0",
     "@qorechain/sdk": "0.14.0",
     "@wicketgate/core": "workspace:*",
-    "viem": "2.21.54"
+    "viem": "2.21.54",
+    "zod": "4.6.7"
   }
 }
