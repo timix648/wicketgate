@@ -13,6 +13,9 @@ import {
   connectNative,
   deposit,
   routeExit,
+  forwardOverIbc,
+  IBC_DESTINATIONS,
+  type IbcDestination,
   exitStatus,
   MIN_DEPOSIT_UQOR,
   newExitAddress,
@@ -623,9 +626,46 @@ function ExitProgress({ exit, feed }: { exit: ExitRecord; feed?: RollupFeed }) {
           {failed && <>{exitQ.data?.error} The money is still yours: after the batch is final it is collected to your address (<code>sweepToBeneficiary</code>). Keep your backup: it holds this exit&apos;s salt.</>}
         </Step>
       </ol>
+      {paid && <ForwardOverIbc exit={exit} />}
       <p className="small muted" style={{ margin: "10px 0 0" }}>
         Exit address <Hash value={exit.exitAddr} /> · <Link href={`/track/${exit.exitAddr}`}>track it</Link>
       </p>
+    </div>
+  );
+}
+
+/** Once an exit is paid: send it on to the user's own address on Osmosis, Injective or the Cosmos Hub, in one signature. */
+function ForwardOverIbc({ exit }: { exit: ExitRecord }) {
+  const [dest, setDest] = useState<IbcDestination>("osmosis");
+  const [amount, setAmount] = useState(qorFromUqor(((BigInt(exit.amountUqor) * 99n) / 100n).toString()));
+  const [busy, setBusy] = useState(false);
+  const [out, setOut] = useState<{ ok: boolean; text: ReactNode }>();
+  const go = async () => {
+    setBusy(true);
+    setOut(undefined);
+    try {
+      const uqor = parseQor(amount);
+      if (!uqor || uqor <= 0n) throw new Error("Enter an amount");
+      const r = await forwardOverIbc({ dest, amountUqor: uqor, evm: exit.beneficiary });
+      setOut({ ok: true, text: <>Sent to <span className="mono">{r.receiver}</span> on {r.destination.name} (<Hash value={r.txHash.toUpperCase()} tx />). The relayer usually delivers in under a minute: <a href={r.destination.explorer(r.receiver)} target="_blank" rel="noreferrer">check the balance there ↗</a>. If it is never delivered, it is refunded here after 15 minutes.</> });
+    } catch (e) {
+      setOut({ ok: false, text: errText(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+      <div className="small"><strong>Take it straight to another chain</strong> (IBC, to your own address there; one signature)</div>
+      <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+        <select value={dest} onChange={(e) => setDest(e.target.value as IbcDestination)} aria-label="Destination chain">
+          {Object.entries(IBC_DESTINATIONS).map(([k, d]) => <option key={k} value={k}>{d.name}</option>)}
+        </select>
+        <input value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Amount to send on, in QOR" style={{ width: 120 }} />
+        <span className="small muted">QOR</span>
+        <button className="btn" disabled={busy} onClick={go}>{busy ? "Sending…" : `Send to ${IBC_DESTINATIONS[dest].name}`}</button>
+      </div>
+      {out && <div className={`banner ${out.ok ? "ok" : "warn"}`} style={{ marginTop: 8 }}><div className="small">{out.text}</div></div>}
     </div>
   );
 }

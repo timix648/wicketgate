@@ -141,5 +141,28 @@ test("connect QoreX, create a rollup account, deposit (rejected), withdraw insta
   exitStatus = { status: "paid", txHash: `0x${"b".repeat(64)}` };
   await expect(page.getByText("Posted to the rollup")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Paid to your EVM address")).toBeVisible({ timeout: 30_000 });
+
+  // ---- 6. send the paid exit on to Osmosis in one QoreX signature (rejected in the mock: nothing is broadcast)
+  await page.evaluate(() => {
+    const m = (window as any).__qorexMock;
+    m.clearRequests();
+    m.rejectNext();
+  });
+  await page.getByLabel("Amount to send on, in QOR").fill("1.5");
+  await page.getByRole("button", { name: "Send to Osmosis testnet" }).click();
+  await expect(page.getByText(/rejected/i).last()).toBeVisible();
+  const ibcCalls = await page.evaluate(() => (window as any).__qorexMock.requests);
+  const ibc = ibcCalls.find((c: any) => c.method === "native:signAndBroadcast");
+  const ibcReq = typeof ibc.params === "string" ? JSON.parse(ibc.params) : ibc.params;
+  const msg = ibcReq.messages[0];
+  expect(msg.typeUrl).toBe("/ibc.applications.transfer.v1.MsgTransfer");
+  const { MsgTransfer } = await import("cosmjs-types/ibc/applications/transfer/v1/tx");
+  const raw = typeof msg.value === "string" ? Buffer.from(msg.value, "base64") : Uint8Array.from(Object.values(msg.value) as number[]);
+  const t = MsgTransfer.decode(raw);
+  expect(t.sourceChannel).toBe("channel-1");
+  expect(t.token?.denom).toBe("uqor");
+  expect(t.token?.amount).toBe("1500000");
+  expect(t.sender).toBe(addresses.native);
+  expect(t.receiver).toMatch(/^osmo1[02-9ac-hj-np-z]{38}$/);
 });
 

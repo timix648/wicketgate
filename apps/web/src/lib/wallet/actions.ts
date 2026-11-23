@@ -228,3 +228,36 @@ export async function routeExit(rollupId: string, amountUqor: bigint): Promise<{
   options.sort((a, b) => Number(!!a.estimate.blocker) - Number(!!b.estimate.blocker) || (a.estimate.feeWei < b.estimate.feeWei ? -1 : a.estimate.feeWei > b.estimate.feeWei ? 1 : 0));
   return { best: options.find((o) => !o.estimate.blocker), options };
 }
+
+// ------------------------------------------------------------- exit straight to another chain (IBC)
+
+/** QoreChain testnet's open ICS-20 channels (checked live 23 Nov 2026: all STATE_OPEN). */
+export const IBC_DESTINATIONS = {
+  osmosis: { name: "Osmosis testnet", channel: "channel-1", prefix: "osmo", keyKind: "cosmos" as const, explorer: (a: string) => `https://lcd.osmotest5.osmosis.zone/cosmos/bank/v1beta1/balances/${a}` },
+  injective: { name: "Injective testnet", channel: "channel-2", prefix: "inj", keyKind: "eth" as const, explorer: (a: string) => `https://testnet.sentry.lcd.injective.network/cosmos/bank/v1beta1/balances/${a}` },
+  cosmoshub: { name: "Cosmos Hub testnet", channel: "channel-0", prefix: "cosmos", keyKind: "cosmos" as const, explorer: (a: string) => `https://rest.provider-sentry-01.ics-testnet.polypore.xyz/cosmos/bank/v1beta1/balances/${a}` },
+};
+export type IbcDestination = keyof typeof IBC_DESTINATIONS;
+
+/**
+ * Forward a paid exit to the user's own address on another chain, in one QoreX signature. The
+ * receiver is derived from the user's own key (Cosmos chains: RIPEMD160(SHA256(pubkey)); Injective,
+ * which uses Ethereum keys: the user's EVM address), so only the user controls it. If the relayer
+ * never delivers, the transfer times out after 15 minutes and the chain refunds it here.
+ */
+export async function forwardOverIbc(input: { dest: IbcDestination; amountUqor: bigint; evm: Address }) {
+  const n = native();
+  if (!hasCapability(n, "signAndBroadcast")) throw new WalletError("This QoreX version cannot sign QoreChain transactions for sites yet; update QoreX");
+  const d = IBC_DESTINATIONS[input.dest];
+  const key = await n.getKey(NET.chainId);
+  const receiver = d.keyKind === "eth" ? hexToBech32(input.evm, d.prefix) : hexToBech32(toHex(Uint8Array.from(key.address)), d.prefix);
+  const { MsgTransfer } = await import("cosmjs-types/ibc/applications/transfer/v1/tx");
+  const value = MsgTransfer.encode(MsgTransfer.fromPartial({
+    sourcePort: "transfer", sourceChannel: d.channel, token: { denom: "uqor", amount: input.amountUqor.toString() },
+    sender: key.bech32Address, receiver, timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+    timeoutTimestamp: BigInt(Date.now() + 15 * 60_000) * 1_000_000n, memo: "wicketgate instant exit",
+  })).finish();
+  const res = await n.signAndBroadcast({ chainId: NET.chainId, messages: [{ typeUrl: "/ibc.applications.transfer.v1.MsgTransfer", value }], gasLimit: 400_000 });
+  if (res.code !== 0) throw new WalletError(`The chain refused the transfer (code ${res.code}, transaction ${res.txHash})`);
+  return { ...res, receiver, destination: d };
+}
