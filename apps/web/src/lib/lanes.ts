@@ -28,6 +28,15 @@ export interface LaneRow {
   enabled: boolean;
   confirmations: number;
   exits: number;
+  /** Exit fees charged by the lane, and the 60% that stays with its liquidity providers. */
+  feesWei: bigint;
+  lpFeesWei: bigint;
+  /** Value of one share in QOR (starts at 1 and grows with fees). */
+  sharePrice: number;
+  /** LP fees over liquidity, annualised at the pace since the lane opened (tiny samples: indicative only). */
+  aprPct: number;
+  /** Days since the lane opened; yields are only shown from 3 days, earlier ones are noise. */
+  ageDays: number;
   isWicketgateAdmin: boolean;
 }
 
@@ -52,17 +61,21 @@ export async function fetchLanes(): Promise<LaneRow[]> {
     const lanes = await read<any[]>("lanesOf", [key]);
     for (const l of lanes) {
       const rollupId = idOf.get(key) ?? key;
-      const [liquidityWei, lane, confirmed, exits] = await Promise.all([
+      const [liquidityWei, lane, confirmed, exits, assets, shares] = await Promise.all([
         client.getBalance({ address: l.pool }),
         read<any[]>("lanes", [keccak256(toHex(rollupId))], l.pool, poolAbi),
         client.getContractEvents({ address: l.pool, abi: poolAbi, eventName: "BatchConfirmed", fromBlock: LANE_HUB.deployBlock }),
         client.getContractEvents({ address: l.pool, abi: poolAbi, eventName: "InstantExit", fromBlock: LANE_HUB.deployBlock }),
+        read<bigint>("totalAssets", [], l.pool, poolAbi),
+        read<bigint>("totalShares", [], l.pool, poolAbi),
       ]);
+      const feesWei = (exits as any[]).reduce((t, e) => t + BigInt(e.args.feeWei ?? 0n), 0n);
+      const y = yieldOf(feesWei, liquidityWei, assets, shares, Number(l.openedAt));
       rows.push({
         rollupId, pool: l.pool, registry: l.registry, adminA: l.adminA, adminB: l.adminB, opener: l.opener, openedAt: Number(l.openedAt),
         openTx: txOf.get(String(l.pool).toLowerCase()), liquidityWei,
         windowSecs: Number(lane[0]), feeBps: Number(lane[2]), quorum: Number(lane[3]), lockPerWatcherWei: BigInt(lane[4]), enabled: Boolean(lane[5]),
-        confirmations: confirmed.length, exits: exits.length,
+        confirmations: confirmed.length, exits: exits.length, ...y,
         isWicketgateAdmin: ours.includes(String(l.adminA).toLowerCase()) || ours.includes(String(l.adminB).toLowerCase()),
       });
     }
@@ -71,3 +84,18 @@ export async function fetchLanes(): Promise<LaneRow[]> {
 }
 
 export const qor = (wei: bigint) => Number(formatEther(wei)).toLocaleString(undefined, { maximumFractionDigits: 3 });
+
+/** Fee split from ExitPool: 30% to the confirming watchers, 10% to the keeper, the rest stays in the pool. */
+export const LP_SHARE_BPS = 10_000n - 3_000n - 1_000n;
+
+export function yieldOf(feesWei: bigint, liquidityWei: bigint, totalAssets: bigint, totalShares: bigint, sinceSecs: number) {
+  const lpFeesWei = (feesWei * LP_SHARE_BPS) / 10_000n;
+  // ExitPool mints 1e6 shares per wei at the start (virtual shares guard against inflation attacks),
+  // so value per share is scaled by 1e6 to read 1.0 at opening and grow with fees from there.
+  const sharePrice = Number(((totalAssets + 1n) * 1_000_000n * 1_000_000n) / (totalShares + 1_000_000n)) / 1e6;
+  const age = Math.max(Date.now() / 1000 - sinceSecs, 3600);
+  const ageDays = age / 86400;
+  const principal = liquidityWei > lpFeesWei ? liquidityWei - lpFeesWei : liquidityWei;
+  const aprPct = principal > 0n ? (Number(lpFeesWei) / Number(principal)) * (365 * 86400 / age) * 100 : 0;
+  return { feesWei, lpFeesWei, sharePrice, aprPct, ageDays };
+}
