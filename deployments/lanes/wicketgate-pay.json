@@ -1,0 +1,32 @@
+{
+  "network": "qorechain-diana",
+  "evmChainId": 9800,
+  "version": "3.1-lane",
+  "openedAt": "2026-11-23T20:02:50.686Z",
+  "deployBlock": 10628348,
+  "hub": "0xca544af3304a19874299a02703c5c67b4b5fff9a",
+  "openTx": "0xf59736369d59f30bf28f6b8fcef42919a6d01539d3abe5b6a6a0f278dab71825",
+  "provider": {
+    "adminA": "0x0764d24FC49eA090Cb2065613a8F5d6E8C265640",
+    "adminB": "0x55f9F01f00AE56078E9B3F0F27F222C89CfE7Ef8"
+  },
+  "registry": "0x5935383277f430D13598781bAFb83cb6fDF2858D",
+  "pool": "0x94347d2ad5863325B1b7E1EA7F438d1507FE5e43",
+  "lanes": {
+    "wicketgate-pay": {
+      "windowSecs": 3600,
+      "graceSecs": 1800,
+      "feeBps": 30,
+      "quorum": 2,
+      "lockPerWatcher": "4000000000000000000",
+      "enabled": true,
+      "risk": {
+        "kinkBps": 5000,
+        "maxFeeBps": 300,
+        "maxExitWei": "4000000000000000000",
+        "maxOutstandingWei": "8000000000000000000",
+        "keeperTipWei": "0"
+      }
+    }
+  }
+}

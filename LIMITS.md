@@ -15,6 +15,8 @@ What Wicketgate does not do, or does not do yet. Kept current; dates are UTC. La
 
 - **Sealed exit relay: what it does not hide.** The relay still sees which rollup an exit is for, when it was sent, its size and the sender's IP. The operator opens every request (it has to, to pay it), and once paid the `instantExit` transaction makes beneficiary and amount public on chain, as any payout is. The pinned fingerprint is shipped by the app itself, so a fully compromised app bundle is out of scope, as for any web wallet; anyone can check the fingerprint against `GET /qorechain/pqc/v1/kem/qor16087dpc985wvk6hlsl2x8p0kyumz394q0lvm6k`. The exit operator's key is ADMIN_A's registered key, also used (under a different QoreSeal purpose) for sealed security reports, because the KEM registry holds one key per account.
 
+- **LaneHub lanes are run by their providers.** A lane's two admins set its fee, quorum and limits; the hub only guarantees the code and the post-quantum keys. Liquidity providers and watchers choose which lanes to back. The hub cannot check from the EVM that a rollup id exists. See [docs/LANES.md](docs/LANES.md).
+
 ## Resolved
 
 | Date | Was | Now |

@@ -30,3 +30,9 @@ start wicketgate-feed   "$ROOT/packages/watcher"  "./publish-feed.sh" feed
 # Keep-alive: the chain deletes batch records ~7 days after they finalise, so post a tiny transfer
 # whenever the newest wicketgate-pay batch is over 48 h old; fresh receipts always exist.
 start wicketgate-pulse  "$ROOT/packages/scripts"  "npx tsx src/pulse.ts" pulse
+# A permissionless lane opened through LaneHub by an outside provider (LANE_A/LANE_B, not our admins):
+# W1 and W2 also stake in and attest to that lane's own pool, from separate state folders.
+LANE="$ROOT/deployments/lanes/wicketgate-pay.json"
+for w in w1 w2; do W=$(echo $w | tr a-z A-Z); mkdir -p "$HOME/.wicketgate/lane-$w"
+  start wicketgate-lane-$w "$ROOT/packages/watcher" "WICKETGATE_DEPLOYMENTS=$LANE WICKETGATE_STATE=$HOME/.wicketgate/lane-$w npx tsx src/cli.ts --mode attest --as $W --rollup wicketgate-pay --interval 20 --feed $HOME/.wicketgate/lane-$w/feed" lane-$w
+done

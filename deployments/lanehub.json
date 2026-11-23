@@ -1,0 +1,9 @@
+{
+  "network": "qorechain-diana",
+  "hub": "0xca544af3304a19874299a02703c5c67b4b5fff9a",
+  "deployTx": "0x009190a8ceb9133a72491924bbcc92efe6c9771c4907a5da8469e136d7638441",
+  "deployBlock": 10628332,
+  "poolCodeHash": "0x92174dbe8dae40643baae620c0fac49c8f8b6e419ebe31395dc1e7ed77e8f45a",
+  "registryCodeHash": "0xe78e572cc207a005b31267cdfc8f883f7fefa877ddea4b50c7d5f3905b817a18",
+  "deployedAt": "2026-11-23T20:01:36.840Z"
+}
