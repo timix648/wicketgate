@@ -3,11 +3,12 @@
 // signature, chain binding), and saves receipts/<rollup>/batch-<n>.json plus receipts/<rollup>/index.json.
 // Batches that the chain rejected have no receipt and are listed as such.
 // Usage: npx tsx src/receipts-all.ts [rollup-id]       (read-only, no key needed)
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRdkClient, buildSettlementReceipt, verifySettlementReceipt, RestClient, isRestNotFound } from "@qorechain/rdk";
 import { NET } from "@wicketgate/core/env";
 import { politeFetch } from "@wicketgate/core/polite";
 import { robustRest } from "@wicketgate/core/robust-rest";
+import { batchPrunedReason, verifyReceiptPruneSafe } from "@wicketgate/core/pruned-receipts";
 
 const ROLLUP = process.argv[2] ?? "wicketgate-pay";
 
@@ -21,7 +22,23 @@ async function main() {
   const rows: any[] = [];
   for (let i = 0; ; i++) {
     let b: any;
-    try { b = await rest.getBatch(ROLLUP, i); } catch (e) { if (isRestNotFound(e)) break; throw e; }
+    try { b = await rest.getBatch(ROLLUP, i); } catch (e) {
+      if (!isRestNotFound(e)) throw e;
+      // 404: either the end of the rollup, or a batch the chain has pruned (about 7 days after it
+      // finalised). A pruned batch keeps its saved receipt, re-verified against its permanent anchor.
+      const layerId = (await rest.getRollup(ROLLUP)).layerId;
+      const pruned = await batchPrunedReason(NET.rest, ROLLUP, layerId, i);
+      if (!pruned) break;
+      const f = new URL(`batch-${i}.json`, dir);
+      if (!existsSync(f)) { rows.push({ batch: i, status: "pruned", valid: false, error: "pruned before a receipt was saved" }); continue; }
+      const receipt = JSON.parse(readFileSync(f, "utf8")).receipt;
+      const v = await verifyReceiptPruneSafe(receipt, client, NET.rest);
+      const passed = Object.values(v.checks).filter(Boolean).length, total = Object.keys(v.checks).length;
+      writeFileSync(f, JSON.stringify({ receipt, verification: { valid: v.valid, mode: v.mode, pruned: true, prunedReason: v.prunedReason, checks: v.checks, checkedAt: new Date().toISOString() } }, null, 2) + "\n");
+      rows.push({ batch: i, status: "finalized (record pruned)", valid: v.valid, checks: `${passed}/${total}`, stateRoot: receipt.stateRoot, anchorHeight: receipt.mainChainHeight, algorithm: receipt.algorithm, file: `batch-${i}.json`, pruned: true });
+      console.log(`batch ${i}: record pruned, saved receipt ${v.valid ? "VALID" : "INVALID"} against its anchor (${passed}/${total} checks)${v.valid ? "" : ` ${v.reason}`}`);
+      continue;
+    }
     if (b.status === "rejected") { rows.push({ batch: i, status: "rejected", valid: null }); console.log(`batch ${i}: rejected on chain, no receipt`); continue; }
     try {
       const receipt = await buildSettlementReceipt(client, ROLLUP, i);

@@ -3,8 +3,9 @@
 // receipt is trusted. This runs on the server because QoreChain's REST and RPC endpoints send no
 // CORS headers, so a browser page cannot query them directly.
 import { createHash } from "node:crypto";
-import { createRdkClient, receiptSchemaError, verifySettlementReceipt, type SettlementReceipt } from "@qorechain/rdk";
+import { createRdkClient, receiptSchemaError, type SettlementReceipt } from "@qorechain/rdk";
 import { NET } from "../../../../lib/config";
+import { verifyReceiptPruneSafe } from "@wicketgate/core/pruned-receipts";
 import { fail, guarded, json, readJson } from "../../../../lib/server/http";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ const RPC = "https://rpc-testnet.qore.host";
 const PER_MINUTE = 20;
 const CACHE_MS = 5 * 60_000;
 
-type Result = Awaited<ReturnType<typeof verifySettlementReceipt>>;
+type Result = Awaited<ReturnType<typeof verifyReceiptPruneSafe>>;
 const cache = new Map<string, { at: number; body: unknown }>();
 // Per-instance limit: verification needs no queue storage, so it keeps working without Redis.
 const hits = new Map<string, { n: number; until: number }>();
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     const client = createRdkClient({ network: "testnet", endpoints: { rest: NET.rest, rpc: RPC } as any });
     let v: Result;
     try {
-      v = await verifySettlementReceipt(receipt, { client });
+      v = await verifyReceiptPruneSafe(receipt, client, NET.rest);
     } catch (e) {
       return fail(502, `Could not read the chain: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
       checks: v.checks,
       signBytesVersion: v.signBytesVersion ?? null,
       reason: v.reason ?? null,
+      pruned: v.pruned,
+      prunedReason: v.prunedReason ?? null,
       anchor: v.anchor ? { mainChainHeight: (v.anchor as any).mainChainHeight ?? null, layerHeight: (v.anchor as any).layerHeight ?? null } : null,
       checkedAt: new Date().toISOString(),
       chainId: NET.chainId,

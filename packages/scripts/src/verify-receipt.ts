@@ -2,7 +2,8 @@
 // file is trusted. Works on receipts from any rollup, not only ours.
 // Usage: npx tsx src/verify-receipt.ts <receipt.json> [more.json ...]
 import { readFileSync } from "node:fs";
-import { createRdkClient, verifySettlementReceipt } from "@qorechain/rdk";
+import { createRdkClient } from "@qorechain/rdk";
+import { verifyReceiptPruneSafe } from "@wicketgate/core/pruned-receipts";
 import { NET } from "@wicketgate/core/env";
 
 async function main() {
@@ -13,9 +14,9 @@ async function main() {
   for (const f of files) {
     const j = JSON.parse(readFileSync(f, "utf8"));
     const receipt = j.receipt ?? j;
-    const v = await verifySettlementReceipt(receipt, { client });
+    const v = await verifyReceiptPruneSafe(receipt, client, NET.rest);
     const failed = Object.entries(v.checks).filter(([, ok]) => !ok).map(([k]) => k);
-    console.log(`${v.valid ? "VALID  " : "INVALID"} ${f}: ${receipt.rollupId ?? ""} batch ${receipt.batchIndex ?? "?"}, ${Object.keys(v.checks).length - failed.length}/${Object.keys(v.checks).length} checks${failed.length ? `, failed: ${failed.join(", ")}` : ""}${v.reason ? ` (${v.reason})` : ""}`);
+    console.log(`${v.valid ? "VALID  " : "INVALID"} ${f}: ${receipt.rollupId ?? ""} batch ${receipt.batchIndex ?? "?"}, ${Object.keys(v.checks).length - failed.length}/${Object.keys(v.checks).length} checks${failed.length ? `, failed: ${failed.join(", ")}` : ""}${v.reason ? ` (${v.reason})` : ""}${v.pruned ? ` [batch record pruned by the chain; checked against its permanent anchor]` : ""}`);
     if (!v.valid) bad++;
   }
   if (bad) process.exitCode = 1;
