@@ -150,6 +150,19 @@ export async function fetchEntriesIndependent(rest: RestClient, input: EntriesIn
   const from = BigInt(input.from);
   const to = BigInt(input.to);
   const q = (t: string) => `${t}.rollup_id='${input.rollupId}'`;
+  // The chain's accumulator to check against. The node prunes old posted-data records, so when
+  // the one at `to` is gone, read on to the inbox head and check the head's accumulator instead:
+  // the accumulator is a hash chain, so a match at the head authenticates every entry before it.
+  let want: string | undefined;
+  let upto = to;
+  try {
+    want = (await rest.getPostedData(input.rollupId, to as any)).inboxAcc;
+  } catch (err) {
+    if (!isRestNotFound(err) && !/\b404\b/.test(String((err as any)?.message ?? err))) throw err;
+    const inbox = await rest.getInbox(input.rollupId);
+    if (BigInt(inbox.headSequence) >= to) { upto = BigInt(inbox.headSequence); want = inbox.headAcc; }
+  }
+  if (!want) throw new Error(`independent reader: the chain no longer holds the inbox accumulator at ${to}`);
   const bySeq = new Map<bigint, QledgerEntry>();
   const put = (seq: bigint, e: QledgerEntry) => {
     const prev = bySeq.get(seq);
@@ -167,7 +180,7 @@ export async function fetchEntriesIndependent(rest: RestClient, input: EntriesIn
       const a = attrs(ev);
       if (a.rollup_id !== input.rollupId) continue;
       const seq = BigInt(a.sequence ?? "0");
-      if (seq <= from || seq > to) continue;
+      if (seq <= from || seq > upto) continue;
       candidates ??= payloadCandidates(tx);
       const payload = candidates.get(norm(a.data_hash ?? ""));
       if (!payload) {
@@ -184,29 +197,20 @@ export async function fetchEntriesIndependent(rest: RestClient, input: EntriesIn
       const a = attrs(ev);
       if (a.rollup_id !== input.rollupId) continue;
       const seq = BigInt(a.sequence ?? "0");
-      if (seq <= from || seq > to) continue;
+      if (seq <= from || seq > upto) continue;
       const amount = BigInt((a.amount ?? "0").replace(/uqor$/, ""));
       put(seq, { height, poster: QLEDGER_DEPOSIT_POSTER_PREFIX + a.depositor, payload: encodeQledgerDeposit(hexToBytes(a.account), amount) } as QledgerEntry);
     }
   }
 
   const entries: QledgerEntry[] = [];
-  for (let s = from + 1n; s <= to; s++) {
+  for (let s = from + 1n; s <= upto; s++) {
     const e = bySeq.get(s);
     if (!e) throw new Error(`independent reader: inbox entry ${s} of ${input.rollupId} was not found in the node's transaction index`);
     entries.push(e);
   }
 
   const accTo = toHex(qledgerAccumulate({ chainId: input.chainId, rollupId: input.rollupId, from, accFrom: input.accFrom, entries } as any));
-  let want: string | undefined;
-  try {
-    want = (await rest.getPostedData(input.rollupId, to as any)).inboxAcc;
-  } catch (err) {
-    if (!isRestNotFound(err)) throw err;
-    const inbox = await rest.getInbox(input.rollupId);
-    if (BigInt(inbox.headSequence) === to) want = inbox.headAcc;
-  }
-  if (!want) throw new Error(`independent reader: the chain no longer holds the inbox accumulator at ${to}`);
-  if (norm(want) !== accTo) throw new Error(`independent reader: entries read back for ${input.rollupId} do not match the chain's inbox accumulator at ${to}`);
-  return entries;
+  if (norm(want) !== accTo) throw new Error(`independent reader: entries read back for ${input.rollupId} do not match the chain's inbox accumulator at ${upto}`);
+  return entries.slice(0, Number(to - from));
 }

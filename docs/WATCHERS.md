@@ -4,6 +4,8 @@ Anyone can watch QoreChain's rollups with Wicketgate, and anyone with a post-qua
 
 All of this is on the `qorechain-diana` testnet. Use a fresh, testnet-only account.
 
+**On your own server with Docker (recommended for a long-running independent watcher):** see [ops/watcher-kit/README.md](../ops/watcher-kit/README.md), a few commands from key to a staked, always-on watcher.
+
 ## 1. Watch, with no key and no tokens (2 minutes)
 
 ```bash

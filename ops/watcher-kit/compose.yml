@@ -1,0 +1,22 @@
+# One independent Wicketgate watcher. Started by `kit.sh up <NAME>`; keys stay in ./keys on this host.
+services:
+  watcher:
+    image: wicketgate-watcher-kit
+    container_name: wicketgate-watcher-${WG_NAME}
+    restart: unless-stopped
+    user: "${WG_UID}:${WG_GID}"
+    working_dir: /app/packages/watcher
+    command: ["npx", "tsx", "src/cli.ts", "--mode", "challenge", "--reader", "${WG_READER:-independent}", "--as", "${WG_NAME}", "--rollup", "all", "--interval", "10", "--feed", "/feed"]
+    volumes:
+      - ./keys:/keys
+      - ./state:/state
+      - ./feed:/feed
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "3" }
+    healthcheck:
+      # healthy while the feed has been written in the last 10 minutes
+      test: ["CMD-SHELL", "find /feed -name 'wicketgate-pay.json' -mmin -10 | grep -q ."]
+      interval: 2m
+      start_period: 15m

@@ -15,7 +15,7 @@
 // It only adds messages the chain already executed; it removes and changes nothing, so a normal
 // direct post behaves exactly as before. Every RDK function that reads posts (fetchQledgerEntries,
 // planQledgerBatch, ...) then works through the wrapper with no other change.
-import type { RestClient } from "@qorechain/rdk";
+import { fetchQledgerEntries, type RestClient } from "@qorechain/rdk";
 
 const POST_TYPE = "/qorechain.rdk.v1.MsgPostRollupData";
 
@@ -90,4 +90,24 @@ export function robustRest<T extends RestClient>(rest: T): T {
   anyRest.searchTxs = (query: string, opts?: unknown) => incrementalSearch(cache, orig, query, opts);
   anyRest.__robust = true;
   return rest;
+}
+
+/**
+ * fetchQledgerEntries that survives the node pruning old posted-data records. The RDK checks a
+ * range against the accumulator recorded at its last sequence and gives up once the node no longer
+ * serves that record, so a watcher started fresh cannot check old batches. When that happens, read
+ * on to the inbox head and check against the head's accumulator, which (being a hash chain)
+ * authenticates every entry before it, then return only the range asked for.
+ */
+export async function fetchQledgerEntriesPruneSafe(rest: RestClient, input: Parameters<typeof fetchQledgerEntries>[1]) {
+  try {
+    return await fetchQledgerEntries(rest, input);
+  } catch (err) {
+    if (!/no longer holds the accumulator|posted_data\/[^ ]+ failed: 404/.test(String((err as any)?.message ?? err))) throw err;
+    const head = BigInt((await rest.getInbox(input.rollupId)).headSequence);
+    const to = BigInt(input.to as any);
+    if (head <= to) throw err;
+    const all = await fetchQledgerEntries(rest, { ...input, to: head as any });
+    return all.slice(0, Number(to - BigInt(input.from as any)));
+  }
 }

@@ -31,7 +31,7 @@ import { buildExitTree, ZERO_ROOT } from "@wicketgate/core/exit-tree";
 import { TOOLS as MCP_TOOLS, toolContext } from "@qorechain/mcp";
 import { restGet } from "@wicketgate/core/chain";
 import { politeFetch } from "@wicketgate/core/polite";
-import { robustRest } from "@wicketgate/core/robust-rest";
+import { robustRest, fetchQledgerEntriesPruneSafe } from "@wicketgate/core/robust-rest";
 import { fetchEntriesIndependent } from "@wicketgate/core/independent-entries";
 import { alert } from "@wicketgate/core/alert";
 
@@ -174,7 +174,7 @@ export class Watcher {
     const hit = this.entryCache.get(key);
     if (hit) return hit;
     const input = { chainId: NET.chainId, rollupId, from, to, accFrom };
-    const got = this.cfg.reader === "independent" ? await fetchEntriesIndependent(this.plainRest, input) : await fetchQledgerEntries(this.rest, input);
+    const got = this.cfg.reader === "independent" ? await fetchEntriesIndependent(this.plainRest, input) : await fetchQledgerEntriesPruneSafe(this.rest, input);
     this.entryCache.set(key, got);
     return got;
   }

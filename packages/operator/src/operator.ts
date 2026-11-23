@@ -33,7 +33,7 @@ import { sendNative, explorerTx, restGet } from "@wicketgate/core/chain";
 import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
 import { recipientAddress, exitLeaf, verifyExitProof } from "@wicketgate/core/exit-tree";
 import { politeFetch } from "@wicketgate/core/polite";
-import { robustRest } from "@wicketgate/core/robust-rest";
+import { robustRest, fetchQledgerEntriesPruneSafe } from "@wicketgate/core/robust-rest";
 import { alert } from "@wicketgate/core/alert";
 import { deriveSealKeys, type SealKeyPair } from "@qorechain/qoreseal";
 import { EXIT_OPERATOR, mlkemFingerprint, openExitRequest } from "@wicketgate/core/sealed-exit";
@@ -129,7 +129,7 @@ export class Operator {
       }
       if (b.status === "rejected") { prefixFinal = false; continue; }
       const key = `${b.inboxStart}:${b.inboxEnd}:${typeof acc === "string" ? acc : bytesToHex(acc)}`;
-      const entries = this.entryCache.get(key) ?? await fetchQledgerEntries(this.rest, { chainId: NET.chainId, rollupId, from: b.inboxStart, to: b.inboxEnd, accFrom: acc });
+      const entries = this.entryCache.get(key) ?? await fetchQledgerEntriesPruneSafe(this.rest, { chainId: NET.chainId, rollupId, from: b.inboxStart, to: b.inboxEnd, accFrom: acc });
       this.entryCache.set(key, entries);
       const result = executeQledger(env, ledger, entries);
       if (hex(result.stateRoot) !== hex(b.stateRoot)) throw new Error(`batch ${i} does not match re-execution; refusing to build on it`);

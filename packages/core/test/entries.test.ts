@@ -104,6 +104,24 @@ describe("reading inbox posts through wrappers", () => {
   });
 });
 
+describe("pruned accumulator records", () => {
+  // The node prunes old posted-data records: GET /posted_data/{rollup}/{seq} answers 404 for early
+  // sequences. A fresh watcher must still check an old range, so the reader reads on to the inbox
+  // head and checks the head's accumulator, which authenticates every entry before it.
+  const pruned = (opts: { tamper?: boolean } = {}) => {
+    const r = restFor(SHAPES["top level"], opts) as any;
+    r.getPostedData = async () => { const e: any = new Error("REST GET /qorechain/rdk/v1/posted_data/x/2 failed: 404 Not Found"); e.status = 404; throw e; };
+    return r as RestClient;
+  };
+  it("checks an old range against the head and returns only the range asked for", async () => {
+    const got = await fetchEntriesIndependent(pruned(), { ...input, to: 2 });
+    expect(got.map((e) => hex(e.payload))).toEqual(payloads.slice(0, 2).map(hex));
+  });
+  it("still refuses a tampered entry inside or after the range", async () => {
+    await expect(fetchEntriesIndependent(pruned({ tamper: true }), { ...input, to: 2 })).rejects.toThrow();
+  });
+});
+
 describe("incremental transaction search", () => {
   // a node that honours `AND tx.height>=N`, ascending, capped like the RDK's searchTxs (limit x pages)
   function node(cap: number) {
