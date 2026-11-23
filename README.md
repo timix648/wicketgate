@@ -10,6 +10,28 @@ A wicket gate is the small door cut into a large castle gate: people pass throug
 
 > Built for **Build Before Q-Day**, the QoreChain Developer Fest, in the **Protocol Builders** category. Everything runs on the `qorechain-diana` testnet. Every number on this page is backed by a transaction hash in [PROOF.md](PROOF.md).
 
+### Why Wicketgate is different
+
+Any rollup can pay withdrawals early by trusting a few watchtowers. Wicketgate is built so that **nobody has to be trusted, and anyone can join**:
+
+| | Trusted watchtower exits | **Wicketgate** |
+| --- | --- | --- |
+| Who vouches for a batch | A fixed set of the rollup team's own watchtowers | **Any staked watcher** with a proven ML-DSA-87 key; ours run two independent reader implementations, so one bug cannot blind them all |
+| If the vouchers lie | Liquidity providers take the loss | **The watchers' stake is slashed.** A pool never advances more than the stake it can lock behind a batch, so every advance is backed 1:1 by slashable stake ([/lanes](https://wicketgate-psi.vercel.app/lanes)) |
+| Rollups served | The team's own rollup | **Any QoreChain rollup.** Anyone can open a lane through `LaneHub` with no permission from us or the rollup team; lanes are live for 4 rollups from 4 teams |
+| Liquidity | One vault | **A market:** lanes compete on fees, the wallet routes each exit to the cheapest pool that can pay, and an AI agent can manage liquidity across them under on-chain limits |
+| Post-quantum | Signatures checked | ML-DSA-87 checked on chain for **every attestation, every admin action, every lane's settings and every AI-agent move**; exit requests sealed in the browser with **ML-KEM-1024** to the operator's on-chain key |
+
+**Live now, 23 Nov 2026** (each with its transaction in [PROOF.md](PROOF.md)):
+- **Permissionless lanes:** `LaneHub` `0xca544af3…`, no owner or admin; lanes for `wicketgate-pay`, `skyproof-1`, `ledgerpump` and `vigil-pay-1`, settled by a lane keeper ([docs/LANES.md](docs/LANES.md)).
+- **Cheapest-lane routing:** a 1 QOR exit quoted 0.083 QOR at the main pool and 0.003 QOR at a lane; it was routed, sealed and paid from the lane.
+- **AI-managed liquidity:** `AgentVault` `0x3d66b87a…`, an agent that rebalances 20 QOR by fee yield and risk, each move ML-DSA-87 signed and verified on chain. Plus an MCP server that gives any AI assistant QoreChain's own MCP tools and Wicketgate's ([docs/AGENT.md](docs/AGENT.md)).
+- **Exit to another chain** from the wallet in one QoreX signature (Osmosis, Injective, Cosmos Hub).
+- **Fraud caught on a rival's rollup:** W1 challenged a forged `ledgerpump` batch 12 s after it was posted; the chain slashed the 1,000 QOR bond.
+- **Fixes upstream in QoreChain's own toolkit:** [issue #2](https://github.com/qorechain/qorechain-rdk/issues/2) and [PR #3](https://github.com/qorechain/qorechain-rdk/pull/3), so every team's receipts keep verifying after the chain prunes batch records.
+
+**Check it in 60 seconds, no key:** open [/lanes](https://wicketgate-psi.vercel.app/lanes) (every lane, its liquidity, fees and stake backing, read live from the chain), then [/watchers](https://wicketgate-psi.vercel.app/watchers) and [/exits](https://wicketgate-psi.vercel.app/exits); or run `cd packages/scripts && npx tsx src/metrics.ts && npx tsx src/redteam.ts`.
+
 ### Wicketgate in numbers (19 Nov 2026, recomputed from the chain by `pnpm metrics`)
 
 | | |
