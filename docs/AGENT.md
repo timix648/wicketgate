@@ -9,6 +9,7 @@ Liquidity providers earn **60% of every instant-exit fee** in the pools they bac
 - **Every agent move needs the agent's ML-DSA-87 signature**, checked on chain by the `pqcVerify` precompile, with a nonce and a deadline. A stolen classical key moves nothing; a replayed signature is refused.
 - **Money leaves only to the owner.** The agent cannot withdraw, cannot pay itself, and the owner can stop it (`setPolicy(..., paused)`) or pull liquidity back (`ownerRelease`) at any time.
 - 9 Foundry tests: recognised pools only, the cap, wrong signer, replay, pause, owner-only withdrawal, release, fee earning.
+- **Invariant suite** (`contracts/test/AgentVaultInvariants.t.sol`): random sequences of agent allocations and releases, owner funding, withdrawals and pauses, an attacker forging signatures and withdrawals, and the agent aiming at an unrecognised pool (128 runs, 8,192 calls). It always holds that value is conserved (vault value plus owner withdrawals equals what was put in, less rounding dust), the agent and the attacker never receive a wei, no forged or unrecognised move ever succeeds, and the vault only ever holds recognised pools.
 
 ## The liquidity agent (`packages/scripts/src/agent.ts`, tmux `wicketgate-agent`, every 30 min)
 - Skips paused pools and pools with a contested batch.
