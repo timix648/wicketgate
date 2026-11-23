@@ -7,6 +7,8 @@ import { keccak256, toHex, type Address } from "viem";
 import { client } from "../chain";
 import { CONTRACTS, NET } from "../config";
 import poolAbi from "@wicketgate/core/abi/ExitPool.json";
+import hubAbi from "@wicketgate/core/abi/LaneHub.json";
+import { LANE_HUB } from "../lanes";
 import { getStore, type QueueItem } from "./store";
 import { isSealedExitText } from "@wicketgate/core/sealed-exit";
 
@@ -89,14 +91,13 @@ export interface ExitItem extends QueueItem {
 /** Sealed requests carry no beneficiary to rate-limit on, so limit per sender address and per rollup. */
 const EXITS_PER_MINUTE_PER_ROLLUP = 60;
 
+/** Whether any pool serves `rollupId`: the main pool's lane, or a LaneHub lane (the sealed request names which). */
 async function laneEnabled(rollupId: string): Promise<boolean> {
-  const lane = (await client.readContract({
-    address: CONTRACTS.pool,
-    abi: poolAbi,
-    functionName: "lanes",
-    args: [keccak256(toHex(rollupId))],
-  })) as readonly [bigint, bigint, number, number, bigint, boolean];
-  return Boolean(lane[5]);
+  const rollupKey = keccak256(toHex(rollupId));
+  const lane = (await client.readContract({ address: CONTRACTS.pool, abi: poolAbi, functionName: "lanes", args: [rollupKey] })) as readonly [bigint, bigint, number, number, bigint, boolean];
+  if (lane[5]) return true;
+  const hubLanes = (await client.readContract({ address: LANE_HUB.address, abi: hubAbi, functionName: "lanesOf", args: [rollupKey] }).catch(() => [])) as any[];
+  return hubLanes.length > 0;
 }
 
 export async function enqueueExit(input: Record<string, unknown>, sender = "unknown"): Promise<Result<{ id: string; duplicate: boolean }>> {

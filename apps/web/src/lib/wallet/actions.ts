@@ -7,6 +7,8 @@ import { createRdkRegistry, depositToRollupMsg, encodeQledgerTx, hexToBech32, si
 import { getQorexNative, hasCapability, QOREX_DOWNLOAD_URLS, type QorexSignAndBroadcastResult } from "@qorechain/qorex-types";
 import { hexToBytes, keccak256, toHex, type Abi, type Address, type Hex } from "viem";
 import poolAbiJson from "@wicketgate/core/abi/ExitPool.json";
+import hubAbiJson from "@wicketgate/core/abi/LaneHub.json";
+import { LANE_HUB } from "../lanes";
 import { client } from "../chain";
 import { CONTRACTS, NET } from "../config";
 import { toHexStr, type Unlocked } from "./vault";
@@ -15,8 +17,9 @@ import type { RecipientCard } from "@qorechain/qoreseal";
 import operatorCard from "../../../../../cards/security.json";
 
 const poolAbi = poolAbiJson as Abi;
-const readPool = <T>(functionName: string, args: unknown[] = []) =>
-  client.readContract({ address: CONTRACTS.pool, abi: poolAbi, functionName, args }) as Promise<T>;
+const hubAbi = hubAbiJson as Abi;
+const readPool = <T>(functionName: string, args: unknown[] = [], pool: Address = CONTRACTS.pool) =>
+  client.readContract({ address: pool, abi: poolAbi, functionName, args }) as Promise<T>;
 
 /** The chain's minimum deposit into a rollup. */
 export const MIN_DEPOSIT_UQOR = 1_000_000n;
@@ -85,12 +88,12 @@ export const relayStatus = (id: string) => api<{ status: "queued" | "posted" | "
  * checked against the fingerprint pinned in the app and the operator's signed card. The app's
  * server and queue only ever see the rollup id and ciphertext.
  */
-export async function requestExit(input: { rollupId: string; beneficiary: Address; salt: Hex; amountUqor: bigint }) {
+export async function requestExit(input: { rollupId: string; beneficiary: Address; salt: Hex; amountUqor: bigint; pool?: Address }) {
   const sealed = await sealExitRequest({
     rest: `${window.location.origin}/api/kem-rest`,
     fetch: kemFetch,
     chainId: NET.chainId,
-    pool: CONTRACTS.pool,
+    pool: input.pool ?? CONTRACTS.pool,
     card: operatorCard as RecipientCard,
     request: { rollupId: input.rollupId, beneficiary: input.beneficiary, salt: input.salt, amountUqor: input.amountUqor.toString() },
   });
@@ -121,9 +124,9 @@ export function signTransfer(keys: Unlocked, rollupId: string, nonce: bigint, am
 }
 
 /** A fresh salt and the exit address the pool will pay against for (beneficiary, salt). */
-export async function newExitAddress(beneficiary: Address): Promise<{ salt: Hex; exitAddr: Address }> {
+export async function newExitAddress(beneficiary: Address, pool: Address = CONTRACTS.pool): Promise<{ salt: Hex; exitAddr: Address }> {
   const salt = toHex(crypto.getRandomValues(new Uint8Array(32)));
-  const exitAddr = await readPool<Address>("exitAddressFor", [beneficiary, salt]);
+  const exitAddr = await readPool<Address>("exitAddressFor", [beneficiary, salt], pool);
   return { salt, exitAddr };
 }
 
@@ -167,14 +170,14 @@ export interface ExitEstimate {
 }
 
 /** Before the withdrawal is batched: the fee and the checks that do not depend on the batch. */
-export async function estimateExit(rollupId: string, amountUqor: bigint): Promise<ExitEstimate> {
+export async function estimateExit(rollupId: string, amountUqor: bigint, pool: Address = CONTRACTS.pool): Promise<ExitEstimate> {
   const rollupKey = keccak256(toHex(rollupId));
   const amountWei = amountUqor * WEI_PER_UQOR;
   const [feeBps, risk, paused, idle] = await Promise.all([
-    readPool<bigint>("feeBpsFor", [rollupKey, amountWei]),
-    readPool<readonly [number, number, bigint, bigint, bigint]>("risk", [rollupKey]),
-    readPool<boolean>("paused"),
-    readPool<bigint>("idleLiquidity"),
+    readPool<bigint>("feeBpsFor", [rollupKey, amountWei], pool),
+    readPool<readonly [number, number, bigint, bigint, bigint]>("risk", [rollupKey], pool),
+    readPool<boolean>("paused", [], pool),
+    readPool<bigint>("idleLiquidity", [], pool),
   ]);
   const tipWei = risk[4];
   const feeWei = (amountWei * feeBps) / 10_000n + tipWei;
@@ -188,11 +191,40 @@ export async function estimateExit(rollupId: string, amountUqor: bigint): Promis
 }
 
 /** After batching: exactly what the pool would pay now against that batch (pool v3.1 `quote`). */
-export async function quoteExit(rollupId: string, batchIndex: number, amountUqor: bigint) {
+export async function quoteExit(rollupId: string, batchIndex: number, amountUqor: bigint, pool: Address = CONTRACTS.pool) {
   const [status, feeWei, payoutWei, coverRoomWei] = await readPool<readonly [number, bigint, bigint, bigint]>("quote", [
     keccak256(toHex(rollupId)),
     BigInt(batchIndex),
     amountUqor,
-  ]);
+  ], pool);
   return { status: Number(status), ...QUOTE_STATUS[Number(status)], feeWei, payoutWei, coverRoomWei };
+}
+
+// ------------------------------------------------------------- lane routing
+
+export interface RouteOption {
+  pool: Address;
+  label: string;
+  estimate: ExitEstimate;
+}
+
+/**
+ * Every pool that can pay an instant exit on `rollupId` (Wicketgate's main pool and any LaneHub
+ * lane), each with its estimate, cheapest payable first. The withdrawal is signed to an exit
+ * address of the chosen pool, so the choice is made before signing.
+ */
+export async function routeExit(rollupId: string, amountUqor: bigint): Promise<{ best?: RouteOption; options: RouteOption[] }> {
+  const rollupKey = keccak256(toHex(rollupId));
+  const candidates: { pool: Address; label: string }[] = [];
+  const mainLane = await readPool<readonly unknown[]>("lanes", [rollupKey]);
+  if (mainLane[5]) candidates.push({ pool: CONTRACTS.pool, label: "Wicketgate main pool" });
+  try {
+    const lanes = (await client.readContract({ address: LANE_HUB.address, abi: hubAbi, functionName: "lanesOf", args: [rollupKey] })) as any[];
+    lanes.forEach((l, i) => candidates.push({ pool: l.pool as Address, label: `LaneHub lane ${i + 1} (${String(l.pool).slice(0, 8)}…)` }));
+  } catch {
+    // no hub reachable: the main pool alone
+  }
+  const options = await Promise.all(candidates.map(async (c) => ({ ...c, estimate: await estimateExit(rollupId, amountUqor, c.pool) })));
+  options.sort((a, b) => Number(!!a.estimate.blocker) - Number(!!b.estimate.blocker) || (a.estimate.feeWei < b.estimate.feeWei ? -1 : a.estimate.feeWei > b.estimate.feeWei ? 1 : 0));
+  return { best: options.find((o) => !o.estimate.blocker), options };
 }

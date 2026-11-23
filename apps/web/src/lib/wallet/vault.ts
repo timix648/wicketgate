@@ -24,6 +24,8 @@ export interface ExitRecord {
   createdAt: number;
   relayId?: string;
   exitId?: string;
+  /** The pool (main or LaneHub lane) whose exit address the withdrawal pays; absent means the main pool. */
+  pool?: `0x${string}`;
 }
 
 export type ActivityKind = "deposit" | "send" | "withdraw";

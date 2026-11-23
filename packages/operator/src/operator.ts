@@ -200,6 +200,19 @@ export class Operator {
     }
   }
 
+  /** Pools that can pay `rollupId`: Wicketgate's own, then every LaneHub lane for it. */
+  private async candidatePools(rollupId: string): Promise<Address[]> {
+    const out: Address[] = [this.pool];
+    try {
+      const hub = JSON.parse(readFileSync(new URL("lanehub.json", DEPLOYMENTS_FILE), "utf8")).hub as Address;
+      const lanes = (await publicClient.readContract({ address: hub, abi: artifact("LaneHub").abi, functionName: "lanesOf", args: [keccak256(toHex(rollupId))] })) as any[];
+      for (const l of lanes) out.push(l.pool as Address);
+    } catch {
+      // no hub deployed here: our pool only
+    }
+    return out;
+  }
+
   /**
    * Exit relay: users ask, through the app's queue, for their instant exit to be taken for them.
    * Anyone may call instantExit (the exit proof locks the payout to the beneficiary), so once the
@@ -220,27 +233,36 @@ export class Operator {
       fetch(`${relayUrl}/exits/done`, { method: "POST", headers, body: JSON.stringify({ id, ...body }) }).catch(() => undefined);
     // Sealed requests (QoreSeal, to our ML-KEM-1024 key) are opened here and only here: the app's
     // queue never sees the beneficiary, salt or amount. Plain items are from before the cutover.
-    const items: { id: string; beneficiary: string; salt: string; amountUqor: string; sealed: boolean }[] = [];
+    const items: { id: string; beneficiary: string; salt: string; amountUqor: string; sealed: boolean; pool: Address }[] = [];
+    // the pools that can pay this rollup: ours and every LaneHub lane; a sealed request is bound to
+    // exactly one of them (QoreSeal associated data), and only that one opens it
+    const pools = await this.candidatePools(rollupId);
     for (const it of raw) {
-      if (typeof it.sealed !== "string") { items.push({ id: it.id, beneficiary: String(it.beneficiary), salt: String(it.salt), amountUqor: String(it.amountUqor), sealed: false }); continue; }
+      if (typeof it.sealed !== "string") { items.push({ id: it.id, beneficiary: String(it.beneficiary), salt: String(it.salt), amountUqor: String(it.amountUqor), sealed: false, pool: this.pool }); continue; }
       if (!this.sealKeys) continue; // not the exit operator: leave it for the one that is
-      try {
-        const r = openExitRequest({ text: it.sealed, keys: this.sealKeys, chainId: NET.chainId, rollupId, pool: this.pool });
-        items.push({ id: it.id, beneficiary: r.beneficiary, salt: r.salt, amountUqor: r.amountUqor, sealed: true });
-      } catch (e: any) {
-        await done(it.id, { status: "failed", error: "the sealed request does not open for this operator, rollup and pool" });
-        this.log(`exit relay: ${it.id} sealed request refused (${e?.message ?? e})`);
+      let opened = false;
+      for (const pool of pools) {
+        try {
+          const r = openExitRequest({ text: it.sealed, keys: this.sealKeys, chainId: NET.chainId, rollupId, pool });
+          items.push({ id: it.id, beneficiary: r.beneficiary, salt: r.salt, amountUqor: r.amountUqor, sealed: true, pool });
+          opened = true;
+          break;
+        } catch {}
+      }
+      if (!opened) {
+        await done(it.id, { status: "failed", error: "the sealed request does not open for this operator, rollup and any pool serving it" });
+        this.log(`exit relay: ${it.id} sealed request refused (no candidate pool opens it)`);
       }
     }
     const feed = await this.rollupFeed();
     const rollupKey = keccak256(toHex(rollupId));
-    const ready: { id: string; args: unknown[]; exitAddr: string }[] = [];
+    const ready: { id: string; args: unknown[]; exitAddr: string; pool: Address }[] = [];
     for (const it of items) {
       if (!isAddress(it.beneficiary) || !/^0x[0-9a-fA-F]{64}$/.test(it.salt) || !/^[1-9][0-9]*$/.test(String(it.amountUqor))) {
         await done(it.id, { status: "failed", error: "malformed request: beneficiary, salt or amountUqor" });
         continue;
       }
-      const exitAddr = ((await publicClient.readContract({ address: this.pool, abi: POOL, functionName: "exitAddressFor", args: [it.beneficiary, it.salt] })) as string).toLowerCase();
+      const exitAddr = ((await publicClient.readContract({ address: it.pool, abi: POOL, functionName: "exitAddressFor", args: [it.beneficiary, it.salt] })) as string).toLowerCase();
       // the batch that carries this withdrawal, re-executed and matching
       let found: { b: any; w: any } | undefined;
       for (const b of feed?.batches ?? []) {
@@ -251,14 +273,14 @@ export class Operator {
       if (!found) continue; // not batched (or not re-executed) yet: keep it queued
       const facts = { stateRoot: found.b.stateRoot as Hex, withdrawalsRoot: (found.b.withdrawalsRoot === "0x" ? ZERO : found.b.withdrawalsRoot) as Hex, exitRoot: found.b.exitRoot as Hex };
       if (!verifyExitProof(found.w.exitProof, facts.exitRoot, exitLeaf(BigInt(found.w.index), exitAddr as Address, BigInt(found.w.amountUqor)))) continue;
-      const bk = (await publicClient.readContract({ address: this.pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(found.b.index)] })) as Hex;
-      const rec = (await publicClient.readContract({ address: this.pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
+      const bk = (await publicClient.readContract({ address: it.pool, abi: POOL, functionName: "batchKey", args: [rollupKey, BigInt(found.b.index)] })) as Hex;
+      const rec = (await publicClient.readContract({ address: it.pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
       const fh = keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }, { type: "bytes32" }], [facts.stateRoot, facts.withdrawalsRoot, facts.exitRoot]));
       if (rec[1] === 0n || rec[0] !== fh) continue; // not confirmed by the watchers yet
       const args = [rollupKey, BigInt(found.b.index), facts, BigInt(found.w.index), it.beneficiary, it.salt, BigInt(it.amountUqor), found.w.exitProof];
       try {
-        await publicClient.simulateContract({ address: this.pool, abi: POOL, functionName: "instantExit", args, account: me.evm as Address } as any);
-        ready.push({ id: it.id, args, exitAddr });
+        await publicClient.simulateContract({ address: it.pool, abi: POOL, functionName: "instantExit", args, account: me.evm as Address } as any);
+        ready.push({ id: it.id, args, exitAddr, pool: it.pool });
       } catch (e: any) {
         let c = e; while (c && !c.data?.errorName) c = c.cause;
         const why = c?.data?.errorName as string | undefined;
@@ -268,11 +290,11 @@ export class Operator {
     }
     if (!ready.length) return;
     await withAccountLock(me, async () => {
-      await openWindow(me, { blocks: 300, maxTxs: ready.length, maxValueUqor: await windowBudget(ready.length, 600_000n), allowedTargets: [this.pool] });
+      await openWindow(me, { blocks: 300, maxTxs: ready.length, maxValueUqor: await windowBudget(ready.length, 600_000n), allowedTargets: [...new Set(ready.map((r) => r.pool))] });
       try {
         for (const r of ready) {
           try {
-            const hash = await walletFor(me).writeContract({ address: this.pool, abi: POOL, functionName: "instantExit", args: r.args, gas: 600_000n } as any);
+            const hash = await walletFor(me).writeContract({ address: r.pool, abi: POOL, functionName: "instantExit", args: r.args, gas: 600_000n } as any);
             const rc = await publicClient.waitForTransactionReceipt({ hash });
             await done(r.id, rc.status === "success" ? { status: "paid", txHash: hash, exitAddr: r.exitAddr } : { status: "failed", txHash: hash, error: "the exit transaction reverted" });
             this.log(`exit relay: ${r.id} ${rc.status} ${hash}`);

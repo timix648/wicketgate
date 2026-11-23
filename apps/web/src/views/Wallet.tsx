@@ -12,7 +12,7 @@ import { ago, dateTime, qorFromUqor, qorFromWei } from "../lib/format";
 import {
   connectNative,
   deposit,
-  estimateExit,
+  routeExit,
   exitStatus,
   MIN_DEPOSIT_UQOR,
   newExitAddress,
@@ -428,7 +428,8 @@ function Actions(props: {
 
   const estimate = useQuery({
     queryKey: ["estimate", rollupId, uqor?.toString()],
-    queryFn: () => estimateExit(rollupId, uqor!),
+    // the same choice doWithdraw makes: the cheapest pool (main or LaneHub lane) that can pay now
+    queryFn: async () => { const r = await routeExit(rollupId, uqor!); const o = r.best ?? r.options[0]; if (!o) throw new Error("No pool serves this rollup"); return o.estimate; },
     enabled: tab === "withdraw" && !!uqor && uqor > 0n,
     staleTime: 15_000,
   });
@@ -465,12 +466,14 @@ function Actions(props: {
   const doWithdraw = async () => {
     if (!evm) throw new Error("Connect QoreX first: the instant exit pays your EVM address");
     if (!uqor || uqor <= 0n) throw new Error("Enter an amount");
-    const est = await estimateExit(rollupId, uqor);
-    if (est.blocker) throw new Error(est.blocker);
-    const { salt, exitAddr } = await newExitAddress(evm);
+    // pick the cheapest pool that can pay now: Wicketgate's main pool or any LaneHub lane
+    const route = await routeExit(rollupId, uqor);
+    if (!route.best) throw new Error(route.options[0]?.estimate.blocker ?? "No pool serves this rollup");
+    const pool = route.best.pool;
+    const { salt, exitAddr } = await newExitAddress(evm, pool);
     const nonce = nextNonce(record, feed, rollupId);
     const tx = signWithdrawal(keys, rollupId, nonce, uqor, exitAddr);
-    const exit: ExitRecord = { rollupId, salt, exitAddr, beneficiary: evm, amountUqor: uqor.toString(), nonce: nonce.toString(), createdAt: Date.now() };
+    const exit: ExitRecord = { rollupId, salt, exitAddr, beneficiary: evm, amountUqor: uqor.toString(), nonce: nonce.toString(), createdAt: Date.now(), pool };
     // Save the salt before anything leaves the browser.
     await update((r) => {
       r.exits = [...r.exits, exit];
@@ -478,13 +481,13 @@ function Actions(props: {
       return r;
     });
     const posted = await relay(rollupId, tx);
-    const queued = await requestExit({ rollupId, beneficiary: evm, salt, amountUqor: uqor });
+    const queued = await requestExit({ rollupId, beneficiary: evm, salt, amountUqor: uqor, pool });
     await update((r) => {
       r.exits = r.exits.map((x) => (x.salt === salt ? { ...x, relayId: posted.id, exitId: queued.id } : x));
       r.activity = [...(r.activity ?? []), { kind: "withdraw", rollupId, amountUqor: uqor.toString(), at: Date.now(), relayId: posted.id, exitId: queued.id, nonce: nonce.toString(), exitAddr }];
       return r;
     });
-    setMsg({ ok: true, text: <>Withdrawal signed. The exit request was sealed in this browser to the operator's ML-KEM-1024 key (from the chain's KEM registry) and queued for an instant exit to <Hash value={evm} />; the relay only holds ciphertext. Follow it below, and download a fresh backup.</> });
+    setMsg({ ok: true, text: <>Withdrawal signed. The exit request was sealed in this browser to the operator's ML-KEM-1024 key (from the chain's KEM registry) and queued for an instant exit to <Hash value={evm} /> from the <strong>{route.best.label}</strong>, the cheapest of {route.options.length} pool{route.options.length === 1 ? "" : "s"} serving this rollup (fee {qorFromWei(route.best.estimate.feeWei)} QOR); the relay only holds ciphertext. Follow it below, and download a fresh backup.</> });
   };
 
   const run = async () => {
@@ -583,7 +586,7 @@ function ExitProgress({ exit, feed }: { exit: ExitRecord; feed?: RollupFeed }) {
   const failed = exitQ.data?.status === "failed";
   const quote = useQuery({
     queryKey: ["quote", exit.rollupId, batch?.index, exit.amountUqor],
-    queryFn: () => quoteExit(exit.rollupId, batch!.index, BigInt(exit.amountUqor)),
+    queryFn: () => quoteExit(exit.rollupId, batch!.index, BigInt(exit.amountUqor), exit.pool),
     enabled: !!batch && !paid && !failed,
     refetchInterval: 20_000,
   });
