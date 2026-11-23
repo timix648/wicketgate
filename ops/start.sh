@@ -30,7 +30,7 @@ start wicketgate-feed   "$ROOT/packages/watcher"  "./publish-feed.sh" feed
 # Keep-alive: the chain deletes batch records ~7 days after they finalise, so post a tiny transfer
 # whenever the newest wicketgate-pay batch is over 48 h old; fresh receipts always exist.
 start wicketgate-pulse  "$ROOT/packages/scripts"  "npx tsx src/pulse.ts" pulse
-# Permissionless lanes opened through LaneHub by an outside provider (LANE_A/LANE_B, not our admins),
+# Permissionless lanes opened through LaneHub by a team-run test provider with its own keys (LANE_A/LANE_B, not the admin keys),
 # one per rollup in deployments/lanes/. W1 and W2 stake in every lane and attest each rollup to its
 # own lane pool from one process each (--lanes), with separate state folders.
 for w in w1 w2; do W=$(echo $w | tr a-z A-Z); mkdir -p "$HOME/.wicketgate/lane-$w"

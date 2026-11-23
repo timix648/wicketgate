@@ -21,12 +21,12 @@ export function Lanes() {
           Anyone can open an instant-exit lane for any QoreChain rollup, without asking us. <code>LaneHub</code> deploys a separate pool and
           watcher registry for each lane, accepts only the audited Wicketgate code, and requires the opener&apos;s two admin keys to be ML-DSA-87
           keys registered on chain. Each lane holds its own liquidity, so a badly run lane can only lose what was put into it. Several lanes can
-          serve one rollup and compete on fees. The hub has no owner and no admin. Read live from the chain.
+          serve one rollup and compete on fees. The hub has no owner and no admin. The lanes so far were opened by a team-run test provider with its own keys, separate from the Wicketgate admin keys; any team can open its own. Read live from the chain.
         </p>
       </div>
 
       <div className="grid stats">
-        <Stat label="Lanes" value={rows.length} sub={`${outside} run by providers other than the Wicketgate admins`} />
+        <Stat label="Lanes" value={rows.length} sub={`${outside} run by keys other than the Wicketgate admin keys`} />
         <Stat label="Rollups served" value={rollups} />
         <Stat label="Lane liquidity" value={qor(liquidity)} unit="QOR" sub="held by the lanes, separate from the main pool" />
         <Stat label="Instant exits paid from lanes" value={exits} />
@@ -63,7 +63,7 @@ export function Lanes() {
                     <td><Hash value={r.pool} /></td>
                     <td>
                       <Hash value={r.adminA} /> + <Hash value={r.adminB} />{" "}
-                      {r.isWicketgateAdmin ? <Pill tone="muted">Wicketgate admins</Pill> : <Pill tone="info">outside provider</Pill>}
+                      {r.isWicketgateAdmin ? <Pill tone="muted">Wicketgate admins</Pill> : <Pill tone="info" title="Separate ML-DSA-87 keys, not the Wicketgate admin keys. The lanes opened so far are a team-run test provider.">separate provider keys</Pill>}
                     </td>
                     <td>{qor(r.liquidityWei)} QOR</td>
                     <td>{(r.feeBps / 100).toFixed(2)}%</td>
