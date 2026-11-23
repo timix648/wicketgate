@@ -26,7 +26,7 @@ import { encodeAbiParameters, keccak256, toHex, type Address, type Hex } from "v
 import type { UnifiedAccount } from "@qorechain/sdk";
 import { NET } from "@wicketgate/core/env";
 import { sendNative, explorerTx } from "@wicketgate/core/chain";
-import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
+import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget, withAccountLock } from "@wicketgate/core/evm";
 import { buildExitTree, ZERO_ROOT } from "@wicketgate/core/exit-tree";
 import { TOOLS as MCP_TOOLS, toolContext } from "@qorechain/mcp";
 import { restGet } from "@wicketgate/core/chain";
@@ -48,6 +48,8 @@ export interface WatcherConfig {
   mode: Mode;
   me?: UnifiedAccount; // required for attest and challenge
   pool?: Address;
+  /** Per-rollup pools (LaneHub lanes): rollupId -> pool. Overrides `pool` for those rollups. */
+  pools?: Record<string, Address>;
   feedDir: string;
   log?: (msg: string) => void;
   /**
@@ -121,7 +123,7 @@ export class Watcher {
 
   constructor(private cfg: WatcherConfig) {
     this.log = cfg.log ?? ((m) => console.log(`${new Date().toISOString()} ${m}`));
-    if (cfg.mode !== "observe" && (!cfg.me || !cfg.pool)) throw new Error(`mode ${cfg.mode} needs a watcher account and the pool address`);
+    if (cfg.mode !== "observe" && (!cfg.me || !(cfg.pool || cfg.pools))) throw new Error(`mode ${cfg.mode} needs a watcher account and the pool address`);
     mkdirSync(cfg.feedDir, { recursive: true });
   }
 
@@ -273,7 +275,7 @@ export class Watcher {
       (v as any).submission = all[all.length - 1] ?? null;
       if (all.length > 1) (v as any).replacedSubmissions = all.slice(0, -1);
     }
-    const pool = this.cfg.pool ? await this.poolState(rollupKey, verdicts.length, new Map(verdicts.map((v) => [v.index, v.status]))) : null;
+    const pool = this.poolOf(rollupKey) ? await this.poolState(rollupKey, verdicts.length, new Map(verdicts.map((v) => [v.index, v.status]))) : null;
     if (pool) for (const v of verdicts) (v as any).pool = pool.batches[v.index] ?? null;
     const feed = {
       version: 1,
@@ -320,8 +322,14 @@ export class Watcher {
   }
 
   /** The pool's view of each batch, so readers of the feed need no contract calls. */
+  /** The pool this watcher attests to for a rollup: its LaneHub lane if configured, else the main pool. */
+  private poolOf(rollupKey: Hex): Address | undefined {
+    for (const [id, p] of Object.entries(this.cfg.pools ?? {})) if (keccak256(toHex(id)) === rollupKey) return p;
+    return this.cfg.pool;
+  }
+
   private async poolState(rollupKey: Hex, n: number, verdictsStatus: Map<number, string> = new Map()) {
-    const pool = this.cfg.pool!;
+    const pool = this.poolOf(rollupKey)!;
     const l = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "lanes", args: [rollupKey] })) as any[];
     const lane = { windowSecs: Number(l[0]), graceSecs: Number(l[1]), feeBps: Number(l[2]), quorum: Number(l[3]), lockPerWatcherQor: Number(l[4]) / 1e18, enabled: Boolean(l[5]) };
     const batches: Record<number, unknown> = {};
@@ -355,7 +363,8 @@ export class Watcher {
     verdicts: BatchVerdict[],
     batchCount: number,
   ) {
-    const me = this.cfg.me!, pool = this.cfg.pool!;
+    const me = this.cfg.me!, pool = this.poolOf(rollupKey);
+    if (!pool) return;
     const lane = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "lanes", args: [rollupKey] })) as any[];
     if (!lane[5]) return; // no lane for this rollup
     // batches confirmed with my stake that can take no more advances: release the stake
@@ -391,43 +400,46 @@ export class Watcher {
     const txs = pending.length + toRelease.length;
     if (txs === 0) return;
 
-    await openWindow(me, { blocks: 600, maxTxs: txs, maxValueUqor: await windowBudget(txs, 2_500_000n), allowedTargets: [pool] });
-    try {
-      const wallet = walletFor(me);
-      for (const bk of toRelease) {
-        this.sent.add(`r:${bk}`);
-        // another watcher of the same batch may release it first; that is fine
-        const again = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
-        if (again[3]) continue;
-        try {
-          const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "release", args: [bk], gas: 400_000n } as any);
+    // one key may attest to several pools from several processes: one window at a time per key
+    await withAccountLock(me, async () => {
+      await openWindow(me, { blocks: 600, maxTxs: txs, maxValueUqor: await windowBudget(txs, 2_500_000n), allowedTargets: [pool] });
+      try {
+        const wallet = walletFor(me);
+        for (const bk of toRelease) {
+          this.sent.add(`r:${bk}`);
+          // another watcher of the same batch may release it first; that is fine
+          const again = (await publicClient.readContract({ address: pool, abi: POOL, functionName: "getBatch", args: [bk] })) as any[];
+          if (again[3]) continue;
+          try {
+            const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "release", args: [bk], gas: 400_000n } as any);
+            const rc = await publicClient.waitForTransactionReceipt({ hash });
+            this.log(`[${rollupId}] released stake on ${bk.slice(0, 10)}: ${rc.status} ${hash}`);
+          } catch (e: any) {
+            this.log(`[${rollupId}] release of ${bk.slice(0, 10)} skipped: ${e?.shortMessage ?? e?.message ?? e}`);
+          }
+        }
+        for (const t of pending) {
+          const msg = (await publicClient.readContract({
+            address: pool, abi: POOL, functionName: "attestationMessage", args: [rollupKey, BigInt(t.index), t.facts],
+          })) as Hex;
+          const sig = pqSign(me, msg);
+          // Fixed gas: an estimate made before another watcher's vote lands misses the costlier
+          // confirming path that this vote may then trigger. The chain bills at least half the
+          // limit, so the limit is kept close to need: on pool v2.1 a vote uses about 340,000 gas
+          // and a confirming vote about 426,000 (measured 18 Nov); 560,000 leaves 31% headroom.
+          const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "attest", args: [rollupKey, BigInt(t.index), t.facts, sig], gas: 560_000n } as any);
           const rc = await publicClient.waitForTransactionReceipt({ hash });
-          this.log(`[${rollupId}] released stake on ${bk.slice(0, 10)}: ${rc.status} ${hash}`);
-        } catch (e: any) {
-          this.log(`[${rollupId}] release of ${bk.slice(0, 10)} skipped: ${e?.shortMessage ?? e?.message ?? e}`);
+          const v = verdicts.find((x) => x.index === t.index)!;
+          v.attestationTx = rc.status === "success" ? hash : `reverted:${hash}`;
+          if (rc.status === "success") {
+            this.sent.add(`a:${keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint64" }], [rollupKey, BigInt(t.index)]))}`);
+          }
+          this.log(`[${rollupId}] attested batch ${t.index}: ${rc.status} ${hash} (gas ${rc.gasUsed})`);
         }
+      } finally {
+        await closeWindow(me);
       }
-      for (const t of pending) {
-        const msg = (await publicClient.readContract({
-          address: pool, abi: POOL, functionName: "attestationMessage", args: [rollupKey, BigInt(t.index), t.facts],
-        })) as Hex;
-        const sig = pqSign(me, msg);
-        // Fixed gas: an estimate made before another watcher's vote lands misses the costlier
-        // confirming path that this vote may then trigger. The chain bills at least half the
-        // limit, so the limit is kept close to need: on pool v2.1 a vote uses about 340,000 gas
-        // and a confirming vote about 426,000 (measured 18 Nov); 560,000 leaves 31% headroom.
-        const hash = await wallet.writeContract({ address: pool, abi: POOL, functionName: "attest", args: [rollupKey, BigInt(t.index), t.facts, sig], gas: 560_000n } as any);
-        const rc = await publicClient.waitForTransactionReceipt({ hash });
-        const v = verdicts.find((x) => x.index === t.index)!;
-        v.attestationTx = rc.status === "success" ? hash : `reverted:${hash}`;
-        if (rc.status === "success") {
-          this.sent.add(`a:${keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint64" }], [rollupKey, BigInt(t.index)]))}`);
-        }
-        this.log(`[${rollupId}] attested batch ${t.index}: ${rc.status} ${hash} (gas ${rc.gasUsed})`);
-      }
-    } finally {
-      await closeWindow(me);
-    }
+    });
   }
 
   private async challenge(rollupId: string, index: number, parent: QledgerLedger, accFrom: Uint8Array | string, entries: QledgerEntry[], b: any) {

@@ -16,6 +16,17 @@ An outside provider (two fresh accounts, `LANE_A` `0x0764…5640` and `LANE_B` `
 
 W1 and W2 staked into the lane's own registry and attested batch 22 to its pool (`0x544a4c51…`, `0xc34cd396…`). A 1 QOR withdrawal to a lane exit address (`BD64DD0A…A04D`) was then paid instantly from the lane (`0xe14f2764c71dacbe79dee4794aeb4da4c5abbcdb2fc50c0e6cb46a3fc6ec8f15`), before the batch finalised. The lane pool went from 10 to 9.003 QOR; Wicketgate's own pool (400.17 QOR) was not touched.
 
+## Lanes for other teams' rollups (23 Nov 2026)
+The same outside provider opened lanes for three other Protocol Builders teams' rollups, each funded with 10 QOR, with W1 and W2 staked in each lane's registry. One watcher process per key attests every rollup to its own lane's pool (`--lanes deployments/lanes`), and a per-account lock stops two processes on one key from clashing over EVM windows.
+
+| Rollup | Lane pool | Opened in |
+| --- | --- | --- |
+| `skyproof-1` | `0x4Ac1b3323cCC1180f2FE8BA85EAF6CB478E245EF` | `0x203a335b35…` |
+| `ledgerpump` | `0x67c90D05a08a00EA3C3569DA685D417b3A0BC94D` | `0x60f9584c00…` |
+| `vigil-pay-1` | `0x17FD413E80Cc475a0eAD49a78eAF665c53533D66` | `0x0c3634e91f…` |
+
+All lanes are listed live on the web app's **/lanes** page, read from the hub (nothing is hard-coded but the hub's address).
+
 ## Open a lane yourself
 ```bash
 cd packages/scripts
@@ -28,4 +39,4 @@ Watchers join the lane with `WICKETGATE_DEPLOYMENTS=deployments/lanes/<rollup>.j
 ## Limits
 - The lane's admins set its fee, quorum and limits. Liquidity providers and watchers choose which lanes to back; the hub does not vet providers.
 - The hub cannot check from the EVM that a rollup id exists on chain. A lane for a rollup that does not exist simply never confirms a batch.
-- A watcher running for several lanes from one key can collide on EVM nonces (seen once as "tx already exists in cache"; it retries the next round).
+- One key serving several pools from several processes is serialised by a per-account lock file (`withAccountLock` in `packages/core/src/evm.ts`); before that fix, two processes clashed once over an EVM window.

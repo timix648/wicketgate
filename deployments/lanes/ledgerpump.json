@@ -1,0 +1,32 @@
+{
+  "network": "qorechain-diana",
+  "evmChainId": 9800,
+  "version": "3.1-lane",
+  "openedAt": "2026-11-23T20:21:03.608Z",
+  "deployBlock": 10628778,
+  "hub": "0xca544af3304a19874299a02703c5c67b4b5fff9a",
+  "openTx": "0x60f9584c00e9c6718545ce5244bd395ff4291e760b6e5879b090804132f3a638",
+  "provider": {
+    "adminA": "0x0764d24FC49eA090Cb2065613a8F5d6E8C265640",
+    "adminB": "0x55f9F01f00AE56078E9B3F0F27F222C89CfE7Ef8"
+  },
+  "registry": "0xe824772b4A5177258E6EFeed2D92de76AA3198C8",
+  "pool": "0x67c90D05a08a00EA3C3569DA685D417b3A0BC94D",
+  "lanes": {
+    "ledgerpump": {
+      "windowSecs": 3600,
+      "graceSecs": 1800,
+      "feeBps": 30,
+      "quorum": 2,
+      "lockPerWatcher": "4000000000000000000",
+      "enabled": true,
+      "risk": {
+        "kinkBps": 5000,
+        "maxFeeBps": 300,
+        "maxExitWei": "4000000000000000000",
+        "maxOutstandingWei": "8000000000000000000",
+        "keeperTipWei": "0"
+      }
+    }
+  }
+}

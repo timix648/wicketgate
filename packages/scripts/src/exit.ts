@@ -54,7 +54,10 @@ async function main() {
       console.log(`batch ${batch.index}: the pool would refuse this exit (${e?.shortMessage ?? e?.message}); not sending`);
       continue;
     }
-    console.log(`batch ${batch.index} confirmed by ${b[7].length} watchers with ${Number(b[5]) / 1e18} QOR at stake; exiting ${Number(w.amountUqor) / 1e6} QOR`);
+    // stake is locked lazily, as exits are taken (ExitPool._lockCover), so show what can be locked
+    const lane = (await publicClient.readContract({ address: pool, abi, functionName: "lanes", args: [rollupKey] })) as readonly any[];
+    const lockable = BigInt(b[7].length) * BigInt(lane[4]);
+    console.log(`batch ${batch.index} confirmed by ${b[7].length} watchers; up to ${Number(lockable) / 1e18} QOR of their stake can be locked behind it (${Number(b[5]) / 1e18} locked so far); exiting ${Number(w.amountUqor) / 1e6} QOR`);
     await openWindow(A, { blocks: 300, maxTxs: 1, maxValueUqor: await windowBudget(1, 800_000n), allowedTargets: [pool] });
     try {
       const before = await publicClient.getBalance({ address: A.evm as Address });

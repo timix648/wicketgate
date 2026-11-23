@@ -30,7 +30,7 @@ import { keccak256, toHex, isAddress, encodeAbiParameters, type Address, type He
 import type { UnifiedAccount } from "@qorechain/sdk";
 import { NET, DEPLOYMENTS_FILE } from "@wicketgate/core/env";
 import { sendNative, explorerTx, restGet } from "@wicketgate/core/chain";
-import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
+import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget, withAccountLock } from "@wicketgate/core/evm";
 import { recipientAddress, exitLeaf, verifyExitProof } from "@wicketgate/core/exit-tree";
 import { politeFetch } from "@wicketgate/core/polite";
 import { robustRest, fetchQledgerEntriesPruneSafe } from "@wicketgate/core/robust-rest";
@@ -267,21 +267,23 @@ export class Operator {
       }
     }
     if (!ready.length) return;
-    await openWindow(me, { blocks: 300, maxTxs: ready.length, maxValueUqor: await windowBudget(ready.length, 600_000n), allowedTargets: [this.pool] });
-    try {
-      for (const r of ready) {
-        try {
-          const hash = await walletFor(me).writeContract({ address: this.pool, abi: POOL, functionName: "instantExit", args: r.args, gas: 600_000n } as any);
-          const rc = await publicClient.waitForTransactionReceipt({ hash });
-          await done(r.id, rc.status === "success" ? { status: "paid", txHash: hash, exitAddr: r.exitAddr } : { status: "failed", txHash: hash, error: "the exit transaction reverted" });
-          this.log(`exit relay: ${r.id} ${rc.status} ${hash}`);
-        } catch (e: any) {
-          await done(r.id, { status: "failed", error: String(e?.shortMessage ?? e?.message ?? e).slice(0, 200) });
+    await withAccountLock(me, async () => {
+      await openWindow(me, { blocks: 300, maxTxs: ready.length, maxValueUqor: await windowBudget(ready.length, 600_000n), allowedTargets: [this.pool] });
+      try {
+        for (const r of ready) {
+          try {
+            const hash = await walletFor(me).writeContract({ address: this.pool, abi: POOL, functionName: "instantExit", args: r.args, gas: 600_000n } as any);
+            const rc = await publicClient.waitForTransactionReceipt({ hash });
+            await done(r.id, rc.status === "success" ? { status: "paid", txHash: hash, exitAddr: r.exitAddr } : { status: "failed", txHash: hash, error: "the exit transaction reverted" });
+            this.log(`exit relay: ${r.id} ${rc.status} ${hash}`);
+          } catch (e: any) {
+            await done(r.id, { status: "failed", error: String(e?.shortMessage ?? e?.message ?? e).slice(0, 200) });
+          }
         }
+      } finally {
+        await closeWindow(me);
       }
-    } finally {
-      await closeWindow(me);
-    }
+    });
   }
 
   /** This rollup's watcher feed: the local one when this machine runs a watcher, else the public one. */
@@ -319,17 +321,19 @@ export class Operator {
       }
     }
     if (toSettle.length === 0) return;
-    await openWindow(me, { blocks: 300, maxTxs: toSettle.length, maxValueUqor: await windowBudget(toSettle.length, 1_000_000n), allowedTargets: [this.pool] });
-    try {
-      for (const id of toSettle) {
-        const hash = await walletFor(me).writeContract({ address: this.pool, abi: POOL, functionName: "settle", args: [id] } as any);
-        const rc = await publicClient.waitForTransactionReceipt({ hash });
-        this.settled.add(id);
-        this.log(`settled advance ${id.slice(0, 10)}: ${rc.status} ${hash}`);
+    await withAccountLock(me, async () => {
+      await openWindow(me, { blocks: 300, maxTxs: toSettle.length, maxValueUqor: await windowBudget(toSettle.length, 1_000_000n), allowedTargets: [this.pool] });
+      try {
+        for (const id of toSettle) {
+          const hash = await walletFor(me).writeContract({ address: this.pool, abi: POOL, functionName: "settle", args: [id] } as any);
+          const rc = await publicClient.waitForTransactionReceipt({ hash });
+          this.settled.add(id);
+          this.log(`settled advance ${id.slice(0, 10)}: ${rc.status} ${hash}`);
+        }
+      } finally {
+        await closeWindow(me);
       }
-    } finally {
-      await closeWindow(me);
-    }
+    });
   }
 }
 

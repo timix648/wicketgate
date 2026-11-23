@@ -69,3 +69,38 @@ export async function windowBudget(txs: number, gas: bigint, valueUqor = 0n): Pr
   const feeWei = (price * 3n * gas * BigInt(txs)) / 2n;
   return valueUqor + feeWei / 1_000_000_000_000n + 1n;
 }
+
+/**
+ * Run `fn` holding an exclusive, cross-process lock for `acc`. One key can serve several pools
+ * (Wicketgate's own pool and LaneHub lanes), each from its own process; an EVM window belongs to
+ * the account, so two processes opening, using and closing windows at once would replace or close
+ * each other's window and clash on nonces. The lock is a file per account; a lock older than
+ * `staleMs` is taken over (its holder died).
+ */
+export async function withAccountLock<T>(acc: UnifiedAccount, fn: () => Promise<T>, staleMs = 15 * 60_000): Promise<T> {
+  const { mkdirSync, openSync, closeSync, statSync, unlinkSync, writeSync } = await import("node:fs");
+  const dir = "/tmp/wicketgate-locks";
+  mkdirSync(dir, { recursive: true });
+  const path = `${dir}/${acc.evm.toLowerCase()}.lock`;
+  for (;;) {
+    try {
+      const fd = openSync(path, "wx");
+      writeSync(fd, `${process.pid} ${new Date().toISOString()}\n`);
+      closeSync(fd);
+      break;
+    } catch (e: any) {
+      if (e?.code !== "EEXIST") throw e;
+      try {
+        if (Date.now() - statSync(path).mtimeMs > staleMs) unlinkSync(path);
+      } catch {}
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    try {
+      unlinkSync(path);
+    } catch {}
+  }
+}
