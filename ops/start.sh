@@ -12,7 +12,7 @@ ROLLUPS="${WICKETGATE_ROLLUPS:-all}"
 # W1 and the wicketgate-pay operator send Telegram alerts (blind watcher, wrong batch); the others
 # stay quiet so each event arrives once. See packages/core/src/alert.ts.
 start() { # name, workdir, command, log
-  if tmux has-session -t "$1" 2>/dev/null; then echo "running  $1"; return; fi
+  if tmux has-session -t "=$1" 2>/dev/null; then echo "running  $1"; return; fi
   tmux new-session -d -s "$1" "cd '$2' && $3 2>&1 | tee -a '$LOGS/$4.log'"
   echo "started  $1"
 }
@@ -36,3 +36,7 @@ start wicketgate-pulse  "$ROOT/packages/scripts"  "npx tsx src/pulse.ts" pulse
 for w in w1 w2; do W=$(echo $w | tr a-z A-Z); mkdir -p "$HOME/.wicketgate/lane-$w"
   start wicketgate-lane-$w "$ROOT/packages/watcher" "WICKETGATE_STATE=$HOME/.wicketgate/lane-$w npx tsx src/cli.ts --mode attest --as $W --lanes $ROOT/deployments/lanes --interval 20 --feed $HOME/.wicketgate/lane-$w/feed" lane-$w
 done
+# The main pool's keeper (settles, writes off, releases; paid 10% of each advance's fee).
+start wicketgate-keeper "$ROOT/packages/scripts" "npx tsx src/keeper.ts --as KEEPER --interval 60" keeper
+# Settle every lane's early payouts once their batches finalise (one keeper pass per lane, every 10 min).
+start wicketgate-keeper-lanes "$ROOT" "./ops/keeper-lanes.sh" keeper-lanes

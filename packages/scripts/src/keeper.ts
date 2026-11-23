@@ -17,7 +17,7 @@ import { sendNative, explorerTx } from "@wicketgate/core/chain";
 import { politeFetch } from "@wicketgate/core/polite";
 import { parseEventLogs, type Address, type Hex } from "viem";
 import { account, DEPLOYMENTS_FILE } from "@wicketgate/core/env";
-import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget } from "@wicketgate/core/evm";
+import { artifact, closeWindow, openWindow, publicClient, walletFor, windowBudget, withAccountLock } from "@wicketgate/core/evm";
 
 const args = process.argv.slice(2);
 const arg = (k: string, d?: string) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
@@ -134,23 +134,26 @@ async function round(me: Awaited<ReturnType<typeof account>>) {
   const claim = credit >= CLAIM_ABOVE && credit > 0n;
   if (!work.length && !claim) return log(`${advanceIds.size} advances and ${batches.size} batches watched; nothing due; credit ${Number(credit) / 1e18} QOR`);
   const n = work.length + (claim ? 1 : 0);
-  await openWindow(me, { blocks: 300, maxTxs: n, maxValueUqor: await windowBudget(n, 700_000n), allowedTargets: [POOL] });
-  try {
-    const wallet = walletFor(me);
-    for (const w of work) {
-      const hash = await wallet.writeContract({ address: POOL, abi: P, functionName: w.fn, args: w.args, gas: 700_000n } as any);
-      const rc = await publicClient.waitForTransactionReceipt({ hash });
-      log(`${w.fn} (${w.why}): ${rc.status} ${hash}`);
+  // KEEPER may serve several pools (the main pool and LaneHub lanes): one EVM window at a time
+  await withAccountLock(me, async () => {
+    await openWindow(me, { blocks: 300, maxTxs: n, maxValueUqor: await windowBudget(n, 700_000n), allowedTargets: [POOL] });
+    try {
+      const wallet = walletFor(me);
+      for (const w of work) {
+        const hash = await wallet.writeContract({ address: POOL, abi: P, functionName: w.fn, args: w.args, gas: 700_000n } as any);
+        const rc = await publicClient.waitForTransactionReceipt({ hash });
+        log(`${w.fn} (${w.why}): ${rc.status} ${hash}`);
+      }
+      if (claim) {
+        const after = (await publicClient.readContract({ address: POOL, abi: P, functionName: "watcherCredit", args: [me.evm] })) as bigint;
+        const hash = await wallet.writeContract({ address: POOL, abi: P, functionName: "claimCredit", args: [], gas: 120_000n } as any);
+        const rc = await publicClient.waitForTransactionReceipt({ hash });
+        log(`claimed ${Number(after) / 1e18} QOR of keeper credit: ${rc.status} ${hash}`);
+      }
+    } finally {
+      await closeWindow(me);
     }
-    if (claim) {
-      const after = (await publicClient.readContract({ address: POOL, abi: P, functionName: "watcherCredit", args: [me.evm] })) as bigint;
-      const hash = await wallet.writeContract({ address: POOL, abi: P, functionName: "claimCredit", args: [], gas: 120_000n } as any);
-      const rc = await publicClient.waitForTransactionReceipt({ hash });
-      log(`claimed ${Number(after) / 1e18} QOR of keeper credit: ${rc.status} ${hash}`);
-    }
-  } finally {
-    await closeWindow(me);
-  }
+  });
 }
 
 async function main() {
