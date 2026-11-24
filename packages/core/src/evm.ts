@@ -1,7 +1,7 @@
 // EVM-lane helpers: forge artifacts, viem clients for a unified account, EVM windows,
 // and ML-DSA-87 admin signatures.
 import { readFileSync } from "node:fs";
-import { createPublicClient, createWalletClient, http, type Abi, type Hex, defineChain } from "viem";
+import { createPublicClient, createWalletClient, http, type Abi, type Address, type Hex, defineChain } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mldsa87 } from "@qorechain/pqc";
 import { openEvmWindowMsg, closeEvmWindowMsg, fetchEvmWindow, type UnifiedAccount } from "@qorechain/sdk";
@@ -103,4 +103,19 @@ export async function withAccountLock<T>(acc: UnifiedAccount, fn: () => Promise<
       unlinkSync(path);
     } catch {}
   }
+}
+
+/**
+ * getContractEvents over any block range. The public EVM RPC refuses a log query spanning more
+ * than 10,000 blocks, so a query from a contract's deploy block works on deploy day and fails once
+ * the chain has moved on. Always read events through this.
+ */
+export async function getEventsChunked(params: { address: Address; abi: Abi; eventName: string; fromBlock: bigint; toBlock?: bigint }, step = 10_000n): Promise<any[]> {
+  const to = params.toBlock ?? (await publicClient.getBlockNumber());
+  const out: any[] = [];
+  for (let f = params.fromBlock; f <= to; f += step) {
+    const t = f + step - 1n < to ? f + step - 1n : to;
+    out.push(...(await publicClient.getContractEvents({ ...params, fromBlock: f, toBlock: t } as any)));
+  }
+  return out;
 }

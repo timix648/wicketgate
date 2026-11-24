@@ -12,7 +12,7 @@ import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { keccak256, toHex, type Address, type Hex } from "viem";
 import { account, STATE_DIR } from "@wicketgate/core/env";
-import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget, withAccountLock } from "@wicketgate/core/evm";
+import { artifact, closeWindow, getEventsChunked, openWindow, pqSign, publicClient, walletFor, windowBudget, withAccountLock } from "@wicketgate/core/evm";
 
 const ROOT = new URL("../../../", import.meta.url);
 const V = JSON.parse(readFileSync(new URL("deployments/agentvault.json", ROOT), "utf8"));
@@ -37,7 +37,7 @@ async function logs(address: Address, eventName: string, from: bigint, to: bigin
 
 async function candidates() {
   const list: { pool: Address; label: string; rollupId?: string }[] = [{ pool: V.mainPool, label: "Wicketgate main pool" }];
-  const opened = await publicClient.getContractEvents({ address: HUB.hub, abi: H, eventName: "LaneOpened", fromBlock: BigInt(HUB.deployBlock) } as any);
+  const opened = await getEventsChunked({ address: HUB.hub, abi: H, eventName: "LaneOpened", fromBlock: BigInt(HUB.deployBlock) });
   for (const e of opened as any[]) list.push({ pool: e.args.pool, label: `${e.args.rollupId} lane`, rollupId: e.args.rollupId });
   return list;
 }

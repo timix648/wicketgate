@@ -9,7 +9,7 @@ import { createServer } from "@qorechain/mcp";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { keccak256, toHex, type Address } from "viem";
-import { artifact, publicClient } from "@wicketgate/core/evm";
+import { artifact, getEventsChunked, publicClient } from "@wicketgate/core/evm";
 
 const ROOT = new URL("../../../", import.meta.url);
 const dep = (f: string) => JSON.parse(readFileSync(new URL(`deployments/${f}`, ROOT), "utf8"));
@@ -22,7 +22,7 @@ const read = <T>(address: Address, functionName: string, args: unknown[] = [], a
 
 async function pools() {
   const out: { pool: Address; label: string; rollupId?: string }[] = [{ pool: MAIN.pool, label: "Wicketgate main pool (all its lanes)" }];
-  const ev = await publicClient.getContractEvents({ address: HUB.hub, abi: H, eventName: "LaneOpened", fromBlock: BigInt(HUB.deployBlock) } as any);
+  const ev = await getEventsChunked({ address: HUB.hub, abi: H, eventName: "LaneOpened", fromBlock: BigInt(HUB.deployBlock) });
   for (const e of ev as any[]) out.push({ pool: e.args.pool, label: `LaneHub lane for ${e.args.rollupId}`, rollupId: e.args.rollupId });
   return out;
 }
@@ -37,7 +37,7 @@ server.registerTool("wicketgate_list_lanes", {
   const rows = [];
   for (const p of await pools()) {
     const [assets, idle, paused, exits] = await Promise.all([read<bigint>(p.pool, "totalAssets"), read<bigint>(p.pool, "idleLiquidity"), read<boolean>(p.pool, "paused"),
-      publicClient.getContractEvents({ address: p.pool, abi: P, eventName: "InstantExit", fromBlock: BigInt(p.rollupId ? HUB.deployBlock : MAIN.deployBlock) } as any).catch(() => [])]);
+      getEventsChunked({ address: p.pool, abi: P, eventName: "InstantExit", fromBlock: BigInt(p.rollupId ? HUB.deployBlock : MAIN.deployBlock) })]);
     const fees = (exits as any[]).reduce((t, e) => t + BigInt(e.args.feeWei ?? 0n), 0n);
     rows.push({ ...p, liquidityQor: qor(assets), idleQor: qor(idle), paused, exitsPaid: (exits as any[]).length, feesQor: qor(fees), lpEarnedQor: qor((fees * 6000n) / 10000n) });
   }
