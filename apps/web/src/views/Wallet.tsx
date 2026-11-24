@@ -111,6 +111,7 @@ export function Wallet() {
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Use</div>
         <h1>Wallet</h1>
         <p>
           Your QoreX wallet signs one thing: the deposit into a rollup. Transfers and withdrawals inside the rollup are signed by a rollup key made

@@ -83,6 +83,7 @@ export function Receipt() {
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Proof</div>
         <h1>Receipt checker</h1>
         <p><strong>A receipt is a claim, not evidence.</strong> A settlement receipt says a rollup batch was anchored on QoreChain with a post-quantum signature. Checking it means re-reading every field from the chain and verifying the ML-DSA-87 signature; nothing in the file is trusted.</p>
       </div>

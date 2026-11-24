@@ -35,7 +35,7 @@ function Txs({ text }: { text: string }) {
 }
 
 function Crumb({ children }: { children: ReactNode }) {
-  return <div className="crumbs" style={{ paddingTop: 24 }}><Link href="/proof">Proof</Link> / {children}</div>;
+  return <div className="crumbs"><Link href="/proof">Proof</Link> / {children}</div>;
 }
 
 // ------------------------------------------------------------- hub
@@ -50,6 +50,7 @@ export function ProofIndex() {
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Proof</div>
         <h1>Proof</h1>
         <p>Tests run on the live testnet contracts, each recorded with its transactions by the script that ran it. Nothing here is a mock-up.</p>
       </div>
@@ -98,7 +99,7 @@ export function QDay() {
   return (
     <>
       <Crumb>Q-Day</Crumb>
-      <div className="page-head" style={{ paddingTop: 8 }}>
+      <div className="page-head under-crumbs">
         <h1>Q-Day, simulated on chain</h1>
         <p>
           On Q-Day a quantum computer turns any secp256k1 public key into its private key. Watcher W4 was given a deliberately weak 40-bit classical
@@ -171,7 +172,7 @@ export function RedTeam() {
   return (
     <>
       <Crumb>Red team</Crumb>
-      <div className="page-head" style={{ paddingTop: 8 }}>
+      <div className="page-head under-crumbs">
         <h1>{r.passed} of {r.total} attacks refused</h1>
         <p>
           Each attack is replayed against the live pool&apos;s real state at the block of a real exit, attestation or lane change, and must be refused by
@@ -257,7 +258,7 @@ export function Stress() {
   return (
     <>
       <Crumb>Stress run</Crumb>
-      <div className="page-head" style={{ paddingTop: 8 }}>
+      <div className="page-head under-crumbs">
         <h1>{s.exits} exits, {s.qorPaid} QOR in {s.secondsForAllExits} seconds</h1>
         <p>
           All from one batch of <Link href={`/r/${s.rollupId}/${s.batchIndex}`} className="mono">{s.rollupId}</Link> #{s.batchIndex}. The pool may never
@@ -326,7 +327,7 @@ export function Fraud() {
   return (
     <>
       <Crumb>Fraud caught</Crumb>
-      <div className="page-head" style={{ paddingTop: 8 }}>
+      <div className="page-head under-crumbs">
         <h1>Two lying batches, both caught in seconds</h1>
         <p>
           An optimistic rollup is only safe if someone re-executes every batch and challenges a wrong one inside the window. We submitted two wrong

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { batchState, type Batch, type RollupFeed } from "../lib/feed";
-import { useAllRollups, useEvents, useLanes, useMetrics, usePool } from "../lib/queries";
+import { useAllRollups, useEvents, useMetrics, usePool } from "../lib/queries";
 import { CONTRACTS, METRICS_SOURCE, repoFile } from "../lib/config";
 import { ago, dateTime, num, qorFromUqor, qorFromWei } from "../lib/format";
 import { BatchPill, ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
-import { BatchStrip, StripLegend } from "../components/BatchStrip";
+import { StripLegend } from "../components/BatchStrip";
+import { RollupTable } from "../components/RollupTable";
 import { Activity } from "../components/Activity";
 
 export function Overview() {
@@ -223,50 +224,6 @@ function LeadFinding() {
         <a href={LEDGERPUMP.log} target="_blank" rel="noreferrer">LedgerPump&apos;s own log ↗</a>
         <a href={repoFile("PROOF.md")} target="_blank" rel="noreferrer">PROOF.md ↗</a>
       </div>
-    </div>
-  );
-}
-
-// ------------------------------------------------------------- rollups, as a dense table
-
-function RollupTable({ rollups }: { rollups: RollupFeed[] }) {
-  const router = useRouter();
-  const { laneOf, isLoading: lanesLoading } = useLanes();
-  const rows = [...rollups].sort((a, b) => b.batches.length - a.batches.length);
-  return (
-    <div className="table-wrap">
-      <table className="rollup-table">
-        <thead>
-          <tr>
-            <th>Rollup</th>
-            <th>Batches, oldest to newest</th>
-            <th className="num">Verified</th>
-            <th className="num">ML-DSA signed</th>
-            <th>Instant exits</th>
-            <th>Latest batch</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => {
-            const bad = r.batches.filter((b) => b.verdict !== "match").length;
-            const pq = r.batches.filter((b) => b.submission?.pqVerified).length;
-            const last = r.batches.at(-1);
-            const to = `/r/${r.rollupId}`;
-            return (
-              <tr key={r.rollupId} className="link" onClick={() => router.push(to)}>
-                <td className="mono"><Link href={to} onClick={(e) => e.stopPropagation()}>{r.rollupId}</Link></td>
-                <td><BatchStrip rollup={r} linked={false} max={36} /></td>
-                <td className="num">
-                  {bad ? <span style={{ color: "var(--bad)" }}>{r.batches.length - bad}/{r.batches.length}</span> : <span>{r.batches.length}/{r.batches.length}</span>}
-                </td>
-                <td className="num">{pq}/{r.batches.length}</td>
-                <td>{lanesLoading ? <span className="faint">…</span> : laneOf(r.rollupId)?.enabled ? <Pill tone="info">lane open</Pill> : <span className="faint">watched only</span>}</td>
-                <td className="muted" title={last ? dateTime(last.submittedTime * 1000) : undefined}>{last ? ago(last.submittedTime * 1000) : "–"}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
     </div>
   );
 }

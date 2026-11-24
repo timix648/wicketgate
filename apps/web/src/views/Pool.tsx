@@ -108,6 +108,7 @@ export function Pool() {
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Network</div>
         <h1>Pool</h1>
         <p>
           Liquidity providers fund the instant exits. The pool pays a withdrawal now and the chain repays it when the batch is final; the 0.3% fee

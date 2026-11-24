@@ -32,6 +32,7 @@ export function Track() {
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Exits</div>
         <h1>Track an exit</h1>
         <p>
           Paste the address that receives the money (the beneficiary) or an exit address, as <code>0x…</code> or <code>qor1…</code>. You will see every

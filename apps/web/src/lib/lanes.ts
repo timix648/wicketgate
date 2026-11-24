@@ -5,7 +5,7 @@ import hubAbiJson from "@wicketgate/core/abi/LaneHub.json";
 import poolAbiJson from "@wicketgate/core/abi/ExitPool.json";
 import hub from "../../../../deployments/lanehub.json";
 import { client } from "./chain";
-import { CONTRACTS } from "./config";
+import { CONTRACTS, LOG_RANGE } from "./config";
 
 const hubAbi = hubAbiJson as Abi;
 const poolAbi = poolAbiJson as Abi;
@@ -42,11 +42,31 @@ export interface LaneRow {
   isWicketgateAdmin: boolean;
 }
 
+/**
+ * A contract's events since `fromBlock`, fetched in 10,000-block windows: the public RPC refuses a
+ * wider eth_getLogs range, so one request from the hub's deploy block stops working within a day.
+ */
+async function eventsSince(address: Address, abi: Abi, eventName: string, fromBlock: bigint): Promise<any[]> {
+  const head = await client.getBlockNumber();
+  const windows: [bigint, bigint][] = [];
+  for (let f = fromBlock; f <= head; f += LOG_RANGE) windows.push([f, f + LOG_RANGE - 1n < head ? f + LOG_RANGE - 1n : head]);
+  const out: any[][] = new Array(windows.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < windows.length) {
+      const i = next++;
+      out[i] = (await client.getContractEvents({ address, abi, eventName, fromBlock: windows[i][0], toBlock: windows[i][1] } as any)) as any[];
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, windows.length) }, worker));
+  return out.flat();
+}
+
 export async function fetchLanes(): Promise<LaneRow[]> {
   const read = <T>(functionName: string, args: unknown[] = [], address: Address = LANE_HUB.address, abi: Abi = hubAbi) =>
     client.readContract({ address, abi, functionName, args }) as Promise<T>;
   // rollup ids are only in the LaneOpened events (the hub stores keys)
-  const opened = await client.getContractEvents({ address: LANE_HUB.address, abi: hubAbi, eventName: "LaneOpened", fromBlock: LANE_HUB.deployBlock });
+  const opened = await eventsSince(LANE_HUB.address, hubAbi, "LaneOpened", LANE_HUB.deployBlock);
   const idOf = new Map<string, string>(), txOf = new Map<string, Hex>();
   for (const e of opened as any[]) {
     idOf.set(e.args.rollupKey, e.args.rollupId);
@@ -66,8 +86,8 @@ export async function fetchLanes(): Promise<LaneRow[]> {
       const [liquidityWei, lane, confirmed, exits, assets, shares] = await Promise.all([
         client.getBalance({ address: l.pool }),
         read<any[]>("lanes", [keccak256(toHex(rollupId))], l.pool, poolAbi),
-        client.getContractEvents({ address: l.pool, abi: poolAbi, eventName: "BatchConfirmed", fromBlock: LANE_HUB.deployBlock }),
-        client.getContractEvents({ address: l.pool, abi: poolAbi, eventName: "InstantExit", fromBlock: LANE_HUB.deployBlock }),
+        eventsSince(l.pool, poolAbi, "BatchConfirmed", LANE_HUB.deployBlock),
+        eventsSince(l.pool, poolAbi, "InstantExit", LANE_HUB.deployBlock),
         read<bigint>("totalAssets", [], l.pool, poolAbi),
         read<bigint>("totalShares", [], l.pool, poolAbi),
       ]);

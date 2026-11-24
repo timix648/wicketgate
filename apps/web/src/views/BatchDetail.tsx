@@ -16,7 +16,7 @@ export function BatchDetail() {
   const chain = useOnChainBatch(rollupId, Number.isInteger(i) ? i : undefined);
 
   const crumbs = (
-    <div className="crumbs" style={{ paddingTop: 24 }}>
+    <div className="crumbs">
       <Link href="/r">Rollups</Link> / <Link href={`/r/${rollupId}`} className="mono">{rollupId}</Link> / batch {index}
     </div>
   );
@@ -34,7 +34,7 @@ export function BatchDetail() {
   return (
     <>
       {crumbs}
-      <div className="page-head" style={{ paddingTop: 8 }}>
+      <div className="page-head under-crumbs">
         <div className="row">
           <h1>Batch {b.index}</h1>
           <BatchPill state={state} />

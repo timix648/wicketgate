@@ -52,6 +52,7 @@ export function Watchers() {
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Network</div>
         <h1>Watchers</h1>
         <p>
           A watcher re-executes every batch and, when the roots match, signs an attestation with its ML-DSA-87 key. Its stake backs what it

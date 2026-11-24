@@ -3,60 +3,32 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { batchState } from "../lib/feed";
-import { useAllRollups, useLanes, useRollup } from "../lib/queries";
+import { useAllRollups, useRollup } from "../lib/queries";
 import { feedFile } from "../lib/config";
 import { ago, dateTime, duration, qorFromUqor } from "../lib/format";
 import { BatchPill, ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
 import { BatchStrip, StripLegend } from "../components/BatchStrip";
+import { RollupTable } from "../components/RollupTable";
 
 export function RollupList() {
-  const router = useRouter();
   const { rollups, isLoading, error } = useAllRollups();
-  const { laneOf, isLoading: lanesLoading } = useLanes();
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Network</div>
         <h1>Rollups</h1>
         <p>
           Every <code>qledger-v1</code> rollup on the chain, found by the watcher without being told about it and rebuilt from main-chain data
           alone. A rollup with an exit lane can be left through the pool in seconds.
         </p>
       </div>
+      <div className="section-head"><span /><StripLegend /></div>
       {error ? (
         <ErrorBox error={error} />
       ) : isLoading && !rollups.length ? (
         <Loading />
       ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Rollup</th>
-                <th>Batches</th>
-                <th className="num">Count</th>
-                <th>Verdicts</th>
-                <th>Exit lane</th>
-                <th>Latest batch</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rollups.map((r) => {
-                const bad = r.batches.filter((b) => b.verdict !== "match").length;
-                const last = r.batches.at(-1);
-                return (
-                  <tr key={r.rollupId} className="link" onClick={() => router.push(`/r/${r.rollupId}`)}>
-                    <td className="mono"><Link href={`/r/${r.rollupId}`}>{r.rollupId}</Link></td>
-                    <td style={{ whiteSpace: "normal", minWidth: 200 }}><BatchStrip rollup={r} linked={false} /></td>
-                    <td className="num">{r.batches.length}</td>
-                    <td>{bad ? <Pill tone="bad">{bad} mismatch</Pill> : <Pill tone="ok">all match</Pill>}</td>
-                    <td>{lanesLoading ? <span className="faint">…</span> : laneOf(r.rollupId)?.enabled ? <Pill tone="info">open</Pill> : <span className="faint">none</span>}</td>
-                    <td>{last ? ago(last.submittedTime * 1000) : "–"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <RollupTable rollups={rollups} />
       )}
     </>
   );
@@ -80,7 +52,7 @@ export function RollupDetail() {
   return (
     <>
       <Crumbs id={rollupId} />
-      <div className="page-head" style={{ paddingTop: 8 }}>
+      <div className="page-head under-crumbs">
         <div className="row">
           <h1 className="mono" style={{ fontSize: 24 }}>{r.rollupId}</h1>
           {r.lane?.enabled ? <Pill tone="info">Exit lane open</Pill> : <Pill tone="muted">Watched only</Pill>}
@@ -133,7 +105,7 @@ export function RollupDetail() {
           <StripLegend />
         </div>
         <div className="card" style={{ marginBottom: 12 }}>
-          <BatchStrip rollup={r} />
+          <BatchStrip rollup={r} max={240} />
         </div>
         <div className="table-wrap">
           <table>
@@ -176,7 +148,7 @@ export function RollupDetail() {
 
 function Crumbs({ id }: { id?: string }) {
   return (
-    <div className="crumbs" style={{ paddingTop: 24 }}>
+    <div className="crumbs">
       <Link href="/r">Rollups</Link> / <span className="mono">{id}</span>
     </div>
   );

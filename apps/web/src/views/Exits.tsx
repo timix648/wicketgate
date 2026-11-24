@@ -47,6 +47,7 @@ export function Exits() {
   return (
     <>
       <div className="page-head">
+        <div className="eyebrow">Exits</div>
         <h1>Instant exits</h1>
         <p>
           Each exit was paid by the pool before its batch finalised, against a batch two watchers had re-executed and attested. When the batch
