@@ -110,12 +110,18 @@ export async function withAccountLock<T>(acc: UnifiedAccount, fn: () => Promise<
  * than 10,000 blocks, so a query from a contract's deploy block works on deploy day and fails once
  * the chain has moved on. Always read events through this.
  */
-export async function getEventsChunked(params: { address: Address; abi: Abi; eventName: string; fromBlock: bigint; toBlock?: bigint }, step = 10_000n): Promise<any[]> {
+export async function getEventsChunked(params: { address: Address; abi: Abi; eventName: string; fromBlock: bigint; toBlock?: bigint }, step = 10_000n, parallel = 6): Promise<any[]> {
   const to = params.toBlock ?? (await publicClient.getBlockNumber());
-  const out: any[] = [];
-  for (let f = params.fromBlock; f <= to; f += step) {
-    const t = f + step - 1n < to ? f + step - 1n : to;
-    out.push(...(await publicClient.getContractEvents({ ...params, fromBlock: f, toBlock: t } as any)));
-  }
-  return out;
+  const ranges: [bigint, bigint][] = [];
+  for (let f = params.fromBlock; f <= to; f += step) ranges.push([f, f + step - 1n < to ? f + step - 1n : to]);
+  const parts: any[][] = new Array(ranges.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < ranges.length) {
+      const i = next++;
+      parts[i] = await publicClient.getContractEvents({ ...params, fromBlock: ranges[i][0], toBlock: ranges[i][1] } as any);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(parallel, ranges.length) }, worker));
+  return parts.flat();
 }
