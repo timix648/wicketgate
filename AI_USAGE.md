@@ -7,8 +7,7 @@ This file is for the Best AI-Native Build award. It records what the team decide
 - **Team:**
   - @timix648 (lead): direction, product decisions, review, chain operations and everything published.
   - @da-b0s: the frontend (wallet and rollup board), some backend jobs, and the demo.
-- **Coding agent:** Claude Code, running on the team's own server with shell access, and the QoreChain docs read as markdown (every page is available by appending `.md` to its URL). The frontend (`apps/web`) was built with Claude Code in its desktop app on @da-b0s's machine, with a browser pane for checking pages.
-- **Other tools:** Foundry for contracts and tests, the QoreChain kits (`@qorechain/sdk`, `@qorechain/rdk`, `@qorechain/pqc`), the public diana endpoints and explorer.
+- **Coding agent:** Claude Code, running on the team's own server with shell access, and the QoreChain docs read as markdown (every page is available by appending `.md` to its URL).- **Other tools:** Foundry for contracts and tests, the QoreChain kits (`@qorechain/sdk`, `@qorechain/rdk`, `@qorechain/pqc`), the public diana endpoints and explorer.
 
 ## What the team decided
 
