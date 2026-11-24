@@ -26,6 +26,10 @@ export interface ExitRecord {
   exitId?: string;
   /** The pool (main or LaneHub lane) whose exit address the withdrawal pays; absent means the main pool. */
   pool?: `0x${string}`;
+  /** Name of the pool chosen by routing, for display. */
+  poolLabel?: string;
+  /** The sealed exit request exactly as it left the browser (ML-KEM-1024 ciphertext; not secret). */
+  sealedText?: string;
 }
 
 export type ActivityKind = "deposit" | "send" | "withdraw";

@@ -12,7 +12,7 @@ import { LANE_HUB } from "../lanes";
 import { client } from "../chain";
 import { CONTRACTS, NET } from "../config";
 import { toHexStr, type Unlocked } from "./vault";
-import { sealExitRequest } from "@wicketgate/core/sealed-exit";
+import { EXIT_OPERATOR, sealExitRequest } from "@wicketgate/core/sealed-exit";
 import type { RecipientCard } from "@qorechain/qoreseal";
 import operatorCard from "../../../../../cards/security.json";
 
@@ -88,7 +88,16 @@ export const relayStatus = (id: string) => api<{ status: "queued" | "posted" | "
  * checked against the fingerprint pinned in the app and the operator's signed card. The app's
  * server and queue only ever see the rollup id and ciphertext.
  */
-export async function requestExit(input: { rollupId: string; beneficiary: Address; salt: Hex; amountUqor: bigint; pool?: Address }) {
+export async function requestExit(input: {
+  rollupId: string;
+  beneficiary: Address;
+  salt: Hex;
+  amountUqor: bigint;
+  pool?: Address;
+  /** Called as the request is sealed and then sent, so the page can show each step. */
+  onStage?: (stage: "sealing" | "sending") => void;
+}) {
+  input.onStage?.("sealing");
   const sealed = await sealExitRequest({
     rest: `${window.location.origin}/api/kem-rest`,
     fetch: kemFetch,
@@ -97,8 +106,18 @@ export async function requestExit(input: { rollupId: string; beneficiary: Addres
     card: operatorCard as RecipientCard,
     request: { rollupId: input.rollupId, beneficiary: input.beneficiary, salt: input.salt, amountUqor: input.amountUqor.toString() },
   });
-  return api<{ queued: true; id: string; sealed: true }>("/api/exit", { method: "POST", body: JSON.stringify({ rollupId: input.rollupId, sealed }) });
+  input.onStage?.("sending");
+  const res = await api<{ queued: true; id: string; sealed: true }>("/api/exit", { method: "POST", body: JSON.stringify({ rollupId: input.rollupId, sealed }) });
+  // `sealedText` is exactly what left the browser: the page shows it as "what the server saw".
+  return { ...res, sealedText: sealed };
 }
+
+/** The exit operator's ML-KEM-1024 key as the chain's KEM registry serves it, and its pinned fingerprint. */
+export const EXIT_OPERATOR_KEY = {
+  address: EXIT_OPERATOR.address,
+  fingerprint: EXIT_OPERATOR.mlkemKeySha3,
+  chainUrl: `${NET.rest}/qorechain/pqc/v1/kem/${EXIT_OPERATOR.address}`,
+};
 
 /** Maps the chain REST paths QoreSeal reads (/qorechain/pqc/v1/{kem|account}/{addr}) to the app's relay of them. */
 const kemFetch = ((url: string | URL, init?: RequestInit) => {

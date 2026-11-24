@@ -74,9 +74,10 @@ export function poolOf(address: string): PoolDeployment | undefined {
 export const LOG_RANGE = 10_000n;
 
 /** The team's own accounts, labelled as the frontend brief asks. Anyone else shows as an address. */
-export const KNOWN_WATCHERS: Record<string, { name: string; note: string }> = {
-  "0xe754dfbe7c4c4061d089b8e262f6f4c36e563bc0": { name: "W1", note: "Active watcher" },
-  "0x65261e42c226e4a34256f5f144ae2ea63db5bae4": { name: "W2", note: "Active watcher; earned the 500 QOR fraud bounty" },
+export const KNOWN_WATCHERS: Record<string, { name: string; note: string; reader?: "rdk" | "independent" }> = {
+  "0xe754dfbe7c4c4061d089b8e262f6f4c36e563bc0": { name: "W1", note: "Active watcher; caught LedgerPump's staged fraud demo", reader: "rdk" },
+  "0x65261e42c226e4a34256f5f144ae2ea63db5bae4": { name: "W2", note: "Active watcher; earned the 500 QOR fraud bounty", reader: "rdk" },
+  "0xe9916f8cf1d98e47f7fcc518800c2ef72cb703d8": { name: "W5", note: "Active watcher on Wicketgate's second, independent inbox reader", reader: "independent" },
   "0xac82ffe5610f14d09ef451e5c71254be9164cc88": { name: "W3", note: "Drill account, key handed to the attack bot" },
   "0x718ed43cba438b9d7095e56787b315ab433903cc": { name: "W4", note: "Q-Day demo (deliberately weak classical key)" },
 };

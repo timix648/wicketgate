@@ -108,9 +108,13 @@ test("connect QoreX, create a rollup account, deposit (rejected), withdraw insta
   // ---- 4. withdraw instantly: estimate, sign with the rollup key, relay, exit relay
   await page.getByRole("tab", { name: "Withdraw instantly" }).click();
   await page.getByLabel("Amount in QOR").fill("2");
-  await expect(page.getByText("You receive")).toBeVisible(); // fee and payout read from the pool
+  await expect(page.getByText("You receive").first()).toBeVisible(); // fee and payout read from the pool
+  await expect(page.getByText(/^Cheapest of \d+ pools?:/)).toBeVisible(); // the routed choice is shown before signing
   await page.getByRole("button", { name: "Withdraw instantly" }).click();
-  await expect(page.getByText(/queued for an instant exit/)).toBeVisible();
+  await expect(page.getByText(/Queued for an instant exit to/)).toBeVisible();
+  // every step is shown, including the sealing to the operator's ML-KEM-1024 key
+  await expect(page.getByText("Sealed ✓ (the relay only sees ciphertext)")).toBeVisible();
+  await expect(page.getByText("Sealed ✓ ML-KEM-1024 + X25519").first()).toBeVisible();
 
   // the withdrawal posted to the relay: one valid qledger-v1 transaction for this rollup,
   // signed by this account, paying the exit address the pool computed for (EVM address, salt)
@@ -135,6 +139,10 @@ test("connect QoreX, create a rollup account, deposit (rejected), withdraw insta
   expect(exitBodies[0].sealed).toMatch(/^qoreseal:/);
   for (const secret of [addresses.evm.slice(2), exit.salt.slice(2)]) expect(exitBodies[0].sealed.toLowerCase()).not.toContain(secret.toLowerCase());
   expect(after.nextNonce[ROLLUP]).toBe("1");
+
+  // "What the server saw" shows exactly the body /api/exit received
+  await page.getByRole("button", { name: "What the server saw" }).first().click();
+  await expect(page.locator(".ciphertext").first()).toHaveText(JSON.stringify(exitBodies[0]));
 
   // ---- 5. progress follows the queues
   relayStatus = { status: "posted", txHash: "A".repeat(64) };

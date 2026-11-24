@@ -242,6 +242,14 @@ details summary { cursor: pointer; }
 .tab.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
 select.input { font-family: var(--sans); }
 
+/* sealed exit request */
+.sealed { border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--border)); background: var(--ok-soft); border-radius: 8px; padding: 10px 12px; }
+.ciphertext {
+  margin: 0; max-height: 180px; overflow: auto; padding: 10px; border-radius: 6px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+  font: 11.5px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all;
+}
+
 /* line chart */
 .chart { position: relative; }
 .chart svg { width: 100%; height: auto; display: block; touch-action: none; }
@@ -277,3 +285,5 @@ select.input { font-family: var(--sans); }
   .kv { grid-template-columns: 1fr; gap: 0 0; }
   .kv dd { margin-bottom: 8px; }
 }
+
+.lead { border-left: 4px solid var(--ok); }

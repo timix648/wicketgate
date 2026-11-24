@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { batchState, type Batch, type RollupFeed } from "../lib/feed";
 import { useAllRollups, useLanes, useMetrics, usePool } from "../lib/queries";
-import { METRICS_SOURCE } from "../lib/config";
+import { METRICS_SOURCE, repoFile } from "../lib/config";
 import { ago, dateTime, duration, num, qorFromUqor, qorFromWei } from "../lib/format";
-import { BatchPill, ErrorBox, Loading, Pill, Stat } from "../components/ui";
+import { BatchPill, ErrorBox, Hash, Loading, Pill, Stat } from "../components/ui";
 import { BatchStrip, StripLegend } from "../components/BatchStrip";
 import { Activity } from "../components/Activity";
 
@@ -25,6 +25,8 @@ export function Overview() {
           behind it. The pool pays withdrawals from confirmed batches at once, and the chain repays the pool when the batch is final.
         </p>
       </div>
+
+      <LeadFinding />
 
       {metrics.error ? (
         <ErrorBox error={metrics.error} />
@@ -126,6 +128,40 @@ export function Overview() {
 
       {rollups.length > 0 && <RecentBatches rollups={rollups} />}
     </>
+  );
+}
+
+/**
+ * The watchtower doing its job on someone else's rollup (PROOF.md, 21 Nov 2026). LedgerPump staged
+ * this fraud on purpose to show their rollup can be policed; it was, by a watcher they did not run.
+ */
+const LEDGERPUMP = {
+  forged: "9DF2AFEB1A24EBBCE80B3CF7DA164DFB712C4CC2B35E0AB56117EB57CB193B62",
+  challenge: "C93AB320110D41FFB5FC448195B05A5CD4803223FD0CB3C8224E4B7B3BFFA660",
+  log: "https://github.com/lahdlahd/ledgerpump/blob/main/docs/TESTNET_LOG.md",
+};
+
+function LeadFinding() {
+  return (
+    <div className="card lead" style={{ marginBottom: 12 }}>
+      <div className="row" style={{ gap: 8, marginBottom: 6 }}>
+        <Pill tone="ok">Caught live</Pill>
+        <span className="small muted">21 Nov 2026 · a rollup we do not run</span>
+      </div>
+      <h2 style={{ marginBottom: 6 }}>A wrong batch on LedgerPump&apos;s rollup was challenged 12 seconds after it was posted</h2>
+      <p className="small" style={{ margin: 0 }}>
+        LedgerPump, another team in the fest, staged a fraud demo on their own rollup: a batch with one byte of its state root flipped. Our watcher W1,
+        which re-executes every rollup on QoreChain, found it and sent the fraud proof on its own, the only challenge on chain. The chain rejected the
+        batch and slashed the 1,000 QOR bond, 500 burned and 500 paid to W1. Their demo showed exactly what it set out to: a lying batch on their
+        rollup does not survive an independent watcher. Nobody on our team acted; we learned of it from W1&apos;s alert.
+      </p>
+      <div className="row small" style={{ gap: 14, marginTop: 10 }}>
+        <span>forged batch <Hash value={LEDGERPUMP.forged} tx /></span>
+        <span>W1&apos;s challenge <Hash value={LEDGERPUMP.challenge} tx /></span>
+        <a href={LEDGERPUMP.log} target="_blank" rel="noreferrer">LedgerPump&apos;s own log ↗</a>
+        <a href={repoFile("PROOF.md")} target="_blank" rel="noreferrer">PROOF.md ↗</a>
+      </div>
+    </div>
   );
 }
 
