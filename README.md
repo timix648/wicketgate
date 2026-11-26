@@ -27,7 +27,9 @@ Any rollup can pay withdrawals early by trusting a few watchtowers. Wicketgate i
 - **Cheapest-lane routing:** a 1 QOR exit quoted 0.083 QOR at the main pool and 0.003 QOR at a lane; it was routed, sealed and paid from the lane.
 - **AI-managed liquidity:** `AgentVault` `0x3d66b87a…`, an agent that rebalances 20 QOR by fee yield and risk, each move ML-DSA-87 signed and verified on chain. Plus an MCP server that gives any AI assistant QoreChain's own MCP tools and Wicketgate's ([docs/AGENT.md](docs/AGENT.md)).
 - **Exit to another chain** from the wallet in one QoreX signature (Osmosis, Injective, Cosmos Hub).
-- **Fraud caught on a rival's rollup:** W1 challenged a forged `ledgerpump` batch 12 s after it was posted; the chain slashed the 1,000 QOR bond.
+- **Fraud caught on two other teams' rollups, unprompted:**
+  - **`ledgerpump` (21 Nov):** W1 challenged a forged batch 12 s after it was posted; the chain slashed the 1,000 QOR bond.
+  - **`sdiqt-1` (26 Nov):** batch 12's state root did not match re-execution. **W5, the watcher on our independent reader**, challenged first; the chain upheld the fraud proof, slashed the submitter's 1,000 QOR bond, paid W5 500 QOR and rolled the rollup back. The rollup's re-posted batch 12 matches. Two independent reader implementations are not a theory: one of them caught this ([tx `A93FED3A…82F6`](https://explore.qore.network/tx/A93FED3A90776DEA7084A8B4C7F3CF33A533BD71CD2686D297B16E7C9DFA82F6)).
 - **Fixes upstream in QoreChain's own toolkit:** [issue #2](https://github.com/qorechain/qorechain-rdk/issues/2) and [PR #3](https://github.com/qorechain/qorechain-rdk/pull/3), so every team's receipts keep verifying after the chain prunes batch records.
 
 **Check it in 60 seconds, no key:** open [/lanes](https://wicketgate-psi.vercel.app/lanes) (every lane, its liquidity, fees and stake backing, read live from the chain), then [/watchers](https://wicketgate-psi.vercel.app/watchers) and [/exits](https://wicketgate-psi.vercel.app/exits); or run `cd packages/scripts && npx tsx src/metrics.ts && npx tsx src/redteam.ts`.
