@@ -24,7 +24,7 @@ import {
 } from "@qorechain/rdk";
 import { encodeAbiParameters, keccak256, toHex, type Address, type Hex } from "viem";
 import type { UnifiedAccount } from "@qorechain/sdk";
-import { NET } from "@wicketgate/core/env";
+import { NET, account } from "@wicketgate/core/env";
 import { sendNative, explorerTx } from "@wicketgate/core/chain";
 import { artifact, closeWindow, openWindow, pqSign, publicClient, walletFor, windowBudget, withAccountLock } from "@wicketgate/core/evm";
 import { buildExitTree, ZERO_ROOT } from "@wicketgate/core/exit-tree";
@@ -442,6 +442,21 @@ export class Watcher {
     });
   }
 
+  /** Who won the challenge on a rejected batch (the chain's rdk_fraud_upheld event), named if it is one of our watchers. */
+  private async whoChallenged(rollupId: string, index: number): Promise<string | undefined> {
+    const txs = await this.plainRest.searchTxs(`rdk_fraud_upheld.rollup_id='${rollupId}'`);
+    for (const tx of [...txs].reverse()) {
+      for (const ev of (tx as any)?.events ?? []) {
+        if (ev?.type !== "rdk_fraud_upheld") continue;
+        const a = Object.fromEntries((ev.attributes ?? []).map((x: any) => [x.key, x.value]));
+        if (Number(a.batch_index) !== index) continue;
+        const ours = await teamWatcherName(a.challenger);
+        return `${ours ? `our watcher ${ours}` : a.challenger} (tx ${(tx as any).txhash})`;
+      }
+    }
+    return undefined;
+  }
+
   private async challenge(rollupId: string, index: number, parent: QledgerLedger, accFrom: Uint8Array | string, entries: QledgerEntry[], b: any) {
     const key = `c:${rollupId}:${index}`;
     if (this.sent.has(key)) return "sent";
@@ -462,8 +477,9 @@ export class Watcher {
       // another watcher got there first: the batch is already rejected
       if (/is rejected|already finalized|already rejected/i.test(String(e?.message))) {
         this.sent.add(key);
-        this.log(`[${rollupId}] batch ${index} was already rejected by another challenger`);
-        return "rejected-by-another-watcher";
+        const who = await this.whoChallenged(rollupId, index).catch(() => undefined);
+        this.log(`[${rollupId}] batch ${index} was already rejected by ${who ?? "another challenger"}`);
+        return who ? `rejected-by ${who}` : "rejected-by-another-watcher";
       }
       throw e;
     }
@@ -471,4 +487,18 @@ export class Watcher {
     this.log(`[${rollupId}] CHALLENGED batch ${index}: ${explorerTx(r.transactionHash)}`);
     return r.transactionHash;
   }
+}
+
+/** Our own watchers' names by address (W1..W5), from the team key file when present. */
+let teamNames: Map<string, string> | undefined;
+async function teamWatcherName(address: string): Promise<string | undefined> {
+  if (!teamNames) {
+    teamNames = new Map();
+    for (const role of ["W1", "W2", "W3", "W4", "W5"]) {
+      try {
+        teamNames.set((await account(role)).cosmos, role);
+      } catch {}
+    }
+  }
+  return teamNames.get(address);
 }
